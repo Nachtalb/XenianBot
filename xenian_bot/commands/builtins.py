@@ -42,7 +42,7 @@ class Commands(BaseCommand):
         for command in BaseCommand.all_commands:
             if command.hidden:
                 continue
-            reply += '{title} \[/{command_name}{args}]: {description}\n'.format(
+            reply += '/{command_name}{args} - {title}: {description}\n'.format(
                 command_name=command.command_name,
                 args=' %s' % command.args if command.args else '',
                 title=command.title,
