@@ -42,7 +42,7 @@ class Commands(BaseCommand):
                 continue
             reply += '{title} \[/{command_name}{args}]: {description}\n'.format(
                 command_name=command.command_name,
-                args=' %ds' % command.args if command.args else '',
+                args=' %s' % command.args if command.args else '',
                 title=command.title,
                 description=command.description
             )
