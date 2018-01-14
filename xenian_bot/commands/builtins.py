@@ -18,7 +18,9 @@ class Start(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        reply = '**At the moment I do nothing.**'
+        reply = ('Hello and welcome to me, **@XenianBot**\n\nI am a personal assistant which can do various tasks for '
+                 'you. For example, I can do reverse image searches directly here in Telegram. To see my full '
+                 'capability, use /commands.')
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
 
