@@ -9,6 +9,8 @@ name = "pypi"
 
 python-telegram-bot = "*"
 paramiko = "*"
+urbandictionary = "*"
+emoji = "*"
 
 
 [dev-packages]
