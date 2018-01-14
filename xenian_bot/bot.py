@@ -58,7 +58,7 @@ def main():
     if MODE['active'] == 'webhook':
         webhook = MODE['webhook']
         updater.start_webhook(listen=webhook['listen'], port=webhook['port'], url_path=webhook['url_path'])
-        updater.bot.set_webhook(url=webhook['url'], certificate=webhook['certification'])
+        updater.bot.set_webhook(url=webhook['url'])
         logger.info('Starting webhook...')
     else:
         updater.start_polling()
