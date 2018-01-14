@@ -40,17 +40,16 @@ class UrbanDictionaryDefine(BaseCommand):
             update.message.reply_text('Could not find anything for: %s' % update.message.text)
             return
         best = definitions[0]
-        reply = """
-        *Definition for [{word}]*
+        reply = """*Definition for [{word}]*
 
-        {definition}
+{definition}
 
-        *Example*
+*Example*
 
-        {example}
+{example}
 
-        *Votes*
-        {emoji_up} {upvotes} | {emoji_down} {downvotes}
+*Votes*
+{emoji_up} {upvotes} | {emoji_down} {downvotes}
         """.format(
             word=best.word,
             definition=best.definition,
