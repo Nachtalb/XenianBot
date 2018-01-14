@@ -5,7 +5,7 @@ from telegram import Bot, Update, ParseMode
 from xenian_bot.commands import BaseCommand
 
 
-__all__ = ['UrbanDictionaryDefine']
+__all__ = ['urban_dictionary_define']
 
 
 class UrbanDictionaryDefine(BaseCommand):
@@ -64,4 +64,4 @@ class UrbanDictionaryDefine(BaseCommand):
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
 
-UrbanDictionaryDefine()
+urban_dictionary_define = UrbanDictionaryDefine()

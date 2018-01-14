@@ -5,7 +5,7 @@ from telegram.parsemode import ParseMode
 
 from .base import BaseCommand
 
-__all__ = ['Start', 'Commands', 'Unknown']
+__all__ = ['start', 'commands', 'unknown']
 
 
 class Start(BaseCommand):
@@ -22,7 +22,7 @@ class Start(BaseCommand):
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
 
-Start()
+start = Start()
 
 
 class Commands(BaseCommand):
@@ -49,7 +49,7 @@ class Commands(BaseCommand):
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
 
-Commands()
+commands = Commands()
 
 
 class Unknown(BaseCommand):
@@ -71,4 +71,4 @@ class Unknown(BaseCommand):
         update.message.reply_text("Sorry, I didn't understand that command.")
 
 
-Unknown()
+unknown = Unknown()

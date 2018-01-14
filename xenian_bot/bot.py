@@ -6,7 +6,7 @@ from threading import Thread
 from telegram import Bot, TelegramError, Update
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 
-from .commands import BaseCommand
+from .commands import BaseCommand, unknown
 from .settings import TELEGRAM_API_TOKEN, ADMINS, MODE
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -50,7 +50,11 @@ def main():
     for command in BaseCommand.all_commands:
         if not command.options:
             raise NotImplementedError('At least one option has to be given for a handler.')
+        if command.command_name == 'unknown':
+            continue
         dispatcher.add_handler(command.handler(**command.options))
+    # We add the Unknown handler later because this one must be added at the end, otherwise new commands will go in this
+    dispatcher.add_handler(unknown.handler(**unknown.options))
 
     # log all errors
     dispatcher.add_error_handler(error)
