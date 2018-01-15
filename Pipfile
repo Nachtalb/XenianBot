@@ -13,6 +13,7 @@ urbandictionary = "*"
 emoji = "*"
 instalooter = "*"
 requests = "*"
+moviepy = "*"
 
 
 [dev-packages]
