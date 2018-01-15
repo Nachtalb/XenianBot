@@ -18,7 +18,7 @@ __all__ = ['toggle_download_mode', 'download_stickers', 'download_gif']
 class ToggleDownloadMode(BaseCommand):
     command_name = 'download_mode'
     title = 'Toggle Download Mode on / off'
-    description = 'Download stickers and gifs in download mode'
+    description = 'Download stickers and gifs in download mode. Does not work in groups'
 
     def command(self, bot: Bot, update: Update):
         """Toggle Download Mode
@@ -46,7 +46,7 @@ class DownloadSticker(BaseCommand):
         super(DownloadSticker, self).__init__()
         self.options = {
             'callback': self.command,
-            'filters': Filters.sticker & download_mode_filter
+            'filters': Filters.sticker & download_mode_filter & ~ Filters.group
         }
 
     def command(self, bot: Bot, update: Update):
@@ -74,7 +74,7 @@ class DownloadGif(BaseCommand):
         super(DownloadGif, self).__init__()
         self.options = {
             'callback': self.command,
-            'filters': (Filters.video | Filters.document) & download_mode_filter
+            'filters': (Filters.video | Filters.document) & download_mode_filter & ~ Filters.group
         }
 
     def command(self, bot: Bot, update: Update):
