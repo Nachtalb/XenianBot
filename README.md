@@ -23,13 +23,10 @@ in Telegram. To see my full capability, send me /commands and you will see every
 - `/start` Start using me
 - `/commands` Get a list of commands, for all the things I can do for you.
 - `/define TEXT` Use this to search for a word or some words on Urban Dictionary.
-- `/search` Use this command and then send me an image, gif, video or sticker which I should create reverse image 
-search links for you. ATM links for IQDB, Google, Yandex, Bing and TinEye are supported. If you want more search
-engines, follow the instructions in [Contribuions](#contributions)
-- `/gifd` gifd stands for Gif Download. You may know that Telegram uses MP4s if you are using "gifs". With this
-command, I convert them to real Gifs and send them to you in a Zip. You may also send me actual videos.
-- `/instap TEXT` As TEXT send me a link to an Instagram post and I will send you the image or video from that post.
-- `/instau TEXT` As TEXT send me a username or the link to a user from Instagram and I will send you all its posts.
+- `/insta POST_LINK OR POST_ID` Send me a link to an Instagram post or its ID and I will send you the image/s or video 
+  from that post.
+- `/instap USER_LINK OR USERNAME` Send me a username or the link to a user from Instagram and I will send you all its 
+  posts.
 Use this command at your own risk, because with active users you may get a ton of images and videos. 
 - `/rawl` Rawl numbers from 0 to 10000 so you can get your sexy dubs, trips and quads.
 - More will come soon if you have any ideas or stuff you want: [Contribuions](#contributions)
