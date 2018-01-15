@@ -9,6 +9,7 @@ from telegram import Bot, ChatAction, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Filters, run_async
 from telegram.ext.messagehandler import MessageHandler
 
+from xenian_bot.commands.filters.download_mode import download_mode_filter
 from xenian_bot.commands.reverse_image_search_engines.bing import BingReverseImageSearchEngine
 from xenian_bot.commands.reverse_image_search_engines.google import GoogleReverseImageSearchEngine
 from xenian_bot.commands.reverse_image_search_engines.iqdb import IQDBReverseImageSearchEngine
@@ -76,7 +77,7 @@ class ReverseImageSearchVideo(ReverseImageSearchMixin, BaseCommand):
     def __init__(self):
         super(ReverseImageSearchVideo, self).__init__()
         self.options = {
-            'filters': (Filters.video | Filters.document) & ~ Filters.group,
+            'filters': (Filters.video | Filters.document) & ~ Filters.group & ~ download_mode_filter,
             'callback': self.command
         }
 
@@ -123,7 +124,7 @@ class ReverseImageSearchSticker(ReverseImageSearchMixin, BaseCommand):
     def __init__(self):
         super(ReverseImageSearchSticker, self).__init__()
         self.options = {
-            'filters': Filters.sticker & ~ Filters.group,
+            'filters': Filters.sticker & ~ Filters.group & ~ download_mode_filter,
             'callback': self.command
         }
 
@@ -163,7 +164,7 @@ class ReverseImageSearchImage(ReverseImageSearchMixin, BaseCommand):
     def __init__(self):
         super(ReverseImageSearchImage, self).__init__()
         self.options = {
-            'filters': Filters.photo & ~ Filters.group,
+            'filters': Filters.photo & ~ Filters.group & ~ download_mode_filter,
             'callback': self.command
         }
 
