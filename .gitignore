@@ -104,3 +104,4 @@ ENV/
 settings.py
 log/
 tmp/
+data/
