@@ -48,7 +48,7 @@ class Commands(BaseCommand):
                 title=command.title,
                 description=command.description
             )
-        update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(reply)
 
 
 commands = Commands()

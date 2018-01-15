@@ -11,6 +11,7 @@ python-telegram-bot = "*"
 paramiko = "*"
 urbandictionary = "*"
 emoji = "*"
+instalooter = "*"
 
 
 [dev-packages]
