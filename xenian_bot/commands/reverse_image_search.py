@@ -16,7 +16,8 @@ from xenian_bot.commands.reverse_image_search_engines.tineye import TinEyeRevers
 from xenian_bot.commands.reverse_image_search_engines.yandex import YandexReverseImageSearchEngine
 from . import BaseCommand
 
-__all__ = ['reverse_image_search_image', 'reverse_image_search_sticker', 'reverse_image_search_video']
+__all__ = ['reverse_image_search_image', 'reverse_image_search_sticker', 'reverse_image_search_video',
+           'reverse_image_search_reply']
 
 
 class ReverseImageSearchMixin:
@@ -75,7 +76,7 @@ class ReverseImageSearchVideo(ReverseImageSearchMixin, BaseCommand):
     def __init__(self):
         super(ReverseImageSearchVideo, self).__init__()
         self.options = {
-            'filters': Filters.video | Filters.document,
+            'filters': (Filters.video | Filters.document) & ~ Filters.group,
             'callback': self.command
         }
 
@@ -89,7 +90,8 @@ class ReverseImageSearchVideo(ReverseImageSearchMixin, BaseCommand):
         update.message.reply_text('Please wait for your results ...')
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
-        document = update.message.document or update.message.video
+        document = (update.message.document or update.message.video or update.message.reply_to_message.document or
+                    update.message.reply_to_message.video)
         video = bot.getFile(document.file_id)
 
         with NamedTemporaryFile() as video_file:
@@ -121,7 +123,7 @@ class ReverseImageSearchSticker(ReverseImageSearchMixin, BaseCommand):
     def __init__(self):
         super(ReverseImageSearchSticker, self).__init__()
         self.options = {
-            'filters': Filters.sticker,
+            'filters': Filters.sticker & ~ Filters.group,
             'callback': self.command
         }
 
@@ -136,7 +138,9 @@ class ReverseImageSearchSticker(ReverseImageSearchMixin, BaseCommand):
         update.message.reply_text('Please wait for your results ...')
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
-        sticker_image = bot.getFile(update.message.sticker.file_id)
+        sticker = update.message.sticker or update.message.reply_to_message.sticker
+
+        sticker_image = bot.getFile(sticker.file_id)
         converted_image = io.BytesIO()
 
         with io.BytesIO() as image_buffer:
@@ -159,7 +163,7 @@ class ReverseImageSearchImage(ReverseImageSearchMixin, BaseCommand):
     def __init__(self):
         super(ReverseImageSearchImage, self).__init__()
         self.options = {
-            'filters': Filters.photo,
+            'filters': Filters.photo & ~ Filters.group,
             'callback': self.command
         }
 
@@ -174,7 +178,9 @@ class ReverseImageSearchImage(ReverseImageSearchMixin, BaseCommand):
         update.message.reply_text('Please wait for your results ...')
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
-        photo = bot.getFile(update.message.photo[-1].file_id)
+        photo_message = update.message.photo or update.message.reply_to_message.photo
+
+        photo = bot.getFile(photo_message[-1].file_id)
         with io.BytesIO() as image_buffer:
             photo.download(out=image_buffer)
             with io.BufferedReader(image_buffer) as image_file:
@@ -182,3 +188,33 @@ class ReverseImageSearchImage(ReverseImageSearchMixin, BaseCommand):
 
 
 reverse_image_search_image = ReverseImageSearchImage()
+
+
+class ReverseImageSearchReply(BaseCommand):
+    command_name = 'search'
+    title = 'Reply reverse search'
+    description = 'Reply to media for reverse search'
+
+    def __init__(self):
+        super(ReverseImageSearchReply, self).__init__()
+
+    @run_async
+    def command(self, bot: Bot, update: Update):
+        """Reply to media to reverse search
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        reply_to_message = update.message.reply_to_message
+        if not reply_to_message:
+            update.message.reply_text('You have to reply to some media file to start the reverse search.')
+        if reply_to_message.photo:
+            reverse_image_search_image.command(bot, update)
+        if reply_to_message.sticker:
+            reverse_image_search_sticker.command(bot, update)
+        if reply_to_message.video or reply_to_message.document:
+            reverse_image_search_video.command(bot, update)
+
+
+reverse_image_search_reply = ReverseImageSearchReply()
