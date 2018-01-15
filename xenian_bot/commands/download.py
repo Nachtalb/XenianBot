@@ -6,7 +6,7 @@ from telegram.ext import Filters, MessageHandler
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 
-__all__ = ['toggle_download_mode']
+__all__ = ['toggle_download_mode', 'convert_stickers']
 
 
 class ToggleDownloadMode(BaseCommand):
@@ -29,3 +29,31 @@ class ToggleDownloadMode(BaseCommand):
 
 
 toggle_download_mode = ToggleDownloadMode()
+
+
+class ConvertSticker(BaseCommand):
+    handler = MessageHandler
+    title = 'Download Stickers'
+    description = 'Turn /download_mode on and send stickers'
+
+    def __init__(self):
+        super(ConvertSticker, self).__init__()
+        self.options = {
+            'callback': self.command,
+            'filters': Filters.sticker & download_mode_filter
+        }
+
+    def command(self, bot: Bot, update: Update):
+        """Download Sticker as images
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        sticker = bot.get_file(update.message.sticker.file_id)
+        with NamedTemporaryFile() as image:
+            sticker.download(image.name)
+            bot.send_photo(update.message.chat_id, photo=image)
+
+
+convert_stickers = ConvertSticker()
