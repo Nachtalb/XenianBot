@@ -118,7 +118,7 @@ class DownloadGif(BaseCommand):
                 host_path = path + '/' + upload_file_name
 
                 button_list = [
-                    InlineKeyboardButton("Open", url=host_path),
+                    InlineKeyboardButton("Download GIF", url=host_path),
                 ]
                 reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=2))
                 bot.send_message(update.message.chat_id, 'Instant GIF Download',  reply_markup=reply_markup)
