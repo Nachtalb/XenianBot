@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from telegram import Bot, ChatAction, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Filters, MessageHandler
+from telegram.ext import Filters, MessageHandler, run_async
 
 from xenian_bot.settings import UPLOADER
 from xenian_bot.uploaders import uploader
@@ -56,7 +56,8 @@ class DownloadSticker(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        sticker = bot.get_file(update.message.sticker.file_id)
+        sticker = update.message.sticker or update.message.reply_to_message.sticker
+        sticker = bot.get_file(sticker.file_id)
         with NamedTemporaryFile() as image:
             sticker.download(image.name)
             bot.send_photo(update.message.chat_id, photo=image)
@@ -124,3 +125,31 @@ class DownloadGif(BaseCommand):
 
 
 download_gif = DownloadGif()
+
+
+class DownloadReply(BaseCommand):
+    command_name = 'download'
+    title = 'Reply download'
+    description = 'Reply to media for download'
+
+    def __init__(self):
+        super(DownloadReply, self).__init__()
+
+    @run_async
+    def command(self, bot: Bot, update: Update):
+        """Reply to media to reverse search
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        reply_to_message = update.message.reply_to_message
+        if not reply_to_message:
+            update.message.reply_text('You have to reply to some media file to start the download.')
+        if reply_to_message.sticker:
+            download_stickers.command(bot, update)
+        if reply_to_message.video or reply_to_message.document:
+            download_gif.command(bot, update)
+
+
+download_reply = DownloadReply()
