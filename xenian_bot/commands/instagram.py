@@ -4,13 +4,14 @@ from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 
 from instaLooter import InstaLooter
-from telegram import Bot, ChatAction, Update
-from telegram.ext import run_async
+from telegram import Bot, ChatAction, MessageEntity, Update
+from telegram.ext import Filters, MessageHandler, run_async
 
 from xenian_bot.commands import BaseCommand
 from xenian_bot.utils import data
 
-__all__ = ['instagram_post_download', 'instagram_profil_download', 'instagram_login', 'instagram_logout']
+__all__ = ['instagram_post_download', 'instagram_profil_download', 'instagram_login', 'instagram_logout',
+           'auto_instargam_downloader']
 
 
 class InstagramMixims:
@@ -97,7 +98,7 @@ class InstagramMixims:
             **{
                 telegram_username: {
                     'username': username,
-                    'password':password
+                    'password': password
                 }
             }
         })
@@ -137,7 +138,7 @@ class InstagramMixims:
             looter.directory = temp_dir
             looter.download_post(post_code)
 
-            yield [os.path.join(temp_dir, file_path)for file_path in os.listdir(temp_dir)]
+            yield [os.path.join(temp_dir, file_path) for file_path in os.listdir(temp_dir)]
 
 
 class InstagramPostDownload(InstagramMixims, BaseCommand):
@@ -151,7 +152,7 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
         self.options['pass_args'] = True
 
     @run_async
-    def command(self, bot: Bot, update: Update, args: list = None):
+    def command(self, bot: Bot, update: Update, args: list = None, quiet=False):
         """Download a post
 
         Args:
@@ -159,14 +160,17 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             args (:obj:`list`): List of arguments passed by the user. First argument must be must be a link to a post or
                 the posts id
+            quiet (:obj:`bool`): If errors should be sent to the user
         """
         if len(args) != 1:
-            update.message.reply_text('You have to give me the link or the post id.')
+            if not quiet:
+                update.message.reply_text('You have to give me the link or the post id.')
             return
 
         telegram_user = update.message.from_user.username
         if not self.logged_in(telegram_user):
-            update.message.reply_text('You first have to login /instali.')
+            if not quiet:
+                update.message.reply_text('You first have to login /instali.')
             return
 
         post_token = args[0].strip()
@@ -179,14 +183,16 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
         try:
             looter = self.get_logged_in_looter(telegram_user)
             if not looter:
-                update.message.reply_text(
-                    'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
+                if not quiet:
+                    update.message.reply_text(
+                        'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
                 return
             post = looter.get_post_info(post_token)
             self.download_n_send_post(bot, update, looter, post)
         except KeyError:
-            update.message.reply_text(
-                'Could not get image, either the provided post link / id is incorrect or the user is private.')
+            if not quiet:
+                update.message.reply_text(
+                    'Could not get image, either the provided post link / id is incorrect or the user is private.')
 
 
 instagram_post_download = InstagramPostDownload()
@@ -305,3 +311,36 @@ class InstagramLogout(InstagramMixims, BaseCommand):
 
 
 instagram_logout = InstagramLogout()
+
+
+class AutoInstargamDownloader(InstagramMixims, BaseCommand):
+    hidden = True
+    handler = MessageHandler
+
+    def __init__(self):
+        super(AutoInstargamDownloader, self).__init__()
+        self.options = {
+            'callback': self.command,
+            'filters': Filters.entity(MessageEntity.URL)
+        }
+
+    def command(self, bot: Bot, update: Update):
+        """Auto read instagram urls
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        telegram_user = update.message.from_user.username
+        if self.logged_in(telegram_user):
+            text = update.message.text
+            http_re = re.compile('^((http(s)?:)?//)?(www\.)?')
+            sent = http_re.sub('', text)
+            path = sent.replace(self.base_url, '')
+
+            if path.startswith('/p/'):
+                post_token = path.replace('/p/', '').split('?', 1)[0].strip(' /')
+                instagram_post_download.command(bot, update, [post_token], quiet=True)
+
+
+auto_instargam_downloader = AutoInstargamDownloader()
