@@ -76,6 +76,7 @@ class InstagramMixims:
         user_dict = data.get(self.data_name)
         if user_dict.get(telegram_username, None):
             del user_dict[telegram_username]
+            data.save(self.data_name, user_dict)
             return True
         return False
 
