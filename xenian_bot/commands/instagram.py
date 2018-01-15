@@ -249,7 +249,7 @@ instagram_profil_download = InstagramProfileDownload()
 class InstagramLogin(InstagramMixims, BaseCommand):
     command_name = 'instali'
     title = 'Instagram Login'
-    description = 'Login to instagram'
+    description = 'Login to instagram. DO NOT USE THIS IN GROUPS'
     args = 'USERNAME PASSWORD'
 
     def __init__(self):
