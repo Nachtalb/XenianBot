@@ -12,7 +12,7 @@ from xenian_bot.utils import build_menu
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 
-__all__ = ['toggle_download_mode', 'convert_stickers']
+__all__ = ['toggle_download_mode', 'download_stickers', 'download_gif']
 
 
 class ToggleDownloadMode(BaseCommand):
@@ -37,13 +37,13 @@ class ToggleDownloadMode(BaseCommand):
 toggle_download_mode = ToggleDownloadMode()
 
 
-class ConvertSticker(BaseCommand):
+class DownloadSticker(BaseCommand):
     handler = MessageHandler
     title = 'Download Stickers'
     description = 'Turn /download_mode on and send stickers'
 
     def __init__(self):
-        super(ConvertSticker, self).__init__()
+        super(DownloadSticker, self).__init__()
         self.options = {
             'callback': self.command,
             'filters': Filters.sticker & download_mode_filter
@@ -62,7 +62,7 @@ class ConvertSticker(BaseCommand):
             bot.send_photo(update.message.chat_id, photo=image)
 
 
-convert_stickers = ConvertSticker()
+download_stickers = DownloadSticker()
 
 
 class DownloadGif(BaseCommand):
