@@ -27,10 +27,16 @@ in Telegram. To see my full capability, send me /commands and you will see every
   from that post.
 - `/instap USER_LINK OR USERNAME` Send me a username or the link to a user from Instagram and I will send you all its 
   posts.
+- `/instli USERNAME PASSWORD` To be able to use the Instagram service, you first need to be logged in. You can do this 
+  with this simple command. DO NOT USE THIS COMMAND IN GROUPS. 
+- `/instlo` Logout from Instagram. 
 Use this command at your own risk, because with active users you may get a ton of images and videos. 
 - `/rawl` Rawl numbers from 0 to 10000 so you can get your sexy dubs, trips and quads.
 - More will come soon if you have any ideas or stuff you want: [Contribuions](#contributions)
 
+
+- Reverse Image / Video / Gif / Sticker Search available. Just send one of the said files and the search starts 
+  automatically.
 ## Contributions
 ### Bug report / Feature request
 If you have found a bug or want a new feature, please file an issue on GitHub [Issues](https://github.com/Nachtalb/python_telegram_bot_template/issues)
