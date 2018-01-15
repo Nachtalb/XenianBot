@@ -264,14 +264,14 @@ class InstagramLogin(InstagramMixims, BaseCommand):
             args (:obj:`list`): List of arguments passed by the user. First argument must be must be the username and
                 the second the password
         """
-        if len(args) < 2 or len(args) > 2:
-            update.message.reply_text('You have to give me the username and password.')
-            return
-        username, password = args
         telegram_user = update.message.chat.username
         if self.logged_in(telegram_user):
             update.message.reply_text('Already logged in as %s' % self.current_user(telegram_user)['username'])
         else:
+            if len(args) < 2 or len(args) > 2:
+                update.message.reply_text('You have to give me the username and password.')
+                return
+            username, password = args
             insta_looter = InstaLooter()
             try:
                 insta_looter.login(username, password)
