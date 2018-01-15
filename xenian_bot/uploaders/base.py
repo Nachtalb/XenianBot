@@ -10,10 +10,10 @@ class UploaderBase:
     """
 
     _mandatory_configuration = {}
-    """(:obj:`dict`): Mandatory configuration settings. 
+    """(:obj:`dict`): Mandatory configuration settings.
 
     Usage:
-        {'some_key': type}: 
+        {'some_key': type}:
             - 'some_key' is a key name like 'host'
             - type is a python object like :class:`str`
     """
