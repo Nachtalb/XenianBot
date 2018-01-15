@@ -12,6 +12,7 @@ paramiko = "*"
 urbandictionary = "*"
 emoji = "*"
 instalooter = "*"
+requests = "*"
 
 
 [dev-packages]
