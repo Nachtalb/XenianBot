@@ -164,7 +164,7 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
             update.message.reply_text('You have to give me the link or the post id.')
             return
 
-        telegram_user = update.message.chat.username
+        telegram_user = update.message.from_user.username
         if not self.logged_in(telegram_user):
             update.message.reply_text('You first have to login /instali.')
             return
@@ -216,7 +216,7 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
             update.message.reply_text('You have to give me the link or the username.')
             return
 
-        telegram_user = update.message.chat.username
+        telegram_user = update.message.from_user.username
         if not self.logged_in(telegram_user):
             update.message.reply_text('You first have to login /instali.')
             return
@@ -265,7 +265,7 @@ class InstagramLogin(InstagramMixims, BaseCommand):
             args (:obj:`list`): List of arguments passed by the user. First argument must be must be the username and
                 the second the password
         """
-        telegram_user = update.message.chat.username
+        telegram_user = update.message.from_user.username
         if self.logged_in(telegram_user):
             update.message.reply_text('Already logged in as %s' % self.current_user(telegram_user)['username'])
         else:
@@ -297,8 +297,8 @@ class InstagramLogout(InstagramMixims, BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        if self.logged_in(update.message.chat.username):
-            if self.remove_user(update.message.chat.username):
+        if self.logged_in(update.message.from_user.username):
+            if self.remove_user(update.message.from_user.username):
                 update.message.reply_text('Logged out')
         else:
             update.message.reply_text('You were not logged in')
