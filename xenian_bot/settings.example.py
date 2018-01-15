@@ -17,7 +17,7 @@ MODE = {
 
 UPLOADER = {
     'uploader': 'xenian_bot.uploaders.ssh.SSHUploader',  # What uploader to use
-    'url' 'YOUR_DOMAIN_FILES_DIR' 
+    'url': 'YOUR_DOMAIN_FILES_DIR',
     'configuration': {
         'host': 'YOUR_HOST_IP',
         'user': 'YOUR_USERNAME',
