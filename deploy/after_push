@@ -6,6 +6,6 @@ echo files changed: $(git diff $oldrev $newrev --diff-filter=ACDMR --name-only |
 umask 002
 
 git submodule sync && git submodule update --init --recursive
-echo "Restarting python_telegram_bot_template.service"
-systemctl --user restart python_telegram_bot_template.service
+echo "Restarting xenian_bot.service"
+systemctl --user restart xenian_bot.service
 echo "Restarted"
