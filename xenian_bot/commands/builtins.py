@@ -1,5 +1,5 @@
 from telegram import Bot, Update
-from telegram.ext import MessageHandler, Filters
+from telegram.ext import MessageHandler, Filters, CommandHandler
 from telegram.parsemode import ParseMode
 
 
@@ -37,17 +37,22 @@ class Commands(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        reply = 'List of available commands:\n'
+        reply = 'List of direct commands:\n'
 
-        for command in BaseCommand.all_commands:
-            if command.hidden:
-                continue
+        for command in [cmd for cmd in BaseCommand.all_commands if cmd.handler == CommandHandler and not cmd.hidden]:
             reply += '/{command_name}{args} - {title}: {description}\n'.format(
                 command_name=command.command_name,
                 args=' %s' % command.args if command.args else '',
                 title=command.title,
                 description=command.description
             )
+        reply += '\n\nList of indirect commands:\n'
+        for command in [cmd for cmd in BaseCommand.all_commands if cmd.handler == MessageHandler and not cmd.hidden]:
+            reply += '- {title}: {description}\n'.format(
+                title=command.title,
+                description=command.description
+            )
+
         update.message.reply_text(reply)
 
 
