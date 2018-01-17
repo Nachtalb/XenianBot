@@ -2,7 +2,7 @@ from telegram import Bot, Update
 from telegram.ext import MessageHandler, Filters, CommandHandler
 from telegram.parsemode import ParseMode
 
-
+from xenian_bot.settings import ADMINS
 from .base import BaseCommand
 
 __all__ = ['start', 'commands', 'unknown']
@@ -57,6 +57,22 @@ class Commands(BaseCommand):
 
 
 commands = Commands()
+
+
+class Support(BaseCommand):
+    description = 'Contact bot maintainer for support of any kind'
+
+    def command(self, bot: Bot, update: Update):
+        """Contact bot maintainer for support of any kind
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        update.message.reply_text('If you need any help do not hesitate to contact me via {}. '.format(ADMINS[0]))
+
+
+support = Support()
 
 
 class Unknown(BaseCommand):
