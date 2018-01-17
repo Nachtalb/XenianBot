@@ -14,7 +14,7 @@ emoji = "*"
 instalooter = "*"
 requests = "*"
 moviepy = "*"
-
+pybooru = "*"
 
 [dev-packages]
 

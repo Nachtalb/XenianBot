@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5bc9a304146cc225640446f3ea2d7f5a33b07bf2cf719a8b4a8d60f603fa374d"
+            "sha256": "3d0c65dafae21a4b22b4cb6aa67d031cbe6b84b79b78a76ec8cc454a24c95aa6"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -317,6 +317,13 @@
                 "sha256:d258b0a71994f7770599835249cece1caef3c70def868c4915e6e5ca49b67d15"
             ],
             "version": "==0.4.2"
+        },
+        "pybooru": {
+            "hashes": [
+                "sha256:80b43633fa2a646de2abac6490e7de7d62c26cf1183bb1240445664b52ccae7b",
+                "sha256:2cbbcef73b049a403434a7f0fdf48b2aa623b93ade9ec1b01cdeedcfb8358ded"
+            ],
+            "version": "==4.1.0"
         },
         "pycparser": {
             "hashes": [
