@@ -1,8 +1,10 @@
 import re
 from collections import OrderedDict
 
+import requests
 from pybooru import Danbooru
 from telegram import Bot, ChatAction, InputMediaPhoto, Update
+from telegram.error import BadRequest
 from telegram.ext import run_async
 
 from . import BaseCommand
@@ -80,21 +82,37 @@ class DanbooruMixims:
             media_list.append(InputMediaPhoto(
                 image_url, '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])))
 
+        errors = 0
         while media_list:
             bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
             if len(media_list) > 1:
-                bot.send_media_group(
-                    chat_id=update.message.chat_id,
-                    media=media_list[:10],
-                    reply_to_message_id=update.message.message_id
-                )
-                del media_list[:10]
+                try:
+                    bot.send_media_group(
+                        chat_id=update.message.chat_id,
+                        media=media_list[:10],
+                        reply_to_message_id=update.message.message_id
+                    )
+                    del media_list[:10]
+                except BadRequest:
+                    error_list = []
+                    for index, media in enumerate(media_list[:10]):
+                        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
+                        request = requests.head(media.media)
+                        if request.status_code > 399 or request.status_code < 200:
+                            errors += 1
+                            error_list.append(media)
+                    media_list = list(set(media_list) - set(error_list))
             else:
-                bot.send_photo(
-                    chat_id=update.message.chat_id,
-                    photo=media_list[0].media,
-                    caption=media_list[0].caption)
+                try:
+                    bot.send_photo(
+                        chat_id=update.message.chat_id,
+                        photo=media_list[0].media,
+                        caption=media_list[0].caption)
+                except BadRequest as e:
+                    errors += 1
                 del media_list[0]
+        if errors:
+            update.message.reply_text('{} of the request {} are not publicly available'.format(errors, query['limit']))
 
 
 class DanbooruSearch(DanbooruMixims, BaseCommand):
