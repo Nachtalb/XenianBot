@@ -74,15 +74,18 @@ class DanbooruMixims:
             update.message.reply_text('Nothing found on page {page}'.format(**query))
             return
 
+        errors = 0
         media_list = []
         for post in posts:
             image_url = post.get('large_file_url', None)
             image_url = client.site_url + image_url if image_url else post['source']
+            if not image_url or not image_url.startswith('http'):
+                errors += 1
+                continue
 
             media_list.append(InputMediaPhoto(
                 image_url, '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])))
 
-        errors = 0
         while media_list:
             bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
             if len(media_list) > 1:
