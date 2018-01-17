@@ -66,7 +66,7 @@ class Unknown(BaseCommand):
 
     def __init__(self):
         super(Unknown, self).__init__()
-        self.options = {'filters': Filters.command, 'callback': self.command}
+        self.options = {'filters': Filters.command & ~ Filters.group, 'callback': self.command}
 
     def command(self, bot: Bot, update: Update):
         """Send a error message to the client if the entered command did not work.
