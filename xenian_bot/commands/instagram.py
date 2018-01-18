@@ -3,12 +3,13 @@ import re
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 
+import requests
 from instaLooter import InstaLooter
 from telegram import Bot, ChatAction, MessageEntity, Update
 from telegram.ext import Filters, MessageHandler, run_async
 
-from xenian_bot.commands import BaseCommand
 from xenian_bot.utils import data
+from . import BaseCommand
 
 __all__ = ['instagram_post_download', 'instagram_profil_download', 'instagram_login', 'instagram_logout',
            'auto_instargam_downloader']
@@ -17,6 +18,7 @@ __all__ = ['instagram_post_download', 'instagram_profil_download', 'instagram_lo
 class InstagramMixims:
     data_name = 'instagram'
     base_url = 'instagram.com'
+    link_pattern = re.compile('^((http(s)?:)?//)?(www\.)?{}'.format(base_url.replace('.', '\.')))
 
     def download_n_send_post(self, bot: Bot, update: Update, looter: InstaLooter, post: dict):
         """Download a post by its link
@@ -103,23 +105,26 @@ class InstagramMixims:
             }
         })
 
-    def get_logged_in_looter(self, telegram_username: str, profile: str = None):
-        """Safe the login for a user
+    def get_looter(self, telegram_username: str = None, profile: str = None):
+        """Return looter
 
         Args:
-            telegram_username (:obj:`str`): Username of the telegram user.
+            telegram_username (:obj:`str`): Username of the telegram user to directly log in.
             profile (:obj:`str`): Username of an instagram user.
 
         Returns:
-            (:class:`InstaLooter`): An InstaLooter object with a logged in user
+            (:class:`InstaLooter`): An InstaLooter object
         """
-        user = self.current_user(telegram_username)
         insta_looter = InstaLooter(profile=profile)
-        try:
-            insta_looter.login(**user)
-            return insta_looter
-        except ValueError:
-            return False
+
+        if telegram_username:
+            user = self.current_user(telegram_username)
+            try:
+                insta_looter.login(**user)
+            except ValueError:
+                return False
+
+        return insta_looter
 
     @contextmanager
     def download_to_object(self, looter: InstaLooter, media: dict):
@@ -149,13 +154,11 @@ class InstagramMixims:
         Returns:
             (:obj:`str`): Post token
         """
-        post_token = post_link.strip()
-        if '/' in post_token:
-            http_re = re.compile('^((http(s)?:)?//)?(www\.)?')
-            sent = http_re.sub('', post_token)
-            path = sent.replace(self.base_url, '')
-            post_token = path.replace('/p/', '').split('?', 1)[0].strip(' /')
-        return post_token
+        post_pattern = re.compile(self.link_pattern.pattern + '/p/')
+        if post_pattern.findall(post_link):
+            path = post_pattern.sub('', post_link)
+            post_token = path.split('?', 1)[0].strip(' /')
+            return post_token
 
     def link_to_username(self, user_link: str):
         """Converts a user link to its username
@@ -166,13 +169,40 @@ class InstagramMixims:
         Returns:
             (:obj:`str`): username
         """
-        username = user_link.strip()
-        if '/' in username:
-            http_re = re.compile('^((http(s)?:)?//)?(www\.)?')
-            sent = http_re.sub('', username)
-            path = sent.replace(self.base_url, '')
+        if self.link_pattern.findall(user_link):
+            path = self.link_pattern.sub('', user_link)
             username = path.split('?', 1)[0].strip(' /')
-        return username
+            return username
+
+    def is_post_public(self, post: str):
+        """Check if the post is public or not
+
+        Args:
+            post (:obj:`str`): Either the link to a post or the post_id
+
+
+        Returns:
+            (:obj:`bool`): True if it is public false if not
+        """
+        if not self.link_pattern.findall(post):
+            post = 'https://{}/p/{}'.format(self.base_url, post)
+        request = requests.head(post)
+        return 200 <= request.status_code < 400
+
+    def is_public_profile(self, user: str):
+        """Check if the profile is pubic
+
+        Args:
+            user (:obj:`str`): Either the link to a user or the username
+
+        Returns:
+            (:obj:`bool`): True if it is public false if not
+        """
+        if not self.link_pattern.findall(user):
+            user = 'https://{}/{}'.format(self.base_url, user)
+        request = requests.get(user)
+
+        return b'"is_private": true' not in request.content
 
 
 class InstagramPostDownload(InstagramMixims, BaseCommand):
@@ -186,7 +216,7 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
         self.options['pass_args'] = True
 
     @run_async
-    def command(self, bot: Bot, update: Update, args: list = None, quiet=False):
+    def command(self, bot: Bot, update: Update, args: list = None):
         """Download a post
 
         Args:
@@ -194,34 +224,33 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             args (:obj:`list`): List of arguments passed by the user. First argument must be must be a link to a post or
                 the posts id
-            quiet (:obj:`bool`): If errors should be sent to the user
         """
         if len(args) != 1:
-            if not quiet:
-                update.message.reply_text('You have to give me the link or the post id.')
+            update.message.reply_text('You have to give me the link or the post id.')
             return
 
-        telegram_user = update.message.from_user.username
-        if not self.logged_in(telegram_user):
-            if not quiet:
-                update.message.reply_text('You first have to login /instali.')
-            return
+        post_token = self.link_to_post_token(args[0]) or args[0]
+        telegram_user = None
 
-        post_token = self.link_to_post_token(args[0])
+        if not self.is_post_public(post_token):
+            telegram_user = update.message.from_user.username
+
+            if not self.logged_in(telegram_user):
+                update.message.reply_text('This content is private, please login first.')
+                return
+
+        looter = self.get_looter(telegram_username=telegram_user)
+        if not looter:
+            update.message.reply_text(
+                'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
+            return
+        post = looter.get_post_info(post_token)
 
         try:
-            looter = self.get_logged_in_looter(telegram_user)
-            if not looter:
-                if not quiet:
-                    update.message.reply_text(
-                        'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
-                return
-            post = looter.get_post_info(post_token)
             self.download_n_send_post(bot, update, looter, post)
         except KeyError:
-            if not quiet:
-                update.message.reply_text(
-                    'Could not get image, either the provided post link / id is incorrect or the user is private.')
+            update.message.reply_text(
+                'Could not get image, either the provided post link / id is incorrect or the user is private.')
 
 
 instagram_post_download = InstagramPostDownload()
@@ -251,21 +280,23 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
             update.message.reply_text('You have to give me the link or the username.')
             return
 
-        telegram_user = update.message.from_user.username
-        if not self.logged_in(telegram_user):
-            update.message.reply_text('You first have to login /instali.')
-            return
+        username = self.link_to_username(args[0]) or args[0]
+        telegram_user = None
+        if not self.is_public_profile(username):
+            telegram_user = update.message.from_user.username
 
-        username = self.link_to_username(args[0])
-
-        try:
-            looter = self.get_logged_in_looter(telegram_user, username)
-            if not looter:
-                update.message.reply_text(
-                    'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
+            if not self.logged_in(telegram_user):
+                update.message.reply_text('This content is private, please login first.')
                 return
 
-            media_generator = looter.medias(with_pbar=True)
+        looter = self.get_looter(telegram_username=telegram_user, profile=username)
+        if not looter:
+            update.message.reply_text(
+                'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
+            return
+
+        media_generator = looter.medias(with_pbar=True)
+        try:
             for media in media_generator:
                 self.download_n_send_post(bot, update, looter, media)
         except KeyError:
@@ -355,16 +386,9 @@ class AutoInstargamDownloader(InstagramMixims, BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        telegram_user = update.message.from_user.username
-        if self.logged_in(telegram_user):
-            text = update.message.text
-            http_re = re.compile('^((http(s)?:)?//)?(www\.)?')
-            sent = http_re.sub('', text)
-            path = sent.replace(self.base_url, '')
-
-            if path.startswith('/p/'):
-                post_token = path.replace('/p/', '').split('?', 1)[0].strip(' /')
-                instagram_post_download.command(bot, update, [post_token], quiet=True)
+        post_token = self.link_to_post_token(update.message.text)
+        if post_token:
+            instagram_post_download.command(bot, update, [post_token, ])
 
 
 auto_instargam_downloader = AutoInstargamDownloader()
