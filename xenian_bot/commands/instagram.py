@@ -140,6 +140,40 @@ class InstagramMixims:
 
             yield [os.path.join(temp_dir, file_path) for file_path in os.listdir(temp_dir)]
 
+    def link_to_post_token(self, post_link: str):
+        """Converts a post link to its token
+
+        Args:
+            post_link (:obj:`str`): The link to a post
+
+        Returns:
+            (:obj:`str`): Post token
+        """
+        post_token = post_link.strip()
+        if '/' in post_token:
+            http_re = re.compile('^((http(s)?:)?//)?(www\.)?')
+            sent = http_re.sub('', post_token)
+            path = sent.replace(self.base_url, '')
+            post_token = path.replace('/p/', '').split('?', 1)[0].strip(' /')
+        return post_token
+
+    def link_to_username(self, user_link: str):
+        """Converts a user link to its username
+
+        Args:
+            user_link (:obj:`str`): The link to a user
+
+        Returns:
+            (:obj:`str`): username
+        """
+        username = user_link.strip()
+        if '/' in username:
+            http_re = re.compile('^((http(s)?:)?//)?(www\.)?')
+            sent = http_re.sub('', username)
+            path = sent.replace(self.base_url, '')
+            username = path.split('?', 1)[0].strip(' /')
+        return username
+
 
 class InstagramPostDownload(InstagramMixims, BaseCommand):
     command_name = 'insta'
@@ -173,12 +207,7 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
                 update.message.reply_text('You first have to login /instali.')
             return
 
-        post_token = args[0].strip()
-        if '/' in post_token:
-            http_re = re.compile('^((http(s)?:)?//)?(www\.)?')
-            sent = http_re.sub('', post_token)
-            path = sent.replace(self.base_url, '')
-            post_token = path.replace('/p/', '').split('?', 1)[0].strip(' /')
+        post_token = self.link_to_post_token(args[0])
 
         try:
             looter = self.get_logged_in_looter(telegram_user)
@@ -227,12 +256,7 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
             update.message.reply_text('You first have to login /instali.')
             return
 
-        username = args[0].strip()
-        if '/' in username:
-            http_re = re.compile('^((http(s)?:)?//)?(www\.)?')
-            sent = http_re.sub('', username)
-            path = sent.replace(self.base_url, '')
-            username = path.split('?', 1)[0].strip(' /')
+        username = self.link_to_username(args[0])
 
         try:
             looter = self.get_logged_in_looter(telegram_user, username)
