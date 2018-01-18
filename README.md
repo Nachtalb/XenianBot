@@ -16,27 +16,36 @@
 
 ## What I do
 I am a personal assistant which can do various tasks for you. For example, I can do reverse image searches directly here
-in Telegram. To see my full capability, send me /commands and you will see everything available or go to
+in Telegram. To see my full capability, send me `/commands` and you will see everything available or go to
 [Commands](#commands).
 
 ## Commands
-- `/start` Start using me
-- `/commands` Get a list of commands, for all the things I can do for you.
-- `/define TEXT` Use this to search for a word or some words on Urban Dictionary.
-- `/insta POST_LINK OR POST_ID` Send me a link to an Instagram post or its ID and I will send you the image/s or video
-  from that post.
-- `/instap USER_LINK OR USERNAME` Send me a username or the link to a user from Instagram and I will send you all its
-  posts.
-- `/instli USERNAME PASSWORD` To be able to use the Instagram service, you first need to be logged in. You can do this
-  with this simple command. DO NOT USE THIS COMMAND IN GROUPS.
-- `/instlo` Logout from Instagram.
-Use this command at your own risk, because with active users you may get a ton of images and videos.
-- `/rawl` Rawl numbers from 0 to 10000 so you can get your sexy dubs, trips and quads.
-- More will come soon if you have any ideas or stuff you want: [Contribuions](#contributions)
+### List of direct commands:
+- `/start` - Start: Initialize the bot
+- `/commands` - Commands: Show all available commands
+- `/support` - Support: Contact bot maintainer for support of any kind
+- `/define` TEXT - Urban Dictionary Definition: Define a word or a sentence via urban dictionary
+- `/rawl`- Rawling: Rawl a number between 0 and 10000
+- `/insta` POST_LINK OR POST_ID - Instagram Post Download: Download a post from Instagram via its link or its ID
+- `/instap` PROFILE_LINK OR USERNAME - Instagram Profile Download: Download a all posts from an user
+- `/instali` USERNAME PASSWORD - Instagram Login: Login to instagram. DO NOT USE THIS IN GROUPS you can login in privat chat with @XenianBot
+- `/instalo` - Instagram Logout: Logout from instagram
+- `/download_mode` - Toggle Download Mode on / off: If on download stickers and gifs sent to the bot of off reverse search is reactivated. Does not work in groups
+- `/download` - Reply download: Reply to media for download
+- `/search`- Reply reverse search: Reply to media for reverse search
+- `/danbooru_tags` 2_TAGS page=PAGE_NUM limit=LIMIT - Danobooru Search: Search on danbooru by max 2 tags separated by comma. You can define which page (default 0) and the limit (default 5, max 100)
+- `/danbooru_latest` page=PAGE_NUM limit=LIMIT - Danobooru Latest: Get latest uploads from danbooru you can use the options page (default 0) and limit (default 5, max 100)
+- `/decide`- Decide: Yes or No
+- More will come soon if you have any ideas or stuff you want: [Contributions](#contributions)
 
 
-- Reverse Image / Video / Gif / Sticker Search available. Just send one of the said files and the search starts
-  automatically.
+### List of indirect commands:
+- Download Stickers: Turn on `/download_mode` and send stickers
+- Download Gifs: Turn on `/download_mode` and send videos
+- Reverse Gif / Video Search: Turn off `/download_mode` and send a video or a gif to search for it online.
+- Reverse Sticker Search: Turn off `/download_mode` and send a sticker to search for it online.
+- Reverse Image Search: Turn off `/download_mode` and send an image to search for it online.
+
 ## Contributions
 ### Bug report / Feature request
 If you have found a bug or want a new feature, please file an issue on GitHub [Issues](https://github.com/Nachtalb/python_telegram_bot_template/issues)

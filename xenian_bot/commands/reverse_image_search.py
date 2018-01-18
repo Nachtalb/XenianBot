@@ -71,8 +71,8 @@ class ReverseImageSearchMixin:
 
 class ReverseImageSearchVideo(ReverseImageSearchMixin, BaseCommand):
     handler = MessageHandler
-    description = "Send a video or a gif to search for it online."
-    title = "Reverse Gif / Video Search"
+    description = 'Turn off /download_mode and send a video or a gif to search for it online.'
+    title = 'Reverse Gif / Video Search'
 
     def __init__(self):
         super(ReverseImageSearchVideo, self).__init__()
@@ -118,8 +118,8 @@ reverse_image_search_video = ReverseImageSearchVideo()
 
 class ReverseImageSearchSticker(ReverseImageSearchMixin, BaseCommand):
     handler = MessageHandler
-    description = "Send a sticker to search for it online."
-    title = "Reverse Sticker Search"
+    description = 'Turn off /download_mode and send a sticker to search for it online.'
+    title = 'Reverse Sticker Search'
 
     def __init__(self):
         super(ReverseImageSearchSticker, self).__init__()
@@ -158,8 +158,8 @@ reverse_image_search_sticker = ReverseImageSearchSticker()
 
 class ReverseImageSearchImage(ReverseImageSearchMixin, BaseCommand):
     handler = MessageHandler
-    description = "Send an image to search for it online."
-    title = "Reverse Image Search"
+    description = 'Turn off /download_mode and send an image to search for it online.'
+    title = 'Reverse Image Search'
 
     def __init__(self):
         super(ReverseImageSearchImage, self).__init__()

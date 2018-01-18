@@ -18,7 +18,8 @@ __all__ = ['toggle_download_mode', 'download_stickers', 'download_gif']
 class ToggleDownloadMode(BaseCommand):
     command_name = 'download_mode'
     title = 'Toggle Download Mode on / off'
-    description = 'Download stickers and gifs in download mode. Does not work in groups'
+    description = 'If on download stickers and gifs sent to the bot of off reverse search is reactivated. Does not ' \
+                  'work in groups'
 
     def command(self, bot: Bot, update: Update):
         """Toggle Download Mode
@@ -40,7 +41,7 @@ toggle_download_mode = ToggleDownloadMode()
 class DownloadSticker(BaseCommand):
     handler = MessageHandler
     title = 'Download Stickers'
-    description = 'Turn /download_mode on and send stickers'
+    description = 'Turn on /download_mode and send stickers'
 
     def __init__(self):
         super(DownloadSticker, self).__init__()
@@ -69,7 +70,7 @@ download_stickers = DownloadSticker()
 class DownloadGif(BaseCommand):
     handler = MessageHandler
     title = 'Download Gifs'
-    description = 'Turn /download_mode on and send videos'
+    description = 'Turn on /download_mode and send videos'
 
     def __init__(self):
         super(DownloadGif, self).__init__()
