@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 import requests
 from instaLooter import InstaLooter
-from telegram import Bot, ChatAction, MessageEntity, Update
+from telegram import Bot, ChatAction, MessageEntity, Update, InputMediaPhoto, InputMediaVideo
 from telegram.ext import Filters, MessageHandler, run_async
 
 from xenian_bot.utils import data
@@ -20,52 +20,47 @@ class InstagramMixims:
     base_url = 'instagram.com'
     link_pattern = re.compile('^((http(s)?:)?//)?(www\.)?{}'.format(base_url.replace('.', '\.')))
 
-    def download_n_send_post(self, bot: Bot, update: Update, looter: InstaLooter, post: dict):
+    def get_file_input_media_from_post(self, update: Update, looter: InstaLooter, post: dict):
         """Download a post by its link
 
         Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
             looter (:class:`InstaLooter`): A logged in InstaLooter object
             post (:obj:`dict`): The post object given by InstaLooter
 
         Returns:
-            :obj:`object`: File like object of the image
+            :obj:`list` of :obj:`InputMediaVideo` or :obj:`InputMediaPhoto`: List of input medias
         """
+        result = []
         with self.download_to_object(looter, post) as files:
             if not files:
                 update.message.reply_text('Something went wrong while downloading the post, please try again')
 
             if post['is_video']:
-                bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_VIDEO)
-                bot.send_video(update.message.chat_id, video=open(files[0], 'rb'))
+                result.append(InputMediaVideo(media=open(files[0], 'rb')))
             else:
                 for file in files:
-                    bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
-                    bot.send_photo(update.message.chat_id, photo=open(file, 'rb'))
+                    result.append(InputMediaPhoto(media=open(file, 'rb')))
+        return result
 
-    def send_post_as_link(self, bot: Bot, update: Update, post: dict):
+    def get_linked_input_media_from_post(self, post: dict):
         """Send post as link to telegram
 
         Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
             post (:obj:`dict`): The post object given by InstaLooter
 
         Returns:
-            :obj:`object`: File like object of the post
+            :obj:`list` of :obj:`InputMediaVideo` or :obj:`InputMediaPhoto`: List of input medias
         """
+        result = []
         if post['is_video']:
-            bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_VIDEO)
-            bot.send_video(update.message.chat_id, video=post['video_url'])
+            result.append(InputMediaVideo(media=post['video_url']))
         else:
             if post.get('edge_sidecar_to_children', None):
                 for photo in post['edge_sidecar_to_children']['edges']:
-                    bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
-                    bot.send_photo(update.message.chat_id, photo=photo['node']['display_url'])
+                    result.append(InputMediaPhoto(media=photo['node']['display_url']))
             else:
-                bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
-                bot.send_photo(update.message.chat_id, photo=post['display_url'])
+                result.append(InputMediaPhoto(media=post['display_src']))
+        return result
 
     def logged_in(self, telegram_username: str):
         """Check if user is logged into instagram
@@ -271,10 +266,18 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
         post = looter.get_post_info(post_token)
 
         try:
+            chat_id = update.message.chat_id
             if is_public:
-                self.send_post_as_link(bot, update, post)
+                media_array = self.get_linked_input_media_from_post(post)
             else:
-                self.download_n_send_post(bot, update, looter, post)
+                media_array = self.get_file_input_media_from_post(update, looter, post)
+
+            if len(media_array) > 1:
+                bot.send_media_group(chat_id, media_array, reply_to_message_id=update.message.message_id)
+            elif post['is_video']:
+                bot.send_video(chat_id, media_array[0].media)
+            else:
+                bot.send_photo(chat_id, media_array[0].media)
         except KeyError:
             update.message.reply_text(
                 'Could not get image, either the provided post link / id is incorrect or the user is private.')
@@ -327,11 +330,29 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
 
         media_generator = looter.medias(with_pbar=True)
         try:
-            for media in media_generator:
-                if is_public:
-                    self.send_post_as_link(bot, update, media)
+            chat_id = update.message.chat_id
+
+            def send_media_array(medias):
+                bot.send_chat_action(chat_id, ChatAction.UPLOAD_PHOTO)
+                if 1 < len(medias):
+                    bot.send_media_group(chat_id, medias)
+                elif isinstance(medias[0], InputMediaVideo):
+                    bot.send_video(chat_id, medias)
                 else:
-                    self.download_n_send_post(bot, update, looter, media)
+                    bot.send_photo(chat_id, medias)
+
+            media_array = []
+            for media in media_generator:
+                post = looter.get_post_info(media['code'])
+                if is_public:
+                    media_array += self.get_linked_input_media_from_post(post)
+                else:
+                    media_array += self.get_file_input_media_from_post(update, looter, post)
+                if len(media_array) >= 10:
+                    send_media_array(media_array[:10])
+                    del media_array[:10]
+            if media_array:
+                send_media_array(media_array)
         except KeyError:
             update.message.reply_text(
                 'Could not get image, either the provided post link / id is incorrect or the user is private.')
