@@ -335,11 +335,11 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
             def send_media_array(medias):
                 bot.send_chat_action(chat_id, ChatAction.UPLOAD_PHOTO)
                 if 1 < len(medias):
-                    bot.send_media_group(chat_id, medias)
+                    bot.send_media_group(chat_id, medias, disable_notification=True)
                 elif isinstance(medias[0], InputMediaVideo):
-                    bot.send_video(chat_id, medias)
+                    bot.send_video(chat_id, medias, disable_notification=True)
                 else:
-                    bot.send_photo(chat_id, medias)
+                    bot.send_photo(chat_id, medias, disable_notification=True)
 
             media_array = []
             for media in media_generator:
@@ -356,6 +356,7 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
         except KeyError:
             update.message.reply_text(
                 'Could not get image, either the provided post link / id is incorrect or the user is private.')
+        update.message.reply_text('Everything has been sent.')
 
 
 instagram_profil_download = InstagramProfileDownload()
