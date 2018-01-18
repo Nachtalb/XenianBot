@@ -260,7 +260,7 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
     command_name = 'instap'
     title = 'Instagram Profile Download'
     description = 'Download a all posts from an user'
-    args = 'POST_LINK OR USERNAME'
+    args = 'PROFILE_LINK OR USERNAME'
 
     def __init__(self):
         super(InstagramProfileDownload, self).__init__()
