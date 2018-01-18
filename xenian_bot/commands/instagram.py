@@ -44,6 +44,29 @@ class InstagramMixims:
                     bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
                     bot.send_photo(update.message.chat_id, photo=open(file, 'rb'))
 
+    def send_post_as_link(self, bot: Bot, update: Update, post: dict):
+        """Send post as link to telegram
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            post (:obj:`dict`): The post object given by InstaLooter
+
+        Returns:
+            :obj:`object`: File like object of the post
+        """
+        if post['is_video']:
+            bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_VIDEO)
+            bot.send_video(update.message.chat_id, video=post['video_url'])
+        else:
+            if post.get('edge_sidecar_to_children', None):
+                for photo in post['edge_sidecar_to_children']['edges']:
+                    bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
+                    bot.send_photo(update.message.chat_id, photo=photo['node']['display_url'])
+            else:
+                bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
+                bot.send_photo(update.message.chat_id, photo=post['display_url'])
+
     def logged_in(self, telegram_username: str):
         """Check if user is logged into instagram
 
@@ -231,8 +254,9 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
 
         post_token = self.link_to_post_token(args[0]) or args[0]
         telegram_user = None
-
+        is_public = True
         if not self.is_post_public(post_token):
+            is_public = False
             telegram_user = update.message.from_user.username
 
             if not self.logged_in(telegram_user):
@@ -247,7 +271,10 @@ class InstagramPostDownload(InstagramMixims, BaseCommand):
         post = looter.get_post_info(post_token)
 
         try:
-            self.download_n_send_post(bot, update, looter, post)
+            if is_public:
+                self.send_post_as_link(bot, update, post)
+            else:
+                self.download_n_send_post(bot, update, looter, post)
         except KeyError:
             update.message.reply_text(
                 'Could not get image, either the provided post link / id is incorrect or the user is private.')
@@ -282,7 +309,10 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
 
         username = self.link_to_username(args[0]) or args[0]
         telegram_user = None
+
+        is_public = True
         if not self.is_public_profile(username):
+            is_public = False
             telegram_user = update.message.from_user.username
 
             if not self.logged_in(telegram_user):
@@ -298,7 +328,10 @@ class InstagramProfileDownload(InstagramMixims, BaseCommand):
         media_generator = looter.medias(with_pbar=True)
         try:
             for media in media_generator:
-                self.download_n_send_post(bot, update, looter, media)
+                if is_public:
+                    self.send_post_as_link(bot, update, media)
+                else:
+                    self.download_n_send_post(bot, update, looter, media)
         except KeyError:
             update.message.reply_text(
                 'Could not get image, either the provided post link / id is incorrect or the user is private.')
