@@ -41,6 +41,7 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/danbooru_search` 2_TAGS page=PAGE_NUM limit=LIMIT - Danobooru Search: Search on danbooru by max 2 tags separated by comma. You can define which page (default 0) and the limit (default 5, max 100)
 - `/danbooru_latest` page=PAGE_NUM limit=LIMIT - Danobooru Latest: Get latest uploads from danbooru you can use the options page (default 0) and limit (default 5, max 100)
 - `/decide`- Decide: Yes or No
+- `/maths` - Math Functions: Show all available math functions 
 - More will come soon if you have any ideas or stuff you want: [Contributions](#contributions)
 
 
@@ -50,6 +51,7 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - Reverse Gif / Video Search: Turn off `/download_mode` and send a video or a gif to search for it online.
 - Reverse Sticker Search: Turn off `/download_mode` and send a sticker to search for it online.
 - Reverse Image Search: Turn off `/download_mode` and send an image to search for it online.
+- Calculator: Solve equations you send me, to get a full list of supported math functions use `/maths`
 
 ## Contributions
 ### Bug report / Feature request
