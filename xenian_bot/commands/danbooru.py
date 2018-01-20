@@ -28,7 +28,7 @@ class Danbooru(BaseCommand):
                 'title': 'Danbooru Latest',
                 'description': 'Get latest uploads from danbooru you can use the options page (default 0) and limit '
                                '(default 5, max 100)',
-                'command': self.latest,
+                'command': self.danbooru_latest,
                 'options': {'pass_args': True},
                 'args': 'page=PAGE_NUM limit=LIMIT'
             }
@@ -75,7 +75,7 @@ class Danbooru(BaseCommand):
         self.post_list_send_media_group(bot, update, query)
 
     @run_async
-    def latest(self, bot: Bot, update: Update, args: list = None):
+    def danbooru_latest(self, bot: Bot, update: Update, args: list = None):
         """Danbooru latest posts
 
         Args:
