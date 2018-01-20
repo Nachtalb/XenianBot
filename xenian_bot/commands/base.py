@@ -1,5 +1,5 @@
 from telegram import Bot, Update
-from telegram.ext import CommandHandler
+from telegram.ext import CommandHandler, MessageHandler
 
 __all__ = ['BaseCommand']
 
@@ -55,6 +55,10 @@ class BaseCommand:
                 command['options']['callback'] = command['command']
             if command['handler'] == CommandHandler and command['options'].get('command', None) is None:
                 command['options']['command'] = command['command_name']
+
+            # Set MessageHandler options if not yet set
+            if command['handler'] == MessageHandler and command['options'].get('callback', None) is None:
+                command['options']['callback'] = command['command']
 
             updated_commands.append(command)
         self.commands = updated_commands
