@@ -6,11 +6,14 @@
 
 - [What I do](#what-i-do)
 - [Commands](#commands)
+  * [List of direct commands:](#list-of-direct-commands)
+  * [List of indirect commands:](#list-of-indirect-commands)
 - [Contributions](#contributions)
   * [Bug report / Feature request](#bug-report--feature-request)
   * [Code Contribution / Pull Requests](#code-contribution--pull-requests)
   * [Development](#development)
     + [Command Concept](#command-concept)
+    + [Uploaders Concept](#uploaders-concept)
 
 <!-- tocstop -->
 
@@ -18,6 +21,8 @@
 I am a personal assistant which can do various tasks for you. For example, I can do reverse image searches directly here
 in Telegram. To see my full capability, send me `/commands` and you will see everything available or go to
 [Commands](#commands).
+
+If you like this bot you can rate it [here](https://telegram.me/storebot?start=xenianbot).
 
 ## Commands
 ### List of direct commands:
@@ -33,7 +38,7 @@ in Telegram. To see my full capability, send me `/commands` and you will see eve
 - `/download_mode` - Toggle Download Mode on / off: If on download stickers and gifs sent to the bot of off reverse search is reactivated. Does not work in groups
 - `/download` - Reply download: Reply to media for download
 - `/search`- Reply reverse search: Reply to media for reverse search
-- `/danbooru_tags` 2_TAGS page=PAGE_NUM limit=LIMIT - Danobooru Search: Search on danbooru by max 2 tags separated by comma. You can define which page (default 0) and the limit (default 5, max 100)
+- `/danbooru_search` 2_TAGS page=PAGE_NUM limit=LIMIT - Danobooru Search: Search on danbooru by max 2 tags separated by comma. You can define which page (default 0) and the limit (default 5, max 100)
 - `/danbooru_latest` page=PAGE_NUM limit=LIMIT - Danobooru Latest: Get latest uploads from danbooru you can use the options page (default 0) and limit (default 5, max 100)
 - `/decide`- Decide: Yes or No
 - More will come soon if you have any ideas or stuff you want: [Contributions](#contributions)
@@ -83,33 +88,33 @@ The `base.py` contains the base command, which is used for every other command. 
 - `all_commands`: This is a variable containing all the commands which you create with this class as Parent. If you
 override the `__init__` method you have to call super init otherwise, the command will not be added to this list. This
 list is used for adding the commands as handlers for telegram and for creating the commands list.
-- `command_name`: This is what the user has to run So for the start command it would be `start`. If you do not define
-one yourself, the lowercase string of the name of your class is taken.
-- `title` This is the title of your command. This does not have to be the same as the `command_name`. Your
-`command_name` could be eg. `desc` so the command would be `/desc`, but the title would be `Describe`. Like this, it is
-easier for the user to get the meaning of function from a command directly from the command list.
-- `description`: As the name says, this is the description. It is shown on the command list. Describe what your command
-does in a few words.
-- `handler`: This is the handler your command uses. This could be `MessageHandler`. `CommandHandler` or any other
-handler. By default, the `CommandHandler` is used.
-- `options`: This is a dict of arguments given to the handler. For the `CommandHandler`, these would be at least
-`command` and `callback`. These are given by default via the `__init__` method. The `command` is the `command_name` and
-the `callback` the `command` method.
-- `hidden`: If the command is hidden from the command list. By default this is False.
-- `args`: If you have args, you can write them here. Eg. a command like this: `/add_human Nick 20 male` your text would
-be like `NAME AGE GENDER`. This will be shown on the command list.
+- `commands`: This is a list of dictionaries in which you can define commands. This list contains the following keys:
+    - `title` (optional): If no title given the name of the command function is taken (underscores replaced with space 
+        and the first word is capitalized)A string for a title for the command. This does not have to be the same as the 
+        `command_name`. Your `command_name` could be eg. `desc` so the command would be `/desc`, but the title would be 
+        `Describe`. Like this, it is easier for the user to get the meaning of function from a command directly from the 
+        command list.
+    - `description` (optional): Default is an empty string. As the name says, this is the description. It is shown on 
+        the command list. Describe what your command does in a few words.
+    - `command_name`: Default is the name of the given command function. This is what the user has to run So for the 
+        start command it would be `start`. If you do not define one yourself, the lowercase string of the name of your 
+        class is taken.
+    - `command` (mandatory): This is the function of the command. This has to be set.
+    - `handler` (optional): Default is the CommandHandler. This is the handler your command uses. This could be 
+        `MessageHandler`, `CommandHandler` or any other handler.
+    - `options` (optional): By default the callback and command are set. If you add another argument you do not have to 
+        define callback and command in the CommandHandler again and callback in the MessageHandler. 
+        This is a dict of arguments given to the handler.
+    - `hidden` (optional): Default is False. If True the command is hidden from the command list.
+    - `args` (optional): If you have args, you can write them here. Eg. a command like this: `/add_human Nick 20 male` 
+        your text would be like `NAME AGE GENDER`. 
 
-Now we get to the methods.
-- `__init__`: Initializes the command. It adds the command to the `command_all` list, as well as sets the default for
-the `command_name` and `title` if it has to. It also sets the default `options`. If you override this function in one of
-your commands, do not forget to super init it. Otherwise, it will not be initialized and not added to the command list.
-- `command`: The actual command function for your operation. This has at least the two arguments `bot` and `update`
-which come from the `python-telegram-bot`. In here you define the actual logic of your code. If you do not implement
-this method in your command, you will get a `NotImplementedError`.
-
-After you create your command, you have to call it at least once. It doesn't matter where you call it from, but I like
-to just call it directly after the class as you can see in the builtins.py. And do not forget that the file with the
+After you create your class, you have to call it at least once. It doesn't matter where you call it from, but I like
+to just call it directly after the code, as you can see in the builtins.py. And do not forget that the file with the
 command must be loaded imported somewhere. I usually do this directly in the `__init__.py`.
+
+A good example can be found in the `reverse_image_search.py`: 
+https://github.com/Nachtalb/XenianBot/blob/b482cbf8a1eb2ebe3f9683c9144bd3e222a26716/xenian_bot/commands/reverse_image_search.py#L23-L56
 
 #### Uploaders Concept
 Like for the commands I tried to make it easier to use different kinds of file storage. You can find a configuration in
