@@ -46,7 +46,15 @@ class BaseCommand:
                 'hidden': command.get('hidden', False),
                 'args': command.get('args', None)
             }
+            # Set options if not yet set
             if command['options'] is None:
                 command['options'] = {'callback': command['command'], 'command': command['command_name']}
+
+            # Set CommandHandler options if not yet set
+            if command['handler'] == CommandHandler and command['options'].get('callback', None) is None:
+                command['options']['callback'] = command['command']
+            if command['handler'] == CommandHandler and command['options'].get('command', None) is None:
+                command['options']['command'] = command['command_name']
+
             updated_commands.append(command)
         self.commands = updated_commands
