@@ -1,4 +1,3 @@
-from telegram import Bot, Update
 from telegram.ext import CommandHandler, MessageHandler
 
 __all__ = ['BaseCommand']

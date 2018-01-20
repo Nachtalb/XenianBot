@@ -1,5 +1,5 @@
 from telegram import Bot, Update
-from telegram.ext import MessageHandler, Filters, CommandHandler
+from telegram.ext import CommandHandler, MessageHandler
 from telegram.parsemode import ParseMode
 
 from xenian_bot.settings import ADMINS

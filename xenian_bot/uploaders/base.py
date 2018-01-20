@@ -1,4 +1,3 @@
-
 class UploaderBase:
     """Base class for other uploader's to inherit from to ensure to use the same methods and attributes.
 

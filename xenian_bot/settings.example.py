@@ -11,7 +11,7 @@ MODE = {
         'port': 5000,  # What port to listen to, if you have multiple bots running they mustn't be the same
         'url_path': TELEGRAM_API_TOKEN,  # Use your API Token so no one can send fake requests
         'url': 'https://your_domain.tld/%s' % TELEGRAM_API_TOKEN,  # Your Public domain, with your token as path so
-                                                                   # telegram knows where to send the request to
+        # telegram knows where to send the request to
     },
 }
 

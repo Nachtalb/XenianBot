@@ -4,10 +4,10 @@ import sys
 from threading import Thread
 
 from telegram import Bot, TelegramError, Update
-from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
+from telegram.ext import CommandHandler, Filters, Updater
 
 from .commands import BaseCommand
-from .settings import TELEGRAM_API_TOKEN, ADMINS, MODE
+from .settings import ADMINS, MODE, TELEGRAM_API_TOKEN
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)

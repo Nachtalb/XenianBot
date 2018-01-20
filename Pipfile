@@ -11,9 +11,9 @@ python-telegram-bot = "*"
 paramiko = "*"
 urbandictionary = "*"
 emoji = "*"
-instalooter = "*"
-requests = "*"
-moviepy = "*"
+      instalooter = "*"
+      requests = "*"
+      moviepy = "*"
 pybooru = "*"
 
 [dev-packages]
