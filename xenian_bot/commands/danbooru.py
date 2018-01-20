@@ -185,6 +185,10 @@ class Danbooru(BaseCommand):
                     )
                     del media_list[:10]
                 except BadRequest as e:
+                    if e.message == 'Group send failed':
+                        update.message.reply_text(
+                            'Something went wrong on Telegrams side, please try other arguments for this command')
+                        return
                     error_list = []
                     for index, media in enumerate(media_list[:10]):
                         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
