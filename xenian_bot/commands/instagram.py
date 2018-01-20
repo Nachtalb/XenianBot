@@ -5,20 +5,218 @@ from tempfile import TemporaryDirectory
 
 import requests
 from instaLooter import InstaLooter
-from telegram import Bot, ChatAction, MessageEntity, Update, InputMediaPhoto, InputMediaVideo
+from telegram import Bot, ChatAction, InputMediaPhoto, InputMediaVideo, MessageEntity, Update
 from telegram.ext import Filters, MessageHandler, run_async
 
 from xenian_bot.utils import data
 from . import BaseCommand
 
-__all__ = ['instagram_post_download', 'instagram_profil_download', 'instagram_login', 'instagram_logout',
-           'auto_instargam_downloader']
+__all__ = ['instagram']
 
 
-class InstagramMixims:
+class Instagram(BaseCommand):
     data_name = 'instagram'
     base_url = 'instagram.com'
     link_pattern = re.compile('^((http(s)?:)?//)?(www\.)?{}'.format(base_url.replace('.', '\.')))
+
+    def __init__(self):
+        self.commands = [
+            {
+                'title': 'Instagram Profile Download',
+                'description': 'Download a all posts from an user',
+                'args': 'POST_LINK OR POST_ID',
+                'command': self.insta,
+                'options': {'pass_args': True}
+            },
+            {
+                'title': 'Instagram Post Download',
+                'description': 'Download a post from Instagram via its link or its PostID',
+                'args': 'PROFILE_LINK OR USERNAME',
+                'command': self.instap,
+                'options': {'pass_args': True}
+            },
+            {
+                'title': 'Instagram Login',
+                'description': 'Login to Instagram. DO NOT USE THIS IN GROUPS you can login in privat chat with '
+                               '@XenianBot',
+                'args': 'USERNAME PASSWORD',
+                'command': self.instali,
+                'options': {'pass_args': True}
+            },
+            {
+                'title': 'Instagram Logout',
+                'description': 'Logout from Instagram',
+                'command': self.instalo,
+            },
+            {
+                'command': self.insta_link_auto,
+                'handler': MessageHandler,
+                'options': {'filters': Filters.entity(MessageEntity.URL)},
+                'hidden': True
+            }
+        ]
+
+        super(Instagram, self).__init__()
+
+    @run_async
+    def insta(self, bot: Bot, update: Update, args: list = None):
+        """Download a post
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            args (:obj:`list`): List of arguments passed by the user. First argument must be must be a link to a post or
+                the posts id
+        """
+        if len(args) != 1:
+            update.message.reply_text('You have to give me the link or the post id.')
+            return
+
+        post_token = self.link_to_post_token(args[0]) or args[0]
+        telegram_user = None
+        is_public = True
+        if not self.is_post_public(post_token):
+            is_public = False
+            telegram_user = update.message.from_user.username
+
+            if not self.logged_in(telegram_user):
+                update.message.reply_text('This content is private, please login first.')
+                return
+
+        looter = self.get_looter(telegram_username=telegram_user)
+        if not looter:
+            update.message.reply_text(
+                'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
+            return
+        post = looter.get_post_info(post_token)
+
+        try:
+            chat_id = update.message.chat_id
+            if is_public:
+                media_array = self.get_linked_input_media_from_post(post)
+            else:
+                media_array = self.get_file_input_media_from_post(update, looter, post)
+
+            if len(media_array) > 1:
+                bot.send_media_group(chat_id, media_array, reply_to_message_id=update.message.message_id)
+            elif post['is_video']:
+                bot.send_video(chat_id, media_array[0].media)
+            else:
+                bot.send_photo(chat_id, media_array[0].media)
+        except KeyError:
+            update.message.reply_text(
+                'Could not get image, either the provided post link / id is incorrect or the user is private.')
+
+    @run_async
+    def instap(self, bot: Bot, update: Update, args: list = None):
+        """Download all posts from a user
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            args (:obj:`list`): List of arguments passed by the user. First argument must be must be a link to a user or
+                his username
+        """
+        if len(args) != 1:
+            update.message.reply_text('You have to give me the link or the username.')
+            return
+
+        username = self.link_to_username(args[0]) or args[0]
+        telegram_user = None
+
+        is_public = True
+        if not self.is_public_profile(username):
+            is_public = False
+            telegram_user = update.message.from_user.username
+
+            if not self.logged_in(telegram_user):
+                update.message.reply_text('This content is private, please login first.')
+                return
+
+        looter = self.get_looter(telegram_username=telegram_user, profile=username)
+        if not looter:
+            update.message.reply_text(
+                'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
+            return
+
+        media_generator = looter.medias(with_pbar=True)
+        try:
+            chat_id = update.message.chat_id
+
+            def send_media_array(medias):
+                bot.send_chat_action(chat_id, ChatAction.UPLOAD_PHOTO)
+                if 1 < len(medias):
+                    bot.send_media_group(chat_id, medias, disable_notification=True)
+                elif isinstance(medias[0], InputMediaVideo):
+                    bot.send_video(chat_id, medias, disable_notification=True)
+                else:
+                    bot.send_photo(chat_id, medias, disable_notification=True)
+
+            media_array = []
+            for media in media_generator:
+                post = looter.get_post_info(media['code'])
+                if is_public:
+                    media_array += self.get_linked_input_media_from_post(post)
+                else:
+                    media_array += self.get_file_input_media_from_post(update, looter, post)
+                if len(media_array) >= 10:
+                    send_media_array(media_array[:10])
+                    del media_array[:10]
+            if media_array:
+                send_media_array(media_array)
+        except KeyError:
+            update.message.reply_text(
+                'Could not get image, either the provided post link / id is incorrect or the user is private.')
+        update.message.reply_text('Everything has been sent.')
+
+    def instali(self, bot: Bot, update: Update, args: list = None):
+        """Login the user to instagram
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            args (:obj:`list`): List of arguments passed by the user. First argument must be must be the username and
+                the second the password
+        """
+        telegram_user = update.message.from_user.username
+        if self.logged_in(telegram_user):
+            update.message.reply_text('Already logged in as %s' % self.current_user(telegram_user)['username'])
+        else:
+            if len(args) < 2 or len(args) > 2:
+                update.message.reply_text('You have to give me the username and password.')
+                return
+            username, password = args
+            insta_looter = InstaLooter()
+            try:
+                insta_looter.login(username, password)
+                self.safe_login(telegram_user, username, password)
+                update.message.reply_text('Logged in')
+            except ValueError:
+                update.message.reply_text('Username or password wrong')
+
+    def instalo(self, bot: Bot, update: Update):
+        """Logout the instagram user
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        if self.logged_in(update.message.from_user.username):
+            if self.remove_user(update.message.from_user.username):
+                update.message.reply_text('Logged out')
+        else:
+            update.message.reply_text('You were not logged in')
+
+    def insta_link_auto(self, bot: Bot, update: Update):
+        """Auto read instagram urls
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        post_token = self.link_to_post_token(update.message.text)
+        if post_token:
+            self.insta(bot, update, [post_token, ])
 
     def get_file_input_media_from_post(self, update: Update, looter: InstaLooter, post: dict):
         """Download a post by its link
@@ -223,227 +421,4 @@ class InstagramMixims:
         return b'"is_private": true' not in request.content
 
 
-class InstagramPostDownload(InstagramMixims, BaseCommand):
-    command_name = 'insta'
-    title = 'Instagram Post Download'
-    description = 'Download a post from Instagram via its link or its ID'
-    args = 'POST_LINK OR POST_ID'
-
-    def __init__(self):
-        super(InstagramPostDownload, self).__init__()
-        self.options['pass_args'] = True
-
-    @run_async
-    def command(self, bot: Bot, update: Update, args: list = None):
-        """Download a post
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of arguments passed by the user. First argument must be must be a link to a post or
-                the posts id
-        """
-        if len(args) != 1:
-            update.message.reply_text('You have to give me the link or the post id.')
-            return
-
-        post_token = self.link_to_post_token(args[0]) or args[0]
-        telegram_user = None
-        is_public = True
-        if not self.is_post_public(post_token):
-            is_public = False
-            telegram_user = update.message.from_user.username
-
-            if not self.logged_in(telegram_user):
-                update.message.reply_text('This content is private, please login first.')
-                return
-
-        looter = self.get_looter(telegram_username=telegram_user)
-        if not looter:
-            update.message.reply_text(
-                'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
-            return
-        post = looter.get_post_info(post_token)
-
-        try:
-            chat_id = update.message.chat_id
-            if is_public:
-                media_array = self.get_linked_input_media_from_post(post)
-            else:
-                media_array = self.get_file_input_media_from_post(update, looter, post)
-
-            if len(media_array) > 1:
-                bot.send_media_group(chat_id, media_array, reply_to_message_id=update.message.message_id)
-            elif post['is_video']:
-                bot.send_video(chat_id, media_array[0].media)
-            else:
-                bot.send_photo(chat_id, media_array[0].media)
-        except KeyError:
-            update.message.reply_text(
-                'Could not get image, either the provided post link / id is incorrect or the user is private.')
-
-
-instagram_post_download = InstagramPostDownload()
-
-
-class InstagramProfileDownload(InstagramMixims, BaseCommand):
-    command_name = 'instap'
-    title = 'Instagram Profile Download'
-    description = 'Download a all posts from an user'
-    args = 'PROFILE_LINK OR USERNAME'
-
-    def __init__(self):
-        super(InstagramProfileDownload, self).__init__()
-        self.options['pass_args'] = True
-
-    @run_async
-    def command(self, bot: Bot, update: Update, args: list = None):
-        """Download all posts from a user
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of arguments passed by the user. First argument must be must be a link to a user or
-                his username
-        """
-        if len(args) != 1:
-            update.message.reply_text('You have to give me the link or the username.')
-            return
-
-        username = self.link_to_username(args[0]) or args[0]
-        telegram_user = None
-
-        is_public = True
-        if not self.is_public_profile(username):
-            is_public = False
-            telegram_user = update.message.from_user.username
-
-            if not self.logged_in(telegram_user):
-                update.message.reply_text('This content is private, please login first.')
-                return
-
-        looter = self.get_looter(telegram_username=telegram_user, profile=username)
-        if not looter:
-            update.message.reply_text(
-                'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
-            return
-
-        media_generator = looter.medias(with_pbar=True)
-        try:
-            chat_id = update.message.chat_id
-
-            def send_media_array(medias):
-                bot.send_chat_action(chat_id, ChatAction.UPLOAD_PHOTO)
-                if 1 < len(medias):
-                    bot.send_media_group(chat_id, medias, disable_notification=True)
-                elif isinstance(medias[0], InputMediaVideo):
-                    bot.send_video(chat_id, medias, disable_notification=True)
-                else:
-                    bot.send_photo(chat_id, medias, disable_notification=True)
-
-            media_array = []
-            for media in media_generator:
-                post = looter.get_post_info(media['code'])
-                if is_public:
-                    media_array += self.get_linked_input_media_from_post(post)
-                else:
-                    media_array += self.get_file_input_media_from_post(update, looter, post)
-                if len(media_array) >= 10:
-                    send_media_array(media_array[:10])
-                    del media_array[:10]
-            if media_array:
-                send_media_array(media_array)
-        except KeyError:
-            update.message.reply_text(
-                'Could not get image, either the provided post link / id is incorrect or the user is private.')
-        update.message.reply_text('Everything has been sent.')
-
-
-instagram_profil_download = InstagramProfileDownload()
-
-
-class InstagramLogin(InstagramMixims, BaseCommand):
-    command_name = 'instali'
-    title = 'Instagram Login'
-    description = 'Login to instagram. DO NOT USE THIS IN GROUPS you can login in privat chat with @XenianBot'
-    args = 'USERNAME PASSWORD'
-
-    def __init__(self):
-        super(InstagramLogin, self).__init__()
-        self.options['pass_args'] = True
-
-    def command(self, bot: Bot, update: Update, args: list = None):
-        """Login the user to instagram
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of arguments passed by the user. First argument must be must be the username and
-                the second the password
-        """
-        telegram_user = update.message.from_user.username
-        if self.logged_in(telegram_user):
-            update.message.reply_text('Already logged in as %s' % self.current_user(telegram_user)['username'])
-        else:
-            if len(args) < 2 or len(args) > 2:
-                update.message.reply_text('You have to give me the username and password.')
-                return
-            username, password = args
-            insta_looter = InstaLooter()
-            try:
-                insta_looter.login(username, password)
-                self.safe_login(telegram_user, username, password)
-                update.message.reply_text('Logged in')
-            except ValueError:
-                update.message.reply_text('Username or password wrong')
-
-
-instagram_login = InstagramLogin()
-
-
-class InstagramLogout(InstagramMixims, BaseCommand):
-    command_name = 'instalo'
-    title = 'Instagram Logout'
-    description = 'Logout from instagram'
-
-    def command(self, bot: Bot, update: Update):
-        """Logout the instagram user
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        if self.logged_in(update.message.from_user.username):
-            if self.remove_user(update.message.from_user.username):
-                update.message.reply_text('Logged out')
-        else:
-            update.message.reply_text('You were not logged in')
-
-
-instagram_logout = InstagramLogout()
-
-
-class AutoInstargamDownloader(InstagramMixims, BaseCommand):
-    hidden = True
-    handler = MessageHandler
-
-    def __init__(self):
-        super(AutoInstargamDownloader, self).__init__()
-        self.options = {
-            'callback': self.command,
-            'filters': Filters.entity(MessageEntity.URL)
-        }
-
-    def command(self, bot: Bot, update: Update):
-        """Auto read instagram urls
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        post_token = self.link_to_post_token(update.message.text)
-        if post_token:
-            instagram_post_download.command(bot, update, [post_token, ])
-
-
-auto_instargam_downloader = AutoInstargamDownloader()
+instagram = Instagram()
