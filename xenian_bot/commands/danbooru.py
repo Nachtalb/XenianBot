@@ -20,8 +20,7 @@ class Danbooru(BaseCommand):
                 'title': 'Danobooru Search',
                 'description': 'Search on danbooru by max 2 tags separated by comma. You can define which page '
                                '(default 0) and the limit (default 5, max 100)',
-                'command': self.search_danbooru,
-                'command_name': 'danbooru_tags',
+                'command': self.danbooru_search,
                 'options': {'pass_args': True},
                 'args': 'TAG_1, TAG_2 page=PAGE_NUM limit=LIMIT'
             },
@@ -38,7 +37,7 @@ class Danbooru(BaseCommand):
         super(Danbooru, self).__init__()
 
     @run_async
-    def search_danbooru(self, bot: Bot, update: Update, args: list = None):
+    def danbooru_search(self, bot: Bot, update: Update, args: list = None):
         """Search on danbooru by tags
 
         Args:
