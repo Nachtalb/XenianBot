@@ -1,26 +1,32 @@
 import urbandictionary as ud
 from emoji import emojize
-from telegram import Bot, Update, ParseMode
+from telegram import Bot, ParseMode, Update
 
 from xenian_bot.commands import BaseCommand
 
+__all__ = ['urban_dictionary']
 
-__all__ = ['urban_dictionary_define']
 
-
-class UrbanDictionaryDefine(BaseCommand):
-    command_name = 'define'
-    title = 'Urban Dictionary Definition'
-    description = 'Define a word or a sentence via urban dictionary'
-    args = 'TEXT'
+class UrbanDictionary(BaseCommand):
 
     def __init__(self):
-        super(UrbanDictionaryDefine, self).__init__()
-        self.options['pass_args'] = True
+        self.commands = [
+            {
+                'title': 'Urban Dictionary Definition',
+                'description': 'Define a word or a sentence via urban dictionary',
+                'command': self.define,
+                'options': {
+                    'pass_args': True
+                },
+                'args': 'WORD(S)'
+            }
+        ]
+
         self.e_thumbs_up = emojize(':thumbsup:', use_aliases=True)
         self.e_thumbs_down = emojize(':thumbsdown:', use_aliases=True)
+        super(UrbanDictionary, self).__init__()
 
-    def command(self, bot: Bot, update: Update, args: list = None):
+    def define(self, bot: Bot, update: Update, args: list = None):
         """Search in urban dictionary
 
         Args:
@@ -63,4 +69,4 @@ class UrbanDictionaryDefine(BaseCommand):
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
 
-urban_dictionary_define = UrbanDictionaryDefine()
+urban_dictionary = UrbanDictionary()
