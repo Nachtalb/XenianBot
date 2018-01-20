@@ -7,4 +7,3 @@ from .download import *
 from .reverse_image_search import *
 from .danbooru import *
 from .decide import *
-

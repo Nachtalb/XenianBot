@@ -8,9 +8,12 @@ __all__ = ['decide']
 
 
 class Decide(BaseCommand):
-    description = 'Yes or No'
+    def __init__(self):
+        self.commands = [{'description': 'Yes or No', 'command': self.decide}, ]
 
-    def command(self, bot: Bot, update: Update):
+        super(Decide, self).__init__()
+
+    def decide(self, bot: Bot, update: Update):
         """Decide
 
         Args:

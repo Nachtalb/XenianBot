@@ -8,10 +8,18 @@ __all__ = ['rawl']
 
 
 class Rawl(BaseCommand):
-    title = 'Rawling'
-    description = 'Rawl a number between 0 and 10000'
+    def __init__(self):
+        self.commands = [
+            {
+                'title': 'Rawling',
+                'description': 'Rawl a number between 0 and 10000',
+                'command': self.rawl
+            }
+        ]
 
-    def command(self, bot: Bot, update: Update, args: list = None):
+        super(Rawl, self).__init__()
+
+    def rawl(self, bot: Bot, update: Update):
         """Rawl a number between 0 and 10000
 
         Args:

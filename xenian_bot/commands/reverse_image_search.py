@@ -17,11 +17,135 @@ from xenian_bot.commands.reverse_image_search_engines.tineye import TinEyeRevers
 from xenian_bot.commands.reverse_image_search_engines.yandex import YandexReverseImageSearchEngine
 from . import BaseCommand
 
-__all__ = ['reverse_image_search_image', 'reverse_image_search_sticker', 'reverse_image_search_video',
-           'reverse_image_search_reply']
+__all__ = ['reverse_image_search']
 
 
-class ReverseImageSearchMixin:
+class ReverseImageSearch(BaseCommand):
+
+    def __init__(self):
+        self.commands = [
+            {
+                'title': 'Reverse Gif / Video Search',
+                'description': 'Turn off /download_mode and send a video or a gif to search for it online.',
+                'command': self.video_search,
+                'handler': MessageHandler,
+                'options': {'filters': (Filters.video | Filters.document) & ~ Filters.group & ~ download_mode_filter}
+            },
+            {
+                'title': 'Reverse Image Search',
+                'description': 'Turn off /download_mode and send an image to search for it online.',
+                'command': self.image_search,
+                'handler': MessageHandler,
+                'options': {'filters': Filters.photo & ~ Filters.group & ~ download_mode_filter}
+            },
+            {
+                'title': 'Reverse Sticker Search',
+                'description': 'Turn off /download_mode and send a sticker to search for it online.',
+                'command': self.sticker_search,
+                'handler': MessageHandler,
+                'options': {'filters': Filters.sticker & ~ Filters.group & ~ download_mode_filter}
+            },
+            {
+                'title': 'Reply reverse search',
+                'description': 'Reply to media for reverse search',
+                'command': self.reply_search,
+                'command_name': 'search'
+            }
+        ]
+
+        super(ReverseImageSearch, self).__init__()
+
+    @run_async
+    def video_search(self, bot: Bot, update: Update):
+        """Send a reverse image search link for the GIF sent to us
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        update.message.reply_text('Please wait for your results ...')
+        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
+
+        document = (update.message.document or update.message.video or update.message.reply_to_message.document or
+                    update.message.reply_to_message.video)
+        video = bot.getFile(document.file_id)
+
+        with NamedTemporaryFile() as video_file:
+            video.download(out=video_file)
+            video_clip = VideoFileClip(video_file.name, audio=False)
+
+            with NamedTemporaryFile(suffix='.gif') as gif_file:
+                video_clip.write_gif(gif_file.name)
+
+                dirname = os.path.dirname(gif_file.name)
+                file_name = os.path.splitext(gif_file.name)[0]
+                compressed_gif_path = os.path.join(dirname, file_name + '-min.gif')
+
+                os.system('gifsicle -O3 --lossy=50 -o {dst} {src}'.format(dst=compressed_gif_path, src=gif_file.name))
+                if os.path.isfile(compressed_gif_path):
+                    self.reverse_image_search(bot, update, compressed_gif_path, 'gif')
+                else:
+                    self.reverse_image_search(bot, update, gif_file.name, 'gif')
+
+    @run_async
+    def image_search(self, bot: Bot, update: Update):
+        """Send a reverse image search link for the image he sent us to the client
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        update.message.reply_text('Please wait for your results ...')
+        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
+
+        photo_message = update.message.photo or update.message.reply_to_message.photo
+
+        photo = bot.getFile(photo_message[-1].file_id)
+        with io.BytesIO() as image_buffer:
+            photo.download(out=image_buffer)
+            with io.BufferedReader(image_buffer) as image_file:
+                self.reverse_image_search(bot, update, image_file)
+
+    @run_async
+    def sticker_search(self, bot: Bot, update: Update):
+        """Send a reverse image search link for the image of the sticker sent to us
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        update.message.reply_text('Please wait for your results ...')
+        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
+
+        sticker = update.message.sticker or update.message.reply_to_message.sticker
+
+        sticker_image = bot.getFile(sticker.file_id)
+        converted_image = io.BytesIO()
+
+        with io.BytesIO() as image_buffer:
+            sticker_image.download(out=image_buffer)
+            with io.BufferedReader(image_buffer) as image_file:
+                pil_image = Image.open(image_file).convert("RGBA")
+                pil_image.save(converted_image, 'png')
+
+                self.reverse_image_search(bot, update, converted_image, 'png')
+
+    def reply_search(self, bot: Bot, update: Update):
+        """Reply to media to reverse search
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        reply_to_message = update.message.reply_to_message
+        if not reply_to_message:
+            update.message.reply_text('You have to reply to some media file to start the reverse search.')
+        if reply_to_message.photo:
+            self.image_search(bot, update)
+        if reply_to_message.sticker:
+            self.sticker_search(bot, update)
+        if reply_to_message.video or reply_to_message.document:
+            self.video_search(bot, update)
 
     def reverse_image_search(self, bot: Bot, update: Update, media_file: object, image_extension: str = None):
         """Send a reverse image search link for the image sent to us
@@ -69,153 +193,4 @@ class ReverseImageSearchMixin:
         )
 
 
-class ReverseImageSearchVideo(ReverseImageSearchMixin, BaseCommand):
-    handler = MessageHandler
-    description = 'Turn off /download_mode and send a video or a gif to search for it online.'
-    title = 'Reverse Gif / Video Search'
-
-    def __init__(self):
-        super(ReverseImageSearchVideo, self).__init__()
-        self.options = {
-            'filters': (Filters.video | Filters.document) & ~ Filters.group & ~ download_mode_filter,
-            'callback': self.command
-        }
-
-    def command(self, bot: Bot, update: Update):
-        """Send a reverse image search link for the GIF sent to us
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        update.message.reply_text('Please wait for your results ...')
-        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-
-        document = (update.message.document or update.message.video or update.message.reply_to_message.document or
-                    update.message.reply_to_message.video)
-        video = bot.getFile(document.file_id)
-
-        with NamedTemporaryFile() as video_file:
-            video.download(out=video_file)
-            video_clip = VideoFileClip(video_file.name, audio=False)
-
-            with NamedTemporaryFile(suffix='.gif') as gif_file:
-                video_clip.write_gif(gif_file.name)
-
-                dirname = os.path.dirname(gif_file.name)
-                file_name = os.path.splitext(gif_file.name)[0]
-                compressed_gif_path = os.path.join(dirname, file_name + '-min.gif')
-
-                os.system('gifsicle -O3 --lossy=50 -o {dst} {src}'.format(dst=compressed_gif_path, src=gif_file.name))
-                if os.path.isfile(compressed_gif_path):
-                    self.reverse_image_search(bot, update, compressed_gif_path, 'gif')
-                else:
-                    self.reverse_image_search(bot, update, gif_file.name, 'gif')
-
-
-reverse_image_search_video = ReverseImageSearchVideo()
-
-
-class ReverseImageSearchSticker(ReverseImageSearchMixin, BaseCommand):
-    handler = MessageHandler
-    description = 'Turn off /download_mode and send a sticker to search for it online.'
-    title = 'Reverse Sticker Search'
-
-    def __init__(self):
-        super(ReverseImageSearchSticker, self).__init__()
-        self.options = {
-            'filters': Filters.sticker & ~ Filters.group & ~ download_mode_filter,
-            'callback': self.command
-        }
-
-    @run_async
-    def command(self, bot: Bot, update: Update):
-        """Send a reverse image search link for the image of the sticker sent to us
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        update.message.reply_text('Please wait for your results ...')
-        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-
-        sticker = update.message.sticker or update.message.reply_to_message.sticker
-
-        sticker_image = bot.getFile(sticker.file_id)
-        converted_image = io.BytesIO()
-
-        with io.BytesIO() as image_buffer:
-            sticker_image.download(out=image_buffer)
-            with io.BufferedReader(image_buffer) as image_file:
-                pil_image = Image.open(image_file).convert("RGBA")
-                pil_image.save(converted_image, 'png')
-
-                self.reverse_image_search(bot, update, converted_image, 'png')
-
-
-reverse_image_search_sticker = ReverseImageSearchSticker()
-
-
-class ReverseImageSearchImage(ReverseImageSearchMixin, BaseCommand):
-    handler = MessageHandler
-    description = 'Turn off /download_mode and send an image to search for it online.'
-    title = 'Reverse Image Search'
-
-    def __init__(self):
-        super(ReverseImageSearchImage, self).__init__()
-        self.options = {
-            'filters': Filters.photo & ~ Filters.group & ~ download_mode_filter,
-            'callback': self.command
-        }
-
-    @run_async
-    def command(self, bot: Bot, update: Update):
-        """Send a reverse image search link for the image he sent us to the client
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        update.message.reply_text('Please wait for your results ...')
-        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-
-        photo_message = update.message.photo or update.message.reply_to_message.photo
-
-        photo = bot.getFile(photo_message[-1].file_id)
-        with io.BytesIO() as image_buffer:
-            photo.download(out=image_buffer)
-            with io.BufferedReader(image_buffer) as image_file:
-                self.reverse_image_search(bot, update, image_file)
-
-
-reverse_image_search_image = ReverseImageSearchImage()
-
-
-class ReverseImageSearchReply(BaseCommand):
-    command_name = 'search'
-    title = 'Reply reverse search'
-    description = 'Reply to media for reverse search'
-
-    def __init__(self):
-        super(ReverseImageSearchReply, self).__init__()
-
-    @run_async
-    def command(self, bot: Bot, update: Update):
-        """Reply to media to reverse search
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        reply_to_message = update.message.reply_to_message
-        if not reply_to_message:
-            update.message.reply_text('You have to reply to some media file to start the reverse search.')
-        if reply_to_message.photo:
-            reverse_image_search_image.command(bot, update)
-        if reply_to_message.sticker:
-            reverse_image_search_sticker.command(bot, update)
-        if reply_to_message.video or reply_to_message.document:
-            reverse_image_search_video.command(bot, update)
-
-
-reverse_image_search_reply = ReverseImageSearchReply()
+reverse_image_search = ReverseImageSearch()

@@ -5,13 +5,23 @@ from telegram.parsemode import ParseMode
 from xenian_bot.settings import ADMINS
 from .base import BaseCommand
 
-__all__ = ['start', 'commands', 'unknown']
+__all__ = ['builtins']
 
 
-class Start(BaseCommand):
-    description = 'Initialize the bot'
+class Builtins(BaseCommand):
 
-    def command(self, bot: Bot, update: Update):
+    command_list_text = ''
+
+    def __init__(self):
+        self.commands = [
+            {'command': self.start, 'description': 'Initialize the bot'},
+            {'command': self.commands, 'description': 'Show all available commands'},
+            {'command': self.support, 'description': 'Contact bot maintainer for support of any kind'}
+        ]
+
+        super(Builtins, self).__init__()
+
+    def start(self, bot: Bot, update: Update):
         """Initialize the bot
 
         Args:
@@ -23,46 +33,49 @@ class Start(BaseCommand):
                  'capability, use /commands.')
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
-
-start = Start()
-
-
-class Commands(BaseCommand):
-    description = 'Show all available commands'
-
-    def command(self, bot: Bot, update: Update):
+    def commands(self, bot: Bot, update: Update):
         """Generate and show list of available commands
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        reply = 'List of direct commands:\n'
+        command_lists = []
 
-        for command in [cmd for cmd in BaseCommand.all_commands if cmd.handler == CommandHandler and not cmd.hidden]:
-            reply += '/{command_name}{args} - {title}: {description}\n'.format(
-                command_name=command.command_name,
-                args=' %s' % command.args if command.args else '',
-                title=command.title,
-                description=command.description
-            )
-        reply += '\n\nList of indirect commands:\n'
-        for command in [cmd for cmd in BaseCommand.all_commands if cmd.handler == MessageHandler and not cmd.hidden]:
-            reply += '- {title}: {description}\n'.format(
-                title=command.title,
-                description=command.description
-            )
+        direct_commands = ''
+        for command_class in BaseCommand.all_commands:
+            for command in [cmd for cmd in command_class.commands
+                            if cmd['handler'] == CommandHandler and not cmd['hidden']]:
+                direct_commands += '/{command_name}{args} - {title}: {description}\n'.format(
+                    command_name=command['command_name'],
+                    args='%s' % ' ' + command['args'] if command['args'] else '',
+                    title=command['title'],
+                    description=command['description']
+                )
+        if direct_commands:
+            direct_commands = 'List of direct commands:\n' + direct_commands
+            command_lists.append(direct_commands)
+
+        indirect_commands = ''
+        for command_class in BaseCommand.all_commands:
+            for command in [cmd for cmd in command_class.commands
+                            if cmd['handler'] == MessageHandler and not cmd['hidden']]:
+                indirect_commands += '- {title}: {description}\n'.format(
+                    title=command['title'],
+                    description=command['description']
+                )
+        if indirect_commands:
+            indirect_commands = 'List of indirect commands:\n' + indirect_commands
+            command_lists.append(indirect_commands)
+
+        reply = ''
+        for command_list in command_lists:
+            reply += '\n\n' + command_list
+        reply.strip()
 
         update.message.reply_text(reply)
 
-
-commands = Commands()
-
-
-class Support(BaseCommand):
-    description = 'Contact bot maintainer for support of any kind'
-
-    def command(self, bot: Bot, update: Update):
+    def support(self, bot: Bot, update: Update):
         """Contact bot maintainer for support of any kind
 
         Args:
@@ -71,27 +84,4 @@ class Support(BaseCommand):
         """
         update.message.reply_text('If you need any help do not hesitate to contact me via {}. '.format(ADMINS[0]))
 
-
-support = Support()
-
-
-class Unknown(BaseCommand):
-    description = "I am called when someone tries a command that does not exist"
-    handler = MessageHandler
-    hidden = True
-
-    def __init__(self):
-        super(Unknown, self).__init__()
-        self.options = {'filters': Filters.command & ~ Filters.group, 'callback': self.command}
-
-    def command(self, bot: Bot, update: Update):
-        """Send a error message to the client if the entered command did not work.
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        update.message.reply_text("Sorry, I didn't understand that command.")
-
-
-unknown = Unknown()
+builtins = Builtins()

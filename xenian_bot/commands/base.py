@@ -1,5 +1,5 @@
 from telegram import Bot, Update
-from telegram.ext import CommandHandler
+from telegram.ext import CommandHandler, MessageHandler
 
 __all__ = ['BaseCommand']
 
@@ -8,56 +8,57 @@ class BaseCommand:
     """
     Attributes:
         all_commands (:class:`list`): A list of all initialized commands
-        short (:obj:`str`): The command as it is used in Telegram with /some_command
-        name (:class:`str`): A short title / name for the command
-        description (:obj:`str`): What the command does
-        handler (:obj:`class`): What handler the command has
-        options (:obj:`dict`): Options for the handler
-        hidden (:obj:`bool`): To hide the command from command listing
-        args (:obj:`str`): Description of args, eg. for a command like "/add_human Nick 20 male" write "NAME AGE GENDER"
+        commands (:obj:`list`): A list of dictionary with the following keys:
+            - title (:class:`str`): Title of the command, (if not set name of the function will be taken)
+            - description (:class:`str`): A short description for the command
+            - command_name (:class:`str`): A name for the command (if not set, the functions name will be taken)
+            - command : The command function
+            - handler : Handler for the command like :class:`CommandHandler` or :class:`MessageHandler`.
+                Default (:class:`CommandHandler`)
+            - options (:class:`dict`): A dictionary of options for the command.
+                Default {'callback': command, 'command': command_name}
+            - hidden (:class:`bool`): If the command is shown in the overview of `/commands`
+            - args (:class:`str`): If the command has arguments define them here as text like: "USERNAME PASSWORD"
     """
     all_commands = []
-
-    command_name = ''
-    title = ''
-    description = ''
-    handler = CommandHandler
-    options = {}
-    hidden = False
-    args = ''
+    commands = []
 
     def __init__(self):
         """Initialize the command
 
         Notes:
-            If you implement this method in your own command you must call super init or otherwise the command will not
-            be found in the all_commands list.
+            super(BaseCommand, self).__init__() has to be run after the self.commands setup
         """
         BaseCommand.all_commands.append(self)
 
-        self.command_name = self.command_name or self.__class__.__name__.lower()
-        self.title = self.title or self.__class__.__name__.capitalize()
+        self.check_commands()
 
-        self.options = {
-            'command': self.command_name,
-            'callback': self.command
-        }
+    def check_commands(self):
+        updated_commands = []
+        for command in self.commands:
+            command = {
+                'title': command.get('title', None) or command['command'].__name__.capitalize().replace('_', ' '),
+                'description': command.get('description', ''),
+                'command_name': command.get('command_name', None) or command['command'].__name__,
+                'command': command['command'],
+                'handler': command.get('handler', None) or CommandHandler,
+                'options': command.get('options', None),
+                'hidden': command.get('hidden', False),
+                'args': command.get('args', None)
+            }
+            # Set options if not yet set
+            if command['options'] is None:
+                command['options'] = {'callback': command['command'], 'command': command['command_name']}
 
-    def command(self, bot: Bot, update: Update):
-        """The actual command
+            # Set CommandHandler options if not yet set
+            if command['handler'] == CommandHandler and command['options'].get('callback', None) is None:
+                command['options']['callback'] = command['command']
+            if command['handler'] == CommandHandler and command['options'].get('command', None) is None:
+                command['options']['command'] = command['command_name']
 
-        This is the actual command in which you will be placing your code.
+            # Set MessageHandler options if not yet set
+            if command['handler'] == MessageHandler and command['options'].get('callback', None) is None:
+                command['options']['callback'] = command['command']
 
-        Notes:
-            If you want the command to be run asynchronously, give the command the
-            :obj:`telegram.ext.dispatcher.run_async` decorator
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of arguments given by the user
-
-        Raises:
-            :obj:`NotImplementedError`: Whenever you do not implement the command of course
-        """
-        raise NotImplementedError()
+            updated_commands.append(command)
+        self.commands = updated_commands
