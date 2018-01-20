@@ -37,11 +37,10 @@ class Instagram(BaseCommand):
             },
             {
                 'title': 'Instagram Login',
-                'description': 'Login to Instagram. DO NOT USE THIS IN GROUPS you can login in privat chat with '
-                               '@XenianBot',
+                'description': 'Login to Instagram, does not work in groups for security.',
                 'args': 'USERNAME PASSWORD',
                 'command': self.instali,
-                'options': {'pass_args': True}
+                'options': {'pass_args': True, 'filters': ~ Filters.group}
             },
             {
                 'title': 'Instagram Logout',
