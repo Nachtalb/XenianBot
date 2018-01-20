@@ -12,16 +12,43 @@ from xenian_bot.utils import build_menu
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 
-__all__ = ['toggle_download_mode', 'download_stickers', 'download_gif']
+__all__ = ['download']
 
 
-class ToggleDownloadMode(BaseCommand):
-    command_name = 'download_mode'
-    title = 'Toggle Download Mode on / off'
-    description = 'If on download stickers and gifs sent to the bot of off reverse search is reactivated. Does not ' \
-                  'work in groups'
+class Download(BaseCommand):
+    def __init__(self):
+        self.commands = [
+            {
+                'title': 'Toggle Download Mode on / off',
+                'description': 'If on download stickers and gifs sent to the bot of off reverse search is reactivated. '
+                               'Does not work in groups',
+                'command_name': 'download_mode',
+                'command': self.toggle_download_mode,
+                'options': {'filters': ~ Filters.group}
+            },
+            {
+                'title': 'Download Stickers',
+                'description': 'Turn on /download_mode and send stickers',
+                'handler': MessageHandler,
+                'command': self.download_stickers,
+                'options': {'filters': Filters.sticker & download_mode_filter & ~ Filters.group}
+            },
+            {
+                'title': 'Download Gifs',
+                'description': 'Turn on /download_mode and send videos and gifs',
+                'handler': MessageHandler,
+                'command': self.download_gif,
+                'options': {'filters': (Filters.video | Filters.document) & download_mode_filter & ~ Filters.group}
+            },
+            {
+                'description': 'Reply to media for download',
+                'command': self.download,
+            }
+        ]
 
-    def command(self, bot: Bot, update: Update):
+        super(Download, self).__init__()
+
+    def toggle_download_mode(self, bot: Bot, update: Update):
         """Toggle Download Mode
 
         Args:
@@ -34,23 +61,7 @@ class ToggleDownloadMode(BaseCommand):
         else:
             update.message.reply_text('Download Mode off')
 
-
-toggle_download_mode = ToggleDownloadMode()
-
-
-class DownloadSticker(BaseCommand):
-    handler = MessageHandler
-    title = 'Download Stickers'
-    description = 'Turn on /download_mode and send stickers'
-
-    def __init__(self):
-        super(DownloadSticker, self).__init__()
-        self.options = {
-            'callback': self.command,
-            'filters': Filters.sticker & download_mode_filter & ~ Filters.group
-        }
-
-    def command(self, bot: Bot, update: Update):
+    def download_stickers(self, bot: Bot, update: Update):
         """Download Sticker as images
 
         Args:
@@ -63,23 +74,7 @@ class DownloadSticker(BaseCommand):
             sticker.download(image.name)
             bot.send_photo(update.message.chat_id, photo=image)
 
-
-download_stickers = DownloadSticker()
-
-
-class DownloadGif(BaseCommand):
-    handler = MessageHandler
-    title = 'Download Gifs'
-    description = 'Turn on /download_mode and send videos'
-
-    def __init__(self):
-        super(DownloadGif, self).__init__()
-        self.options = {
-            'callback': self.command,
-            'filters': (Filters.video | Filters.document) & download_mode_filter & ~ Filters.group
-        }
-
-    def command(self, bot: Bot, update: Update):
+    def download_gif(self, bot: Bot, update: Update):
         """Download videos as gifs
 
         Args:
@@ -122,22 +117,10 @@ class DownloadGif(BaseCommand):
                     InlineKeyboardButton("Download GIF", url=host_path),
                 ]
                 reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=2))
-                bot.send_message(update.message.chat_id, 'Instant GIF Download',  reply_markup=reply_markup)
-
-
-download_gif = DownloadGif()
-
-
-class DownloadReply(BaseCommand):
-    command_name = 'download'
-    title = 'Reply download'
-    description = 'Reply to media for download'
-
-    def __init__(self):
-        super(DownloadReply, self).__init__()
+                bot.send_message(update.message.chat_id, 'Instant GIF Download', reply_markup=reply_markup)
 
     @run_async
-    def command(self, bot: Bot, update: Update):
+    def download(self, bot: Bot, update: Update):
         """Reply to media to reverse search
 
         Args:
@@ -148,9 +131,9 @@ class DownloadReply(BaseCommand):
         if not reply_to_message:
             update.message.reply_text('You have to reply to some media file to start the download.')
         if reply_to_message.sticker:
-            download_stickers.command(bot, update)
+            self.download_stickers(bot, update)
         if reply_to_message.video or reply_to_message.document:
-            download_gif.command(bot, update)
+            self.download_gif(bot, update)
 
 
-download_reply = DownloadReply()
+download = Download()
