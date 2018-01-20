@@ -10,8 +10,6 @@ __all__ = ['builtins']
 
 class Builtins(BaseCommand):
 
-    command_list_text = ''
-
     def __init__(self):
         self.commands = [
             {'command': self.start, 'description': 'Initialize the bot'},
@@ -86,5 +84,6 @@ class Builtins(BaseCommand):
         update.message.reply_text(
             'If you need any help do not hesitate to contact me via {}.\n\nIf you like this bot you can give me rating '
             'here: https://telegram.me/storebot?start=xenianbot'.format(ADMINS[0]))
+
 
 builtins = Builtins()
