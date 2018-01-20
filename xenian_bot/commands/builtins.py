@@ -30,7 +30,8 @@ class Builtins(BaseCommand):
         """
         reply = ('Hello and welcome to me, **@XenianBot**\n\nI am a personal assistant which can do various tasks for '
                  'you. For example, I can do reverse image searches directly here in Telegram. To see my full '
-                 'capability, use /commands.')
+                 'capability, use /commands.\n\nIf you like this bot you can give me a rating here: '
+                 'https://telegram.me/storebot?start=xenianbot')
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
     def commands(self, bot: Bot, update: Update):
@@ -82,6 +83,8 @@ class Builtins(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        update.message.reply_text('If you need any help do not hesitate to contact me via {}. '.format(ADMINS[0]))
+        update.message.reply_text(
+            'If you need any help do not hesitate to contact me via {}.\n\nIf you like this bot you can give me rating '
+            'here: https://telegram.me/storebot?start=xenianbot'.format(ADMINS[0]))
 
 builtins = Builtins()
