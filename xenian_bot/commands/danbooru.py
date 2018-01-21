@@ -179,7 +179,8 @@ class Danbooru(BaseCommand):
                     bot.send_media_group(
                         chat_id=update.message.chat_id,
                         media=media_list[:10],
-                        reply_to_message_id=update.message.message_id
+                        reply_to_message_id=update.message.message_id,
+                        disable_notification=True
                     )
                     del media_list[:10]
                 except BadRequest:
@@ -187,7 +188,8 @@ class Danbooru(BaseCommand):
                         bot.send_photo(
                             chat_id=update.message.chat_id,
                             photo=media_list[0].media,
-                            caption=media_list[0].caption
+                            caption=media_list[0].caption,
+                            disable_notification = True
                         )
                     except (BadRequest, TimedOut):
                         errors += 1
@@ -197,12 +199,17 @@ class Danbooru(BaseCommand):
                     bot.send_photo(
                         chat_id=update.message.chat_id,
                         photo=media_list[0].media,
-                        caption=media_list[0].caption)
+                        caption=media_list[0].caption,
+                        disable_notification=True
+                    )
                 except BadRequest:
                     errors += 1
                 del media_list[0]
+
+        reply = 'Images has been sent'
         if errors:
-            update.message.reply_text('{} of the request {} are not publicly available'.format(errors, query['limit']))
+            reply += (', but {} of the request {} are not publicly available'.format(errors, query['limit']))
+        update.message.reply_text(reply)
 
 
 danbooru = Danbooru()
