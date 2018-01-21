@@ -3,6 +3,7 @@ from tempfile import NamedTemporaryFile
 
 import paramiko
 
+import xenian_bot
 from .base import UploaderBase
 
 
@@ -46,13 +47,14 @@ class SSHUploader(UploaderBase):
         self.sftp.close()
         self.ssh.close()
 
-    def upload(self, file, filename: str = None, upload_dir: str = None):
+    def upload(self, file,  filename: str = None, upload_dir: str = None, remove_after: int=None):
         """Upload file to the ssh server
 
         Args:
             file: Path to file on file system or a file like object
             filename (:obj:`str`): Filename on the server. This is mandatory if your file is a file like object.
             upload_dir (:obj:`str`): Upload directory on server. Joins with the configurations upload_dir
+            remove_after (:obj:`int`): After how much time to remove the file in sec. Defaults to None (do not remove)
         """
         is_file_object = bool(getattr(file, 'read', False))
         if is_file_object:
@@ -73,5 +75,29 @@ class SSHUploader(UploaderBase):
         upload_path = os.path.join(upload_dir, filename)
 
         self.sftp.put(real_file, upload_path)
+
+        if remove_after:
+            xenian_bot.job_queue.run_once(
+                callback=lambda bot, job: self.remove(upload_path, True),
+                when=remove_after,
+                name='Remove on server: {}'.format(upload_path))
         if is_file_object:
             os.unlink(real_file)
+
+    def remove(self, file_path: str, self_connect: bool):
+        """Remove a file from the server
+
+        Args:
+            file_path (:obj:`str`): path to a file
+            self_connect (:obj:`bool`): If he method should connect to the server by itself
+
+        Raises:
+            :obj:`NotImplementedError`: If you did not implement the function in your uploader.
+        """
+        if self_connect:
+            self.connect()
+
+        self.sftp.remove(file_path)
+
+        if self_connect:
+            self.close()

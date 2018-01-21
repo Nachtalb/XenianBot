@@ -1,6 +1,7 @@
 import os
 from tempfile import NamedTemporaryFile
 
+import xenian_bot
 from .base import UploaderBase
 
 
@@ -10,7 +11,7 @@ class FileSystemUploader(UploaderBase):
 
     _mandatory_configuration = {'path': str}
 
-    def upload(self, file, filename: str = None, save_path: str = None):
+    def upload(self, file, filename: str = None, save_path: str = None, remove_after: int=None):
         """Upload file to the ssh server
 
         Args:
@@ -19,6 +20,7 @@ class FileSystemUploader(UploaderBase):
             filename (:obj:`str`): New filename, must be set if file is a file like object
             save_path (:obj:`str`): Directory where to save the file. Joins with the configurations path. Creates
                 directory if it does not exist yet.
+            remove_after (:obj:`int`): After how much time to remove the file in sec. Defaults to None (do not remove)
         """
         is_file_object = bool(getattr(file, 'read', False))
         if is_file_object:
@@ -40,5 +42,30 @@ class FileSystemUploader(UploaderBase):
         os.makedirs(save_dir, exist_ok=True)
 
         os.system('cp {src} {dst} && chmod 664 {dst}'.format(src=real_file, dst=save_path))
+
+        if remove_after:
+            xenian_bot.job_queue.run_once(
+                callback=lambda bot, job: self.remove(save_path, True),
+                when=remove_after,
+                name='Remove file locally: {}'.format(save_path))
+
         if is_file_object:
             os.unlink(real_file)
+
+    def remove(self, file_path: str, self_connect: bool):
+        """Remove a file from the server
+
+        Args:
+            file_path (:obj:`str`): path to a file
+            self_connect (:obj:`bool`): If he method should connect to the server by itself
+
+        Raises:
+            :obj:`NotImplementedError`: If you did not implement the function in your uploader.
+        """
+        if self_connect:
+            self.connect()
+
+        os.unlink(file_path)
+
+        if self_connect:
+            self.close()

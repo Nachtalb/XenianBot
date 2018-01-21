@@ -36,11 +36,24 @@ class UploaderBase:
         """Close connection to the server"""
         pass
 
-    def upload(self, file):
+    def upload(self, file, remove_after: int):
         """Upload a file to the server
 
         Args:
             file: file like object or a path to a file
+            remove_after (:obj:`int`): After how much time to remove the file in sec
+
+        Raises:
+            :obj:`NotImplementedError`: If you did not implement the function in your uploader.
+        """
+        raise NotImplementedError
+
+    def remove(self, file_path: str, self_connect: bool):
+        """Remove a file from the server
+
+        Args:
+            file_path (:obj:`str`): path to a file
+            self_connect (:obj:`bool`): If he method should connect to the server by itself
 
         Raises:
             :obj:`NotImplementedError`: If you did not implement the function in your uploader.

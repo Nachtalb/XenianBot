@@ -63,12 +63,14 @@ class ReverseImageSearchEngine:
         """
         return self.get_search_link_by_url(self.upload_image(file_))
 
-    def upload_image(self, image_file, file_name: str = None):
+    def upload_image(self, image_file, file_name: str = None, remove_after: int=None):
         """Upload the given image to the in the settings specified place.
 
         Args:
             image_file: File like object of an image or path to an image
             file_name (:obj:`str`): Name of the given file. Can be left empty if image_file is a file path
+            remove_after (:obj:`int`): After how much time to remove the file in sec. Defaults to None (do not remove)
+
         Returns:
             :obj:`str`: Url to the uploaded image
         Raises:
@@ -82,7 +84,7 @@ class ReverseImageSearchEngine:
             file_name = os.path.basename(image_file)
 
         uploader.connect()
-        uploader.upload(image_file, file_name)
+        uploader.upload(image_file, file_name, remove_after=remove_after)
         uploader.close()
 
         path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''

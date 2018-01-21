@@ -165,7 +165,7 @@ class ReverseImageSearch(BaseCommand):
             BingReverseImageSearchEngine(), YandexReverseImageSearchEngine()
         )
 
-        image_url = iqdb_search.upload_image(media_file, image_name + '.' + image_extension)
+        image_url = iqdb_search.upload_image(media_file, image_name + '.' + image_extension, remove_after=3600)
 
         iqdb_url, google_url, tineye_url, bing_url, yandex_url = (
             iqdb_search.get_search_link_by_url(image_url), google_search.get_search_link_by_url(image_url),
