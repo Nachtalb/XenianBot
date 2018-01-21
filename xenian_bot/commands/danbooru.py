@@ -1,10 +1,9 @@
 import re
 from collections import OrderedDict
 
-import requests
 from pybooru import Danbooru as PyDanbooru
 from telegram import Bot, ChatAction, InputMediaPhoto, Update
-from telegram.error import BadRequest
+from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
 from . import BaseCommand
@@ -183,26 +182,23 @@ class Danbooru(BaseCommand):
                         reply_to_message_id=update.message.message_id
                     )
                     del media_list[:10]
-                except BadRequest as e:
-                    if e.message == 'Group send failed':
-                        update.message.reply_text(
-                            'Something went wrong on Telegrams side, please try other arguments for this command')
-                        return
-                    error_list = []
-                    for index, media in enumerate(media_list[:10]):
-                        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-                        request = requests.head(media.media)
-                        if request.status_code > 399 or request.status_code < 200:
-                            errors += 1
-                            error_list.append(media)
-                    media_list = list(set(media_list) - set(error_list))
+                except BadRequest:
+                    try:
+                        bot.send_photo(
+                            chat_id=update.message.chat_id,
+                            photo=media_list[0].media,
+                            caption=media_list[0].caption
+                        )
+                    except (BadRequest, TimedOut):
+                        errors += 1
+                    del media_list[0]
             else:
                 try:
                     bot.send_photo(
                         chat_id=update.message.chat_id,
                         photo=media_list[0].media,
                         caption=media_list[0].caption)
-                except BadRequest as e:
+                except BadRequest:
                     errors += 1
                 del media_list[0]
         if errors:
