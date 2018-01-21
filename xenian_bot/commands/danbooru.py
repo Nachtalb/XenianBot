@@ -183,7 +183,7 @@ class Danbooru(BaseCommand):
                         disable_notification=True
                     )
                     del media_list[:10]
-                except BadRequest:
+                except (BadRequest, TimedOut):
                     try:
                         update.message.reply_photo(
                             photo=media_list[0].media,
@@ -200,7 +200,7 @@ class Danbooru(BaseCommand):
                         caption=media_list[0].caption,
                         disable_notification=True
                     )
-                except BadRequest:
+                except (BadRequest, TimedOut):
                     errors += 1
                 del media_list[0]
 
