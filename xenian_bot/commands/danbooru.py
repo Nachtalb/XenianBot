@@ -185,19 +185,17 @@ class Danbooru(BaseCommand):
                     del media_list[:10]
                 except BadRequest:
                     try:
-                        bot.send_photo(
-                            chat_id=update.message.chat_id,
+                        update.message.reply_photo(
                             photo=media_list[0].media,
                             caption=media_list[0].caption,
-                            disable_notification = True
+                            disable_notification=True
                         )
                     except (BadRequest, TimedOut):
                         errors += 1
                     del media_list[0]
             else:
                 try:
-                    bot.send_photo(
-                        chat_id=update.message.chat_id,
+                    update.message.reply_photo(
                         photo=media_list[0].media,
                         caption=media_list[0].caption,
                         disable_notification=True
