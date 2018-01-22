@@ -8,6 +8,7 @@ from instaLooter import InstaLooter
 from telegram import Bot, ChatAction, InputMediaPhoto, InputMediaVideo, MessageEntity, Update
 from telegram.ext import Filters, MessageHandler, run_async
 
+from xenian_bot.commands.filters.download_mode import download_mode_filter
 from xenian_bot.utils import data
 from . import BaseCommand
 
@@ -48,10 +49,10 @@ class Instagram(BaseCommand):
                 'command': self.instalo,
             },
             {
+                'description': 'Turn on /download_mode and send links to Instargam posts to auto-download them',
                 'command': self.insta_link_auto,
                 'handler': MessageHandler,
-                'options': {'filters': Filters.entity(MessageEntity.URL)},
-                'hidden': True
+                'options': {'filters': Filters.entity(MessageEntity.URL) & download_mode_filter},
             }
         ]
 
