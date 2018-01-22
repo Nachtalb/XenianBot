@@ -49,6 +49,7 @@ class Instagram(BaseCommand):
                 'command': self.instalo,
             },
             {
+                'title': 'Instagram Auto Link',
                 'description': 'Turn on /download_mode and send links to Instargam posts to auto-download them',
                 'command': self.insta_link_auto,
                 'handler': MessageHandler,

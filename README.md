@@ -46,11 +46,13 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 
 
 ### List of indirect commands:
+- Instagram Auto Link: Turn on `/download_mode` and send links to Instargam posts to auto-download them
 - Download Stickers: Turn on `/download_mode` and send stickers
-- Download Gifs: Turn on `/download_mode` and send videos
+- Download Gifs: Turn on `/download_mode` and send videos and gifs
+- Video from URL: Turn on `/download_mode` and send links to videos like a youtube video
 - Reverse Gif / Video Search: Turn off `/download_mode` and send a video or a gif to search for it online.
-- Reverse Sticker Search: Turn off `/download_mode` and send a sticker to search for it online.
 - Reverse Image Search: Turn off `/download_mode` and send an image to search for it online.
+- Reverse Sticker Search: Turn off `/download_mode` and send a sticker to search for it online.
 - Calculator: Solve equations you send me, to get a full list of supported math functions use `/maths`
 
 ## Contributions
