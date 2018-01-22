@@ -24,8 +24,13 @@ class Data:
         """
         name = os.path.splitext(os.path.basename(name))[0]
         path = os.path.join(self.data_dir, name + '.json')
+        try:
+            data = self.serialize(dict(data))
+        except TypeError:
+            pass
+
         with copen(path, mode='w', encoding='utf-8') as data_file:
-            json.dump(data, data_file, ensure_ascii=False, indent=4, sort_keys=True)
+            json.dump(data, data_file, ensure_ascii=False, indent=4, sort_keys=True, )
 
     def get(self, name: object) -> object:
         """Get data by name
@@ -43,7 +48,65 @@ class Data:
         with copen(path, encoding='utf-8') as data_file:
             content = data_file.read()
             content = content or '{}'
-            return json.loads(content)
+
+            data = json.loads(content)
+            if isinstance(data, dict):
+                data = self.deserialize(data)
+            return data
+
+    def serialize(self, data: dict) -> dict:
+        """Serialize a dict recursively
+
+        Args:
+            data (:obj:`dict`): Old dictionary
+
+        Returns:
+            :obj:`dict`: New dictionary
+
+        Raises:
+            ValueError: If key is not str, int or float
+        """
+        new_dict = {}
+        for key, value in data.items():
+            new_key = key
+            if isinstance(key, int):
+                new_key = '{}--int'.format(key)
+            elif isinstance(key, float):
+                new_key = '{}--float'.format(key)
+            elif not isinstance(key, str):
+                raise ValueError('Key must be either str, int or float: {} {}'.format(key, value))
+
+            if isinstance(value, dict):
+                new_dict[new_key] = self.serialize(value)
+            else:
+                new_dict[new_key] = value
+        return new_dict
+
+    def deserialize(self, data: dict) -> dict:
+        """Deserialize a dict recursively
+
+        Args:
+            data (:obj:`dict`): Old dictionary
+
+        Returns:
+            :obj:`dict`: New dictionary
+
+        Raises:
+            ValueError: If key is not str, int or float
+        """
+        new_dict = {}
+        for key, value in data.items():
+            new_key = key
+            if key.endswith('--int'):
+                new_key = int(key.replace('--int', ''))
+            elif key.endswith('--float'):
+                new_key = float(key.replace('--float', ''))
+
+            if isinstance(value, dict):
+                new_dict[new_key] = self.deserialize(value)
+            else:
+                new_dict[new_key] = value
+        return new_dict
 
 
 data = Data()
@@ -111,7 +174,7 @@ class TelegramProgressBar:
         self.current_step = 0
 
     def start(self,
-              current_step: int or float= None,
+              current_step: int or float = None,
               full_amount: int or float = None,
               line_width: int = None,
               pre_message: str = None,
