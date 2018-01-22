@@ -418,8 +418,8 @@ class VideoDownloader(BaseCommand):
             for format_ in video_information['formats']:
                 formats[format_['format_id']] = {
                     'ext': format_.get('ext', None),
-                    'video': format_.get('vcodec', None),
-                    'audio': format_.get('acodec', None),
+                    'video': format_['vcodec'] if format_.get('vcodec', None) != 'none' else None,
+                    'audio': format_['acodec'] if format_.get('acodec', None) != 'none' else None,
                     'filesize': format_.get('filesize', None),
                     'res':
                         '%sx%s' % (format_['width'], format_['height'])
