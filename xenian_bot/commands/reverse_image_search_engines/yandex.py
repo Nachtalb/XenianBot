@@ -4,7 +4,8 @@ __all__ = ['YandexReverseImageSearchEngine']
 
 
 class YandexReverseImageSearchEngine(ReverseImageSearchEngine):
-    """A :class:`ReverseImageSearchEngine` configured for yandex.com"""
+    """A :class:`ReverseImageSearchEngine` configured for yandex.com
+    """
 
     def __init__(self):
         super(YandexReverseImageSearchEngine, self).__init__(

@@ -12,6 +12,8 @@ __all__ = ['danbooru']
 
 
 class Danbooru(BaseCommand):
+    """The class for all danbooru related commands
+    """
 
     def __init__(self):
         self.commands = [
@@ -37,12 +39,12 @@ class Danbooru(BaseCommand):
 
     @run_async
     def danbooru_search(self, bot: Bot, update: Update, args: list = None):
-        """Search on danbooru by tags
+        """Search on danbooru by tags command
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of search terms and options
+            args (:obj:`list`, optional): List of search terms and options
         """
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
@@ -75,12 +77,12 @@ class Danbooru(BaseCommand):
 
     @run_async
     def danbooru_latest(self, bot: Bot, update: Update, args: list = None):
-        """Danbooru latest posts
+        """Danbooru show latest posts command
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): Various options see description
+            args (:obj:`list`, optional): Various options see description
         """
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
@@ -100,11 +102,14 @@ class Danbooru(BaseCommand):
 
         self.post_list_send_media_group(bot, update, query)
 
-    def filter_terms(self, terms: list):
-        """Filter terms by removing non alphanumeric and duplicates
+    def filter_terms(self, terms: list) -> list:
+        """Ensure terms for the danbooru tag search are valid
 
         Args:
-            terms (:obj:`list`): List of strings
+            terms (:obj:`list`): List of not yet validated strings
+
+        Returns:
+                :obj:`list`: List with the given strings validated
         """
         non_alphanum = re.compile('[^\w_ ]+')
         terms = map(lambda term: non_alphanum.sub('', term), terms)
@@ -113,16 +118,16 @@ class Danbooru(BaseCommand):
         terms = filter(lambda term: not non_alphanum.match(term) and bool(term), terms)
         return list(OrderedDict.fromkeys(terms))
 
-    def extract_option_from_string(self, name: str, text: str, type_: str or int = None):
+    def extract_option_from_string(self, name: str, text: str, type_: str or int = None) -> tuple:
         """Extract option from string
 
         Args:
             name (:obj:`str`): Name of the option
             text (:obj:`str`): Text itself
-            type_ (:obj:`str` or :obj:`int`): Type of option is it a string or an int, default is string
+            type_ (:obj:`str` or :obj:`int`, optional): Type of option is it a string or an int, default is string
 
         Returns
-            (:obj:`tuple`): First item the text without the option, the second the value of the option
+            :obj:`tuple`: First item the text without the option, the second the value of the option
         """
         type_ = type_ or str
         options = {
@@ -142,7 +147,7 @@ class Danbooru(BaseCommand):
         return text, out
 
     def post_list_send_media_group(self, bot: Bot, update: Update, query: dict):
-        """Perform client.post_list search and send found images to user as media group
+        """Perform :method:`pybooru.api_danbooru.DanbooruApi_Mixin#post_list` search and send found images to user as media group
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.

@@ -11,16 +11,17 @@ class FileSystemUploader(UploaderBase):
 
     _mandatory_configuration = {'path': str}
 
-    def upload(self, file, filename: str = None, save_path: str = None, remove_after: int=None):
+    def upload(self, file, filename: str = None, save_path: str = None, remove_after: int = None):
         """Upload file to the ssh server
 
         Args:
             file: Path to file on file system or file like object. If a file path is given the file is copied to the new
                 place not moved.
-            filename (:obj:`str`): New filename, must be set if file is a file like object
-            save_path (:obj:`str`): Directory where to save the file. Joins with the configurations path. Creates
-                directory if it does not exist yet.
-            remove_after (:obj:`int`): After how much time to remove the file in sec. Defaults to None (do not remove)
+            filename (:obj:`str`, optional): New filename, must be set if file is a file like object
+            save_path (:obj:`str`, optional): Directory where to save the file. Joins with the configurations path.
+                Creates directory if it does not exist yet.
+            remove_after (:obj:`int`, optional): After how much time to remove the file in sec.
+                Defaults to None (do not remove)
         """
         is_file_object = bool(getattr(file, 'read', False))
         if is_file_object:

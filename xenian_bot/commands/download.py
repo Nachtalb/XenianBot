@@ -406,12 +406,15 @@ class VideoDownloader(BaseCommand):
         self.keyboard_message_id.pop(username, None)
         self.video_information.pop(username, None)
 
-    def get_keyboard(self, keyboard_name: str, video_information: dict):
+    def get_keyboard(self, keyboard_name: str, video_information: dict) -> InlineKeyboardMarkup:
         """Get inline keyboard list
 
         Args:
             keyboard_name (:obj:`str`): For available names look in the description for current_menu
             video_information (:obj:`dict`): Information about the video
+
+        Returns:
+            :class:`telegram.inline.inlinekeyboardmarkup.InlineKeyboardMarkup`: InlineKeyboardMarkup with the new menu
         """
         formats = {}
         if video_information.get('formats', None):
@@ -467,12 +470,14 @@ class VideoDownloader(BaseCommand):
 
         return InlineKeyboardMarkup(keyboard)
 
-    def get_advance_keyboard(self, advance_menu: str, formats: dict):
+    def get_advance_keyboard(self, advance_menu: str, formats: dict) -> list:
         """Get advanced keyboard for audio, video or audio + video
 
         Args:
             advance_menu (:obj:`str`): Which menud you want audio, video or video_audio
             formats (:obj:`dict`): Dict with the format information
+        Returns:
+            :obj:`list`: List of lists containing :class:`telegram.inline.inlinekeyboardbutton.InlineKeyboardButton`
         """
         keyboard = []
 

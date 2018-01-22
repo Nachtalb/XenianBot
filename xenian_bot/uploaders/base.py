@@ -1,11 +1,11 @@
 class UploaderBase:
-    """Base class for other uploader's to inherit from to ensure to use the same methods and attributes.
+    """Base class for other uploader's to inherit from, to ensure to use the same methods and attributes.
 
     Attributes:
         configuration (:obj:`dict`): Configuration of this uploader
     Args:
         configuration (:obj:`dict`): Configuration of this uploader
-        connect (:obj:`bool`): If the uploader should directly connect to the server
+        connect (:obj:`bool`, optional): If the uploader should directly connect to the server
     """
 
     _mandatory_configuration = {}
@@ -29,11 +29,13 @@ class UploaderBase:
             self.connect()
 
     def connect(self):
-        """Connect to the server defined in the configuration"""
+        """Connect to the server defined in the configuration
+        """
         pass
 
     def close(self):
-        """Close connection to the server"""
+        """Close connection to the server
+        """
         pass
 
     def upload(self, file, remove_after: int):

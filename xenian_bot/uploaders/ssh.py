@@ -17,7 +17,7 @@ class SSHUploader(UploaderBase):
     Args:
         configuration (:obj:`dict`): Configuration of this uploader. Must contain these key: host, user, password,
             key_filename, upload_dir, ssh_authentication
-        connect (:obj:`bool`): If the uploader should directly connect to the server
+        connect (:obj:`bool`, optional): If the uploader should directly connect to the server
     """
 
     _mandatory_configuration = {'host': str, 'user': str, 'password': str, 'upload_dir': str}
@@ -29,6 +29,8 @@ class SSHUploader(UploaderBase):
         super().__init__(configuration, connect)
 
     def connect(self):
+        """Connect to the server defined in the configuration
+        """
         self.ssh = paramiko.SSHClient()
         self.ssh.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
 
@@ -44,17 +46,21 @@ class SSHUploader(UploaderBase):
         self.sftp = self.ssh.open_sftp()
 
     def close(self):
+        """Close connection to the server
+        """
         self.sftp.close()
         self.ssh.close()
 
-    def upload(self, file,  filename: str = None, upload_dir: str = None, remove_after: int=None):
+    def upload(self, file, filename: str = None, upload_dir: str = None, remove_after: int = None):
         """Upload file to the ssh server
 
         Args:
             file: Path to file on file system or a file like object
-            filename (:obj:`str`): Filename on the server. This is mandatory if your file is a file like object.
-            upload_dir (:obj:`str`): Upload directory on server. Joins with the configurations upload_dir
-            remove_after (:obj:`int`): After how much time to remove the file in sec. Defaults to None (do not remove)
+            filename (:obj:`str`, optional): Filename on the server. This is mandatory if your file is a file like
+                object.
+            upload_dir (:obj:`str`, optional): Upload directory on server. Joins with the configurations upload_dir
+            remove_after (:obj:`int`, optional): After how much time to remove the file in sec.
+                Defaults to None (do not remove)
         """
         is_file_object = bool(getattr(file, 'read', False))
         if is_file_object:

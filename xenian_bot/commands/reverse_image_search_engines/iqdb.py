@@ -8,7 +8,8 @@ __all__ = ['IQDBReverseImageSearchEngine']
 
 
 class IQDBReverseImageSearchEngine(ReverseImageSearchEngine):
-    """A :class:`ReverseImageSearchEngine` configured for iqdb.org"""
+    """A :class:`ReverseImageSearchEngine` configured for iqdb.org
+    """
 
     def __init__(self):
         super(IQDBReverseImageSearchEngine, self).__init__(
@@ -18,7 +19,7 @@ class IQDBReverseImageSearchEngine(ReverseImageSearchEngine):
         )
 
     @property
-    def best_match(self):
+    def best_match(self) -> dict:
         if not self.search_html:
             if not self.search_url:
                 raise ValueError('No image given yet!')

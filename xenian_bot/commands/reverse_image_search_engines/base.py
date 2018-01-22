@@ -39,7 +39,7 @@ class ReverseImageSearchEngine:
         self.url_path = url_path
         self.name = name
 
-    def get_search_link_by_url(self, url):
+    def get_search_link_by_url(self, url) -> str:
         """Get the reverse image search link for the given url
 
         Args:
@@ -52,7 +52,7 @@ class ReverseImageSearchEngine:
         self.search_html = ''
         return self.url_base + self.url_path.format(image_url=quote_plus(url))
 
-    def get_search_link_by_file(self, file_):
+    def get_search_link_by_file(self, file_) -> str:
         """Get the reverse image search link for the given file
 
         Args:
@@ -63,13 +63,13 @@ class ReverseImageSearchEngine:
         """
         return self.get_search_link_by_url(self.upload_image(file_))
 
-    def upload_image(self, image_file, file_name: str = None, remove_after: int=None):
+    def upload_image(self, image_file, file_name: str = None, remove_after: int=None) -> str:
         """Upload the given image to the in the settings specified place.
 
         Args:
             image_file: File like object of an image or path to an image
-            file_name (:obj:`str`): Name of the given file. Can be left empty if image_file is a file path
-            remove_after (:obj:`int`): After how much time to remove the file in sec. Defaults to None (do not remove)
+            file_name (:obj:`str`, optional): Name of the given file. Can be left empty if image_file is a file path
+            remove_after (:obj:`int`, optional): After how much time to remove the file in sec. Defaults to None (do not remove)
 
         Returns:
             :obj:`str`: Url to the uploaded image
@@ -90,11 +90,11 @@ class ReverseImageSearchEngine:
         path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
         return os.path.join(path, file_name)
 
-    def get_html(self, url=None):
+    def get_html(self, url=None) -> str:
         """Get the HTML of the image search site.
 
         Args:
-            url (:obj:`str`): Link to the image, if no url is given it takes the last searched image url
+            url (:obj:`str`, optional): Link to the image, if no url is given it takes the last searched image url
 
         Returns:
             :obj:`str`: HTML of the image search site
@@ -114,7 +114,7 @@ class ReverseImageSearchEngine:
         return self.search_html
 
     @property
-    def best_match(self):
+    def best_match(self) -> dict:
         """Get info about the best matching image found
 
         Notes:
@@ -137,7 +137,6 @@ class ReverseImageSearchEngine:
             :obj:`dict`: Dictionary of the found image
 
         Raises:
-            ValueError: If not image was given to this class yet
             NotImplementedError: If the method was not implemented
         """
         raise NotImplementedError

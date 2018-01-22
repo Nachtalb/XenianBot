@@ -7,6 +7,8 @@ from telegram import Bot, ParseMode
 
 
 class Data:
+    """Class for managing simple persistent data
+    """
 
     def __init__(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -30,6 +32,9 @@ class Data:
 
         Args:
             name (:obj:`str`): Name of data object
+
+        Returns:
+            Object saved in the data file
         """
         name = os.path.splitext(os.path.basename(name))[0]
         path = os.path.join(self.data_dir, name + '.json')
@@ -59,8 +64,8 @@ class TelegramProgressBar:
     Attributes:
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         chat_id (:obj:`int`): Unique identifier of the chat with a user.
-        full_amount (:obj:`int` or :obj:`float`): Total amount of items.
-        step_size (:obj:`int` or :obj:`float`): On nth item send update message to user.
+        full_amount (:obj:`int`): Total amount of items.
+        step_size (:obj:`int`): On nth item send update message to user.
         line_width (:obj:`int`): With of progressbar in characters.
         pre_message (:obj:`str`): Message which comes a line above the Progressbar.
         se_message (:obj:`str`): Message which comes a line under the Progressbar.
@@ -72,19 +77,20 @@ class TelegramProgressBar:
     Args:
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         chat_id (:obj:`int`): Unique identifier of the chat with a user.
-        full_amount (:obj:`int` or :obj:`float`): Total amount of items.
-        step_size (:obj:`int` or :obj:`float`): On nth item send update message to user.
-        line_width (:obj:`int`): With of progressbar in characters.
-        pre_message (:obj:`str`): Message which comes a line above the Progressbar. Available placeholders are:
+        full_amount (:obj:`int`, optional): Total amount of items.
+        step_size (:obj:`int`, optional): On nth item send update message to user.
+        line_width (:obj:`int`, optional): With of progressbar in characters.
+        pre_message (:obj:`str`, optional): Message which comes a line above the Progressbar.
+            Available placeholders are:
             {current} == current step number
             {total} == total step number
             {step_size} == step size
-        se_message (:obj:`str`): Message which comes a line under the Progressbar. The same placeholders are available
-            as in pre_message
-        loaded_char (:obj:`str`): Character to be displayed as loaded in the progressbar, you can use emojis like so
-            :cake: or :joy:
-        unloaded_char (:obj:`str`): Character to be displayed as not yet loaded in the progressbar, you can use emojis
+        se_message (:obj:`str`, optional): Message which comes a line under the Progressbar. The same placeholders
+            are available as in pre_message
+        loaded_char (:obj:`str`, optional): Character to be displayed as loaded in the progressbar, you can use emojis
             like so :cake: or :joy:
+        unloaded_char (:obj:`str`, optional): Character to be displayed as not yet loaded in the progressbar, you can
+            use emojis like so :cake: or :joy:
     """
     last_message = None
 
@@ -125,19 +131,20 @@ class TelegramProgressBar:
         """Show empty progressbar and initialize any new value.
 
         Args:
-            current_step (:obj:`int` or :obj:`float`): Your current stop number. If left away it just increases by one.
-            full_amount (:obj:`int` or :obj:`float`): Total amount of items. Set it here if not yet set in the beginning.
-            line_width (:obj:`int`): With of progressbar in characters.
-            pre_message (:obj:`str`): Message which comes a line above the Progressbar. Available placeholders are:
+            current_step (:obj:`int`, optional): Your current stop number. If left away it just increases by one.
+            full_amount (:obj:`int`, optional): Total amount of items. Set it here if not yet set in the beginning.
+            line_width (:obj:`int`, optional): With of progressbar in characters.
+            pre_message (:obj:`str`, optional): Message which comes a line above the Progressbar.
+                Available placeholders are:
                 {current} == current step number
                 {total} == total step number
                 {step_size} == step size
-            se_message (:obj:`str`): Message which comes a line under the Progressbar. The same placeholders are
-                available as in pre_message
-            loaded_char (:obj:`str`): Character to be displayed as loaded in the progressbar, you can use emojis like so
-                :cake: or :joy:
-            unloaded_char (:obj:`str`): Character to be displayed as not yet loaded in the progressbar, you can use
+            se_message (:obj:`str`, optional): Message which comes a line under the Progressbar. The same placeholders
+                are available as in pre_message
+            loaded_char (:obj:`str`, optional): Character to be displayed as loaded in the progressbar, you can use
                 emojis like so :cake: or :joy:
+            unloaded_char (:obj:`str`, optional): Character to be displayed as not yet loaded in the progressbar, you
+                can use emojis like so :cake: or :joy:
         """
         self.current_step = current_step or self.current_step
         self.full_amount = full_amount or self.full_amount
@@ -166,14 +173,15 @@ class TelegramProgressBar:
         """Update progress bar with its new amount.
 
         Args:
-            new_amount (:obj:`int` or :obj:`float`): New amount
-            new_full_amount (:obj:`int` or :obj:`float`): New full amount
-            pre_message (:obj:`str`): Message which comes a line above the Progressbar. Available placeholders are:
+            new_amount (:obj:`int`): New amount
+            new_full_amount (:obj:`int`, optional): New full amount
+            pre_message (:obj:`str`, optional): Message which comes a line above the Progressbar.
+                Available placeholders are:
                 {current} == current step number
                 {total} == total step number
                 {step_size} == step size
-            se_message (:obj:`str`): Message which comes a line under the Progressbar. The same placeholders are
-                available as in pre_message
+            se_message (:obj:`str`, optional): Message which comes a line under the Progressbar. The same placeholders
+                are available as in pre_message
         """
         self.current_step = new_amount
         self.full_amount = self.full_amount or new_full_amount

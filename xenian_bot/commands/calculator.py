@@ -11,6 +11,14 @@ __all__ = ['calculator']
 
 
 class Calculator(BaseCommand):
+    """A small class which acts as an calculator
+
+    Attributes:
+        safe_list (:obj:`list`): A list with allowed commands inside eval
+        safe_dict (:obj:`dict`): A dict generated from the :obj:`Calculator.safe_list` where the key is the name of a
+            function and the value is the actual function. This dict is passed to the eval and acts as the locals()
+            This is to ensure that eval is not evil.
+    """
     safe_list = [
         'acos', 'asin', 'atan', 'atan2', 'ceil', 'cos', 'cosh', 'degrees', 'e', 'exp', 'fabs', 'floor', 'fmod', 'frexp',
         'hypot', 'ldexp', 'log', 'log10', 'modf', 'pi', 'pow', 'radians', 'sin', 'sinh', 'sqrt', 'tan', 'tanh'

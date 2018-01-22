@@ -21,6 +21,8 @@ __all__ = ['reverse_image_search']
 
 
 class ReverseImageSearch(BaseCommand):
+    """Reverse Image Search integration for this bot
+    """
 
     def __init__(self):
         self.commands = [
@@ -154,7 +156,7 @@ class ReverseImageSearch(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             media_file: File like image to search for
-            image_extension (:obj:`str`): What extension the image should have. Default is 'jpg'
+            image_extension (:obj:`str`, optional): What extension the image should have. Default is 'jpg'
         """
 
         image_extension = image_extension or 'jpg'

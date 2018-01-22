@@ -35,7 +35,8 @@ def main():
     xenian_bot.job_queue = updater.job_queue
 
     def stop_and_restart():
-        """Gracefully stop the Updater and replace the current process with a new one."""
+        """Gracefully stop the Updater and replace the current process with a new one.
+        """
         updater.stop()
         os.execl(sys.executable, sys.executable, *sys.argv)
 

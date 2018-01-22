@@ -8,6 +8,8 @@ __all__ = ['urban_dictionary']
 
 
 class UrbanDictionary(BaseCommand):
+    """Urban Dictionary integration into this bot
+    """
 
     def __init__(self):
         self.commands = [
@@ -32,7 +34,7 @@ class UrbanDictionary(BaseCommand):
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of sent arguments
+            args (:obj:`list`, optional): List of sent arguments
         """
         if update.message.reply_to_message is not None:
             return

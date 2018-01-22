@@ -8,6 +8,8 @@ __all__ = ['decide']
 
 
 class Decide(BaseCommand):
+    """Decide command if you don't know any further
+    """
     def __init__(self):
         self.commands = [{'description': 'Yes or No', 'command': self.decide}, ]
 

@@ -4,10 +4,41 @@ __all__ = ['BaseCommand']
 
 
 class BaseCommand:
-    """
+    """Base of any command class
+
+    This is the base which should be used for any new command class. A command class is a class containing one or more
+    commands. For this to work the created command class must be called afterwards at least once. Like this an entry is
+    made in this classes :obj:`BaseCommand.all_commands` for the new command class. This has the advantage that you can
+    store all the data for your commands together in one place.
+
+    Your commands are also automatically added to the Telegram Updater, as well as listed in the output of the /commands
+    command from the :class:`xenian_bot.commands.builtins.Builtins` commands (unless you have hidden on true for your
+    command).
+
+    Examples:
+        >>> from telegram.ext import Filters
+        >>> from xenian_bot.commands.base import BaseCommand
+        >>>
+        >>> class MyCommands(BaseCommand):
+        >>>     def __init__(self):
+        >>>         self.commands = [
+        >>>             {
+        >>>                 'title': 'Echo yourself',
+        >>>                 'description': 'Return messages that you send me',
+        >>>                 'command': self.echo,
+        >>>                 'handler': MessageHandler,
+        >>>                 'options': {'filters': Filters.text},
+        >>>             }
+        >>>         ]
+        >>>
+        >>>         super(MyCommands, self).__init__()
+        >>>
+        >>>     def echo(self, bot, update):
+        >>>         update.message.reply_text(update.message.text)
+
     Attributes:
-        all_commands (:class:`list`): A list of all initialized commands
-        commands (:obj:`list`): A list of dictionary with the following keys:
+        all_commands (:class:`list` of :obj:`class`): A list of all initialized command classes
+        commands (:obj:`list` of :obj:`dict`): A list of dictionary with the following keys:
             - title (:class:`str`): Title of the command, (if not set name of the function will be taken)
             - description (:class:`str`): A short description for the command
             - command_name (:class:`str`): A name for the command (if not set, the functions name will be taken)
@@ -23,7 +54,7 @@ class BaseCommand:
     commands = []
 
     def __init__(self):
-        """Initialize the command
+        """Initialize the command class
 
         Notes:
             super(BaseCommand, self).__init__() has to be run after the self.commands setup
@@ -33,6 +64,8 @@ class BaseCommand:
         self.check_commands()
 
     def check_commands(self):
+        """Check commands for faults, add defaults and add them to :obj:`BaseCommand.all_commands`
+        """
         updated_commands = []
         for command in self.commands:
             command = {

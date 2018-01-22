@@ -4,7 +4,8 @@ __all__ = ['BingReverseImageSearchEngine']
 
 
 class BingReverseImageSearchEngine(ReverseImageSearchEngine):
-    """A :class:`ReverseImageSearchEngine` configured for bing.com"""
+    """A :class:`ReverseImageSearchEngine` configured for bing.com
+    """
 
     def __init__(self):
         super(BingReverseImageSearchEngine, self).__init__(

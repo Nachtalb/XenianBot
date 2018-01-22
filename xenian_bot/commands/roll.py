@@ -9,6 +9,9 @@ __all__ = ['roll']
 
 
 class Roll(BaseCommand):
+    """Roll a dice
+    """
+
     def __init__(self):
         self.commands = [
             {
@@ -28,7 +31,7 @@ class Roll(BaseCommand):
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of sent arguments
+            args (:obj:`list`, optional): List of sent arguments
         """
         min_ = int(args[0]) if len(args) >= 1 and bool(re.match('^\d+$', args[0])) else 1
         max_ = int(args[1]) if len(args) >= 2 and bool(re.match('^\d+$', args[1])) else 6

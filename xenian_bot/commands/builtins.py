@@ -9,7 +9,8 @@ __all__ = ['builtins']
 
 
 class Builtins(BaseCommand):
-
+    """A set of base commands which every bot should have
+    """
     def __init__(self):
         self.commands = [
             {'command': self.start, 'description': 'Initialize the bot'},

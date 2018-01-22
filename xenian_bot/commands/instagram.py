@@ -16,6 +16,14 @@ __all__ = ['instagram']
 
 
 class Instagram(BaseCommand):
+    """Instagram Downloader integration for this bot
+
+
+    Attributes:
+        data_name (:obj:`str`): The name for the data set where the user credentials are saved
+        base_url (:obj:`str`): Base URL of Instagram
+        link_pattern (:obj:`_sre.SRE_Pattern`): A regex compiled string which matches any Instagram link
+    """
     data_name = 'instagram'
     base_url = 'instagram.com'
     link_pattern = re.compile('^((http(s)?:)?//)?(www\.)?{}'.format(base_url.replace('.', '\.')))
@@ -63,6 +71,11 @@ class Instagram(BaseCommand):
 
     @staticmethod
     def insta_link_filter():
+        """Small filter to test against Instagram URLs
+
+        Returns:
+            :class:`Filter`: A Filter class which inherits from :class:`BaseFilter`
+        """
         pattern = Instagram.link_pattern
 
         class Filter(BaseFilter):
@@ -78,8 +91,8 @@ class Instagram(BaseCommand):
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of arguments passed by the user. First argument must be must be a link to a post or
-                the posts id
+            args (:obj:`list`, optional): List of arguments passed by the user. First argument must be must be a link
+                to a post or the posts id
         """
         if len(args) != 1:
             update.message.reply_text('You have to give me the link or the post id.')
@@ -127,8 +140,8 @@ class Instagram(BaseCommand):
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of arguments passed by the user. First argument must be must be a link to a user or
-                his username
+            args (:obj:`list`, optional): List of arguments passed by the user. First argument must be must be a link to
+                a user or his username
         """
         if len(args) != 1:
             update.message.reply_text('You have to give me the link or the username.')
@@ -188,8 +201,8 @@ class Instagram(BaseCommand):
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`): List of arguments passed by the user. First argument must be must be the username and
-                the second the password
+            args (:obj:`list`, optional): List of arguments passed by the user. First argument must be must be the
+                username and the second the password
         """
         telegram_user = update.message.from_user.username
         if self.logged_in(telegram_user):
@@ -231,15 +244,16 @@ class Instagram(BaseCommand):
         if post_token:
             self.insta(bot, update, [post_token, ])
 
-    def get_file_input_media_from_post(self, update: Update, looter: InstaLooter, post: dict):
+    def get_file_input_media_from_post(self, update: Update, looter: InstaLooter, post: dict) -> list:
         """Download a post by its link
 
         Args:
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
             looter (:class:`InstaLooter`): A logged in InstaLooter object
             post (:obj:`dict`): The post object given by InstaLooter
 
         Returns:
-            :obj:`list` of :obj:`InputMediaVideo` or :obj:`InputMediaPhoto`: List of input medias
+            :obj:`list`: List of input media classes :class:`InputMediaPhoto` and :class:`InputMediaVideo`
         """
         result = []
         with self.download_to_object(looter, post) as files:
@@ -253,14 +267,14 @@ class Instagram(BaseCommand):
                     result.append(InputMediaPhoto(media=open(file, 'rb')))
         return result
 
-    def get_linked_input_media_from_post(self, post: dict):
+    def get_linked_input_media_from_post(self, post: dict) -> list:
         """Send post as link to telegram
 
         Args:
             post (:obj:`dict`): The post object given by InstaLooter
 
         Returns:
-            :obj:`list` of :obj:`InputMediaVideo` or :obj:`InputMediaPhoto`: List of input medias
+            :obj:`list`: List of input media classes :class:`InputMediaPhoto` and :class:`InputMediaVideo`
         """
         result = []
         if post['is_video']:
@@ -273,37 +287,37 @@ class Instagram(BaseCommand):
                 result.append(InputMediaPhoto(media=post['display_src']))
         return result
 
-    def logged_in(self, telegram_username: str):
-        """Check if user is logged into instagram
+    def logged_in(self, telegram_username: str) -> bool:
+        """Check if user is logged into Instagram
 
         Args:
             telegram_username (:obj:`str`): Username of the telegram user.
 
         Returns:
-            (:obj:`bool`): Returns whether the user is logged in ot not
+            :obj:`bool`: Returns whether the user is logged in ot not
         """
         return bool(self.current_user(telegram_username))
 
-    def current_user(self, telegram_username: str):
-        """Get instagram username of telegram user
+    def current_user(self, telegram_username: str) -> str:
+        """Get Instagram username of Telegram user
 
         Args:
-            telegram_username (:obj:`str`): Username of the telegram user.
+            telegram_username (:obj:`str`): Username of the Telegram user.
 
         Returns:
-            (:obj:`str` or :obj:`None`): Returns the name if existing otherwise None
+            :obj:`str`: Returns the name if existing otherwise None
         """
         user_dict = data.get(self.data_name)
         return user_dict.get(telegram_username, None)
 
-    def remove_user(self, telegram_username: str):
-        """Remove login of a specific telegram user
+    def remove_user(self, telegram_username: str) -> bool:
+        """Remove login of a specific Telegram user
 
         Args:
-            telegram_username (:obj:`str`): Username of the telegram user.
+            telegram_username (:obj:`str`): Username of the Telegram user.
 
         Returns:
-            (:obj:`bool`): Returns true if the user was removed and false if the user didn't exist
+            :obj:`bool`: Returns true if the user was removed and false if the user didn't exist
         """
         user_dict = data.get(self.data_name)
         if user_dict.get(telegram_username, None):
@@ -312,7 +326,7 @@ class Instagram(BaseCommand):
             return True
         return False
 
-    def safe_login(self, telegram_username: str, username: str, password: str):
+    def safe_login(self, telegram_username: str, username: str, password: str) -> bool:
         """Safe the login for a user
 
         Args:
@@ -321,7 +335,7 @@ class Instagram(BaseCommand):
             password (:obj:`str`): Password of the instagram user.
 
         Returns:
-            (:obj:`bool`): Returns true if the user was removed and false if the user didn't exist
+            :obj:`bool`: Returns true if the user was removed and false if the user didn't exist
         """
         user_dict = data.get(self.data_name)
         data.save(self.data_name, {
@@ -334,15 +348,15 @@ class Instagram(BaseCommand):
             }
         })
 
-    def get_looter(self, telegram_username: str = None, profile: str = None):
-        """Return looter
+    def get_looter(self, telegram_username: str = None, profile: str = None) -> InstaLooter:
+        """Create a :class:`InstaLooter` instance
 
         Args:
-            telegram_username (:obj:`str`): Username of the telegram user to directly log in.
-            profile (:obj:`str`): Username of an instagram user.
+            telegram_username (:obj:`str`, optional): Username of the Telegram user to directly log in.
+            profile (:obj:`str`, optional): Username of an Instagram user.
 
         Returns:
-            (:class:`InstaLooter`): An InstaLooter object
+            :class:`InstaLooter`: An InstaLooter object
         """
         insta_looter = InstaLooter(profile=profile)
 
@@ -356,7 +370,7 @@ class Instagram(BaseCommand):
         return insta_looter
 
     @contextmanager
-    def download_to_object(self, looter: InstaLooter, media: dict):
+    def download_to_object(self, looter: InstaLooter, media: dict) -> list:
         """Download a post
 
         Args:
@@ -364,7 +378,7 @@ class Instagram(BaseCommand):
             media (:obj:`dict`): A post dictionary given by the instagram api
 
         Returns:
-            List of files downloaded (it is possible for one post to have multiple images)
+            :obj:`list`: List of files downloaded (it is possible for one post to have multiple images)
         """
         post_code = media['code']
 
@@ -374,14 +388,14 @@ class Instagram(BaseCommand):
 
             yield [os.path.join(temp_dir, file_path) for file_path in os.listdir(temp_dir)]
 
-    def link_to_post_token(self, post_link: str):
+    def link_to_post_token(self, post_link: str) -> str:
         """Converts a post link to its token
 
         Args:
             post_link (:obj:`str`): The link to a post
 
         Returns:
-            (:obj:`str`): Post token
+            :obj:`str`: Post token
         """
         post_pattern = re.compile(self.link_pattern.pattern + '/p/')
         if post_pattern.findall(post_link):
@@ -389,43 +403,42 @@ class Instagram(BaseCommand):
             post_token = path.split('?', 1)[0].strip(' /')
             return post_token
 
-    def link_to_username(self, user_link: str):
+    def link_to_username(self, user_link: str) -> str:
         """Converts a user link to its username
 
         Args:
             user_link (:obj:`str`): The link to a user
 
         Returns:
-            (:obj:`str`): username
+            :obj:`str`: The users username
         """
         if self.link_pattern.findall(user_link):
             path = self.link_pattern.sub('', user_link)
             username = path.split('?', 1)[0].strip(' /')
             return username
 
-    def is_post_public(self, post: str):
+    def is_post_public(self, post: str) -> bool:
         """Check if the post is public or not
 
         Args:
             post (:obj:`str`): Either the link to a post or the post_id
 
-
         Returns:
-            (:obj:`bool`): True if it is public false if not
+            :obj:`bool`: True if it is public false if not
         """
         if not self.link_pattern.findall(post):
             post = 'https://{}/p/{}'.format(self.base_url, post)
         request = requests.head(post)
         return 200 <= request.status_code < 400
 
-    def is_public_profile(self, user: str):
+    def is_public_profile(self, user: str) -> bool:
         """Check if the profile is pubic
 
         Args:
             user (:obj:`str`): Either the link to a user or the username
 
         Returns:
-            (:obj:`bool`): True if it is public false if not
+            :obj:`bool`: True if it is public false if not
         """
         if not self.link_pattern.findall(user):
             user = 'https://{}/{}'.format(self.base_url, user)

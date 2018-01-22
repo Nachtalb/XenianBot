@@ -7,7 +7,8 @@ __all__ = ['TinEyeReverseImageSearchEngine']
 
 
 class TinEyeReverseImageSearchEngine(ReverseImageSearchEngine):
-    """A :class:`ReverseImageSearchEngine` configured for tineye.com"""
+    """A :class:`ReverseImageSearchEngine` configured for tineye.com
+    """
 
     def __init__(self):
         super(TinEyeReverseImageSearchEngine, self).__init__(
@@ -17,12 +18,7 @@ class TinEyeReverseImageSearchEngine(ReverseImageSearchEngine):
         )
 
     @property
-    def best_match(self):
-        """
-
-        Returns:
-
-        """
+    def best_match(self) -> dict:
         if not self.search_html:
             if not self.search_url:
                 raise ValueError('No image given yet!')
@@ -61,13 +57,15 @@ class TinEyeReverseImageSearchEngine(ReverseImageSearchEngine):
             'provided by': '[TinEye](https://tineye.com/)',
         }
 
-    def check_image_availability(self, url: str):
+    def check_image_availability(self, url: str) -> bool:
         """Check if image is still available
 
         Args:
             url (:obj:`str`): Url to image to check
+        Returns:
+            :obj:`bool`: True if image is available, False if not
         """
         try:
             return requests.head(url) == 200
         except:
-            pass
+            return False
