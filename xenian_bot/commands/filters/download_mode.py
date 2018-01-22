@@ -21,13 +21,13 @@ class DownloadMode(BaseFilter):
         Returns:
             :obj:`bool`
         """
-        return self.is_mode_on(message.from_user.username)
+        return self.is_mode_on(message.from_user.id)
 
     def is_mode_on(self, telegram_user: str) -> bool:
         """Check if mode is on
 
         Args:
-            telegram_user (:obj:`str`): The telegram users username
+            telegram_user (:obj:`str`): The telegram users user_id
 
         Returns:
             :obj:`bool`: True if the user has download mode on, False otherwise
@@ -39,7 +39,7 @@ class DownloadMode(BaseFilter):
         """Turn download mode on
 
         Args:
-            telegram_user (:obj:`str`): The telegram users username
+            telegram_user (:obj:`str`): The telegram users user_id
         """
         mode_dict = data.get(self.data_set_name)
         mode_dict[telegram_user] = True
@@ -49,7 +49,7 @@ class DownloadMode(BaseFilter):
         """Turn download mode off
 
         Args:
-            telegram_user (:obj:`str`): The telegram users username
+            telegram_user (:obj:`str`): The telegram users user_id
         """
         mode_dict = data.get(self.data_set_name)
         mode_dict[telegram_user] = False
@@ -59,7 +59,7 @@ class DownloadMode(BaseFilter):
         """Toggle download mode
 
         Args:
-            telegram_user (:obj:`str`): The telegram users username
+            telegram_user (:obj:`str`): The telegram users user_id
 
         Returns:
                 :obj:`bool`: True if the mode is now on False if off

@@ -103,13 +103,13 @@ class Instagram(BaseCommand):
         is_public = True
         if not self.is_post_public(post_token):
             is_public = False
-            telegram_user = update.message.from_user.username
+            telegram_user = update.message.from_user.id
 
             if not self.logged_in(telegram_user):
                 update.message.reply_text('This content is private, please login first.')
                 return
 
-        looter = self.get_looter(telegram_username=telegram_user)
+        looter = self.get_looter(telegram_user_id=telegram_user)
         if not looter:
             update.message.reply_text(
                 'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
@@ -153,13 +153,13 @@ class Instagram(BaseCommand):
         is_public = True
         if not self.is_public_profile(username):
             is_public = False
-            telegram_user = update.message.from_user.username
+            telegram_user = update.message.from_user.id
 
             if not self.logged_in(telegram_user):
                 update.message.reply_text('This content is private, please login first.')
                 return
 
-        looter = self.get_looter(telegram_username=telegram_user, profile=username)
+        looter = self.get_looter(telegram_user_id=telegram_user, profile=username)
         if not looter:
             update.message.reply_text(
                 'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
@@ -204,7 +204,7 @@ class Instagram(BaseCommand):
             args (:obj:`list`, optional): List of arguments passed by the user. First argument must be must be the
                 username and the second the password
         """
-        telegram_user = update.message.from_user.username
+        telegram_user = update.message.from_user.id
         if self.logged_in(telegram_user):
             update.message.reply_text('Already logged in as %s' % self.current_user(telegram_user)['username'])
         else:
@@ -227,8 +227,8 @@ class Instagram(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        if self.logged_in(update.message.from_user.username):
-            if self.remove_user(update.message.from_user.username):
+        if self.logged_in(update.message.from_user.id):
+            if self.remove_user(update.message.from_user.id):
                 update.message.reply_text('Logged out')
         else:
             update.message.reply_text('You were not logged in')
@@ -287,50 +287,50 @@ class Instagram(BaseCommand):
                 result.append(InputMediaPhoto(media=post['display_src']))
         return result
 
-    def logged_in(self, telegram_username: str) -> bool:
+    def logged_in(self, telegram_user_id: str) -> bool:
         """Check if user is logged into Instagram
 
         Args:
-            telegram_username (:obj:`str`): Username of the telegram user.
+            telegram_user_id (:obj:`str`): Username of the telegram user.
 
         Returns:
             :obj:`bool`: Returns whether the user is logged in ot not
         """
-        return bool(self.current_user(telegram_username))
+        return bool(self.current_user(telegram_user_id))
 
-    def current_user(self, telegram_username: str) -> str:
+    def current_user(self, telegram_user_id: str) -> str:
         """Get Instagram username of Telegram user
 
         Args:
-            telegram_username (:obj:`str`): Username of the Telegram user.
+            telegram_user_id (:obj:`str`): Username of the Telegram user.
 
         Returns:
             :obj:`str`: Returns the name if existing otherwise None
         """
         user_dict = data.get(self.data_name)
-        return user_dict.get(telegram_username, None)
+        return user_dict.get(telegram_user_id, None)
 
-    def remove_user(self, telegram_username: str) -> bool:
+    def remove_user(self, telegram_user_id: str) -> bool:
         """Remove login of a specific Telegram user
 
         Args:
-            telegram_username (:obj:`str`): Username of the Telegram user.
+            telegram_user_id (:obj:`str`): Username of the Telegram user.
 
         Returns:
             :obj:`bool`: Returns true if the user was removed and false if the user didn't exist
         """
         user_dict = data.get(self.data_name)
-        if user_dict.get(telegram_username, None):
-            del user_dict[telegram_username]
+        if user_dict.get(telegram_user_id, None):
+            del user_dict[telegram_user_id]
             data.save(self.data_name, user_dict)
             return True
         return False
 
-    def safe_login(self, telegram_username: str, username: str, password: str) -> bool:
+    def safe_login(self, telegram_user_id: str, username: str, password: str) -> bool:
         """Safe the login for a user
 
         Args:
-            telegram_username (:obj:`str`): Username of the telegram user.
+            telegram_user_id (:obj:`str`): Username of the telegram user.
             username (:obj:`str`): Username of the instagram user.
             password (:obj:`str`): Password of the instagram user.
 
@@ -341,18 +341,18 @@ class Instagram(BaseCommand):
         data.save(self.data_name, {
             **user_dict,
             **{
-                telegram_username: {
+                telegram_user_id: {
                     'username': username,
                     'password': password
                 }
             }
         })
 
-    def get_looter(self, telegram_username: str = None, profile: str = None) -> InstaLooter:
+    def get_looter(self, telegram_user_id: str = None, profile: str = None) -> InstaLooter:
         """Create a :class:`InstaLooter` instance
 
         Args:
-            telegram_username (:obj:`str`, optional): Username of the Telegram user to directly log in.
+            telegram_user_id (:obj:`str`, optional): Username of the Telegram user to directly log in.
             profile (:obj:`str`, optional): Username of an Instagram user.
 
         Returns:
@@ -360,8 +360,8 @@ class Instagram(BaseCommand):
         """
         insta_looter = InstaLooter(profile=profile)
 
-        if telegram_username:
-            user = self.current_user(telegram_username)
+        if telegram_user_id:
+            user = self.current_user(telegram_user_id)
             try:
                 insta_looter.login(**user)
             except ValueError:

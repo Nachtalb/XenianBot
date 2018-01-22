@@ -59,7 +59,7 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        mode_on = download_mode_filter.toggle_mode(update.message.from_user.username)
+        mode_on = download_mode_filter.toggle_mode(update.message.from_user.id)
         if mode_on:
             update.message.reply_text('Download Mode on')
         else:
@@ -144,7 +144,7 @@ class VideoDownloader(BaseCommand):
     keyboard_message_id = {}
     """Keyboard message chat id of current download
     
-    Key must always be username
+    Key must always be user_id
     
     Examples:
         keyboard_message_id = {
@@ -155,7 +155,7 @@ class VideoDownloader(BaseCommand):
     current_menu = {}
     """Which menu the user is in
     
-    Key must always be username
+    Key must always be user_id
     Possible menus: 'format', 'audio', 'video', 'video_quality', 'audio_quality'
     
     Examples:
@@ -167,7 +167,7 @@ class VideoDownloader(BaseCommand):
     video_information = {}
     """Extracted video information
     
-    Key must always be username
+    Key must always be user_id
     """
 
     def __init__(self):
@@ -211,9 +211,9 @@ class VideoDownloader(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        username = update.message.from_user.username
+        user_id = update.message.from_user.id
 
-        if self.video_information.get(username, None):
+        if self.video_information.get(user_id, None):
             self.abort(bot, update)
 
         chat_id = update.message.chat_id
@@ -226,15 +226,15 @@ class VideoDownloader(BaseCommand):
             except DownloadError:
                 return
             info['short_description'] = re.sub(r'\n\s*\n', '\n', info.get('description', ''))
-            self.video_information[username] = info
+            self.video_information[user_id] = info
             keyboard = self.get_keyboard('format', info)
 
-            self.current_menu[username] = 'format'
+            self.current_menu[user_id] = 'format'
             bot.send_photo(
                 chat_id=chat_id,
                 photo=info['thumbnail']
             )
-            self.keyboard_message_id[username] = bot.send_message(
+            self.keyboard_message_id[user_id] = bot.send_message(
                 chat_id=chat_id,
                 text='{extractor_key:-^20}\n'
                      '<b>{title}</b>\n'
@@ -253,9 +253,9 @@ class VideoDownloader(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        username = update.effective_user.username
+        user_id = update.effective_user.id
         chat_id = update.effective_chat.id
-        url = self.video_information[username]['webpage_url']
+        url = self.video_information[user_id]['webpage_url']
         data = update.callback_query.data.split(' ')
 
         class DownloadHook:
@@ -325,7 +325,7 @@ class VideoDownloader(BaseCommand):
             with youtube_dl.YoutubeDL(options) as ydl:
                 bot.edit_message_reply_markup(
                     chat_id=update.effective_chat.id,
-                    message_id=self.keyboard_message_id[username].message_id,
+                    message_id=self.keyboard_message_id[user_id].message_id,
                     reply_markup=[])
 
                 ydl.download([url, ])
@@ -359,9 +359,9 @@ class VideoDownloader(BaseCommand):
                              'please use this download button',
                         reply_markup=keyboard)
 
-                self.current_menu.pop(username, None)
-                self.keyboard_message_id.pop(username, None)
-                self.video_information.pop(username, None)
+                self.current_menu.pop(user_id, None)
+                self.keyboard_message_id.pop(user_id, None)
+                self.video_information.pop(user_id, None)
 
     def menu_change(self, bot: Bot, update: Update):
         """Menu changes
@@ -370,16 +370,16 @@ class VideoDownloader(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        username = update.callback_query.from_user.username
+        user_id = update.callback_query.from_user.id
         text = update.callback_query.data
 
-        keyboard = self.get_keyboard(text, self.video_information[username])
+        keyboard = self.get_keyboard(text, self.video_information[user_id])
         bot.edit_message_reply_markup(
             chat_id=update.effective_chat.id,
-            message_id=self.keyboard_message_id[username].message_id,
+            message_id=self.keyboard_message_id[user_id].message_id,
             reply_markup=keyboard)
 
-        self.current_menu[username] = text
+        self.current_menu[user_id] = text
 
     def abort(self, bot: Bot, update: Update):
         """Abort
@@ -388,20 +388,20 @@ class VideoDownloader(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        username = update.effective_user.username
-        text = 'Aborted {}'.format(self.video_information[username]['title'])
+        user_id = update.effective_user.id
+        text = 'Aborted {}'.format(self.video_information[user_id]['title'])
         if update.callback_query:
             update.callback_query.answer(text=text)
             bot.edit_message_reply_markup(
                 chat_id=update.effective_chat.id,
-                message_id=self.keyboard_message_id[username].message_id,
+                message_id=self.keyboard_message_id[user_id].message_id,
                 reply_markup=[])
         else:
             bot.send_message(chat_id=update.effective_chat.id, text=text)
 
-        self.current_menu.pop(username, None)
-        self.keyboard_message_id.pop(username, None)
-        self.video_information.pop(username, None)
+        self.current_menu.pop(user_id, None)
+        self.keyboard_message_id.pop(user_id, None)
+        self.video_information.pop(user_id, None)
 
     def get_keyboard(self, keyboard_name: str, video_information: dict) -> InlineKeyboardMarkup:
         """Get inline keyboard list
