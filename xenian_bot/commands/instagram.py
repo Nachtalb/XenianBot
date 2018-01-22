@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 import requests
 from instaLooter import InstaLooter
 from telegram import Bot, ChatAction, InputMediaPhoto, InputMediaVideo, MessageEntity, Update
-from telegram.ext import Filters, MessageHandler, run_async
+from telegram.ext import Filters, MessageHandler, run_async, BaseFilter
 
 from xenian_bot.commands.filters.download_mode import download_mode_filter
 from xenian_bot.utils import data
@@ -53,11 +53,23 @@ class Instagram(BaseCommand):
                 'description': 'Turn on /download_mode and send links to Instargam posts to auto-download them',
                 'command': self.insta_link_auto,
                 'handler': MessageHandler,
-                'options': {'filters': Filters.entity(MessageEntity.URL) & download_mode_filter},
+                'options': {
+                    'filters': Filters.entity(MessageEntity.URL) & download_mode_filter & Instagram.insta_link_filter()
+                },
             }
         ]
 
         super(Instagram, self).__init__()
+
+    @staticmethod
+    def insta_link_filter():
+        pattern = Instagram.link_pattern
+
+        class Filter(BaseFilter):
+            def filter(self, message):
+                return bool(pattern.findall(message.text))
+
+        return Filter()
 
     @run_async
     def insta(self, bot: Bot, update: Update, args: list = None):
