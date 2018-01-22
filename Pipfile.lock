@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3d0c65dafae21a4b22b4cb6aa67d031cbe6b84b79b78a76ec8cc454a24c95aa6"
+            "sha256": "0cd0159fee1638eecb917a07531720b6d2a15791576ce24ac66c5153b0e8e254"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -80,10 +80,10 @@
         },
         "certifi": {
             "hashes": [
-                "sha256:244be0d93b71e93fc0a0a479862051414d0e00e16435707e5bf5000f92e04694",
-                "sha256:5ec74291ca1136b40f0379e1128ff80e866597e4e2c1e755739a913bbc3613c0"
+                "sha256:14131608ad2fd56836d33a71ee60fa1c82bc9d2c8d98b7bdbc631fe1b3cd1296",
+                "sha256:edbc3f203427eef571f79a7692bb160a2b0f7ccaa31953e99bd17e307cf63f7d"
             ],
-            "version": "==2017.11.5"
+            "version": "==2018.1.18"
         },
         "cffi": {
             "hashes": [
@@ -432,6 +432,13 @@
                 "sha256:cc44da8e1145637334317feebd728bd869a35285b93cbb4cca2577da7e62db4f"
             ],
             "version": "==1.22"
+        },
+        "youtube-dl": {
+            "hashes": [
+                "sha256:6fe61fd319917f7beab87ea453df1b90c4a5638f166af162b79bdd8cd63091ea",
+                "sha256:f5fe51b868a5b5a2adbcfe574b8a3f26be38ebaabdd7e74b3cf9301e6d83babc"
+            ],
+            "version": "==2018.1.21"
         }
     },
     "develop": {}

@@ -11,10 +11,12 @@ python-telegram-bot = "*"
 paramiko = "*"
 urbandictionary = "*"
 emoji = "*"
-      instalooter = "*"
-      requests = "*"
-      moviepy = "*"
+instalooter = "*"
+requests = "*"
+moviepy = "*"
 pybooru = "*"
+youtube-dl = "*"
+
 
 [dev-packages]
 
