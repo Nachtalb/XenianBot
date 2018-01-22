@@ -12,7 +12,7 @@ from youtube_dl import DownloadError
 
 from xenian_bot.settings import UPLOADER
 from xenian_bot.uploaders import uploader
-from xenian_bot.utils import TelegramProgressBar, build_menu
+from xenian_bot.utils import TelegramProgressBar
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 
@@ -117,10 +117,7 @@ class Download(BaseCommand):
                 path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
                 host_path = path + '/' + upload_file_name
 
-                button_list = [
-                    InlineKeyboardButton("Download GIF", url=host_path),
-                ]
-                reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=2))
+                reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Download GIF", url=host_path), ], ])
                 bot.send_photo(update.message.chat_id, host_path, 'Instant GIF Download', reply_markup=reply_markup)
 
     @run_async
