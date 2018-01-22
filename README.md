@@ -30,7 +30,7 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/commands` - Commands: Show all available commands
 - `/support` - Support: Contact bot maintainer for support of any kind
 - `/define` TEXT - Urban Dictionary Definition: Define a word or a sentence via urban dictionary
-- `/rawl`- Rawling: Rawl a number between 0 and 10000
+- `/roll` - MIN MAX - Rolling Dice: Roll a number between 0 and 6 or give me another range
 - `/insta` POST_LINK OR POST_ID - Instagram Post Download: Download a post from Instagram via its link or its ID
 - `/instap` PROFILE_LINK OR USERNAME - Instagram Profile Download: Download a all posts from an user
 - `/instali` USERNAME PASSWORD - Instagram Login: Login to instagram. DO NOT USE THIS IN GROUPS you can login in privat chat with @XenianBot
