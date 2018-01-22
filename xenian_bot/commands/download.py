@@ -362,6 +362,10 @@ class VideoDownloader(BaseCommand):
                              'please use this download button',
                         reply_markup=keyboard)
 
+                self.current_menu.pop(username, None)
+                self.keyboard_message_id.pop(username, None)
+                self.video_information.pop(username, None)
+
     def menu_change(self, bot: Bot, update: Update):
         """Menu changes
 
