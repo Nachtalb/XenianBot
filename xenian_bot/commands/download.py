@@ -121,7 +121,7 @@ class Download(BaseCommand):
                     InlineKeyboardButton("Download GIF", url=host_path),
                 ]
                 reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=2))
-                bot.send_message(update.message.chat_id, 'Instant GIF Download', reply_markup=reply_markup)
+                bot.send_photo(update.message.chat_id, host_path, 'Instant GIF Download', reply_markup=reply_markup)
 
     @run_async
     def download(self, bot: Bot, update: Update):
