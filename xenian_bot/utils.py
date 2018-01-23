@@ -4,7 +4,7 @@ import time
 from codecs import open as copen
 
 from emoji import emojize
-from telegram import Bot, ParseMode
+from telegram import Bot, ParseMode, User
 
 
 class Data:
@@ -322,3 +322,16 @@ class MWT(object):
         func.func_name = f.__name__
 
         return func
+
+
+@MWT(timeout=60 * 60)
+def get_self(bot: Bot) -> User:
+    """Get User object of this bot
+
+    Args:
+        bot (:obj:`Bot`): Telegram Api Bot Object
+
+    Returns:
+        :obj:`User`: The user object of this bot
+    """
+    return bot.get_me()
