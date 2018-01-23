@@ -41,7 +41,10 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/danbooru_search` 2_TAGS page=PAGE_NUM limit=LIMIT - Danobooru Search: Search on danbooru by max 2 tags separated by comma. You can define which page (default 0) and the limit (default 5, max 100)
 - `/danbooru_latest` page=PAGE_NUM limit=LIMIT - Danobooru Latest: Get latest uploads from danbooru you can use the options page (default 0) and limit (default 5, max 100)
 - `/decide`- Decide: Yes or No
-- `/maths` - Math Functions: Show all available math functions 
+- `/maths` - Math Functions: Show all available math functions
+- `ban` - Ban: Ban a user. Reply to one of his messages with this command **(Group Only)**
+- `warn` - Strike: Warn a user, after 3 warnings he get banned. Reply to one of his messages with this command **(Group Only)**
+- `kick` - Kick: Kick a user for 10 min. Reply to one of his messages with this command **(Group Only)**
 - More will come soon if you have any ideas or stuff you want: [Contributions](#contributions)
 
 
