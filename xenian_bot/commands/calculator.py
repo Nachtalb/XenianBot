@@ -3,6 +3,7 @@ import re
 from math import *
 
 from telegram import Bot, ParseMode, Update
+from telegram.error import BadRequest
 from telegram.ext import Filters, MessageHandler, run_async
 
 from . import BaseCommand
@@ -63,9 +64,23 @@ class Calculator(BaseCommand):
         """
         equation = equation or update.message.text
         equation = re.sub('["\']', '', equation)
+        message = ''
         try:
             result = eval(equation, {"__builtins__": None}, self.safe_dict)
-            update.message.reply_text('`{} = {}`'.format(equation, result), parse_mode=ParseMode.MARKDOWN)
+            reply_template = '{message}\n`{equation} = {result}`'
+            try:
+                result = float(result)
+            except OverflowError:
+                message = 'Result could not be shortened, shown in long format:'
+            try:
+                reply = reply_template.format(
+                    message=message,
+                    equation=equation,
+                    result=result
+                )
+                update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+            except BadRequest:
+                update.message.reply_text('Result was too long (max. 4096 characters) for Telegram.')
         except (SyntaxError, TypeError) as e:
             pass
 
