@@ -1,6 +1,6 @@
 import datetime
 
-from telegram import Bot, Update
+from telegram import Bot, Update, User
 
 import xenian_bot
 from xenian_bot.commands import BaseCommand
@@ -32,6 +32,12 @@ class GroupManager(BaseCommand):
                 'title': 'Kick',
                 'description': 'Kick a user for 10 min. Reply to one of his messages with this command (Group Only)',
                 'command': self.kick
+            },
+            {
+                'title': 'Delete and Warn',
+                'description': 'Delete a message from a user and warn them. Reply to one of his messages with this '
+                               'command (Group Only)',
+                'command': self.delete,
             }
         ]
 
@@ -169,7 +175,7 @@ class GroupManager(BaseCommand):
 
             data.save(self.group_data_set, group_data)
 
-    def warn(self, bot: Bot, update: Update):
+    def warn(self, bot: Bot, update: Update, wanted_user: User = None):
         """Strike a user
 
         After 3 strikes he is banned
@@ -177,13 +183,14 @@ class GroupManager(BaseCommand):
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            wanted_user (:obj:`telegram.user.User`): Telegram User object of the user which should be warned
         """
         if update.message.reply_to_message is None:
             update.message.reply_text('You have to reply to a message from this user to warn him.')
             return
         chat_id = update.message.chat_id
         from_user = update.message.from_user
-        wanted_user = update.message.reply_to_message.from_user
+        wanted_user = wanted_user or update.message.reply_to_message.from_user
         if self.is_allowed(bot, update):
             group_data = data.get(self.group_data_set)
 
@@ -212,6 +219,22 @@ class GroupManager(BaseCommand):
                     warns=group_data[chat_id][wanted_user.id]))
 
             data.save(self.group_data_set, group_data)
+
+    def delete(self, bot: Bot, update: Update):
+        """Delete a post from a user
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        if self.is_allowed(bot, update):
+            if update.message.reply_to_message is None:
+                return
+            chat_id = update.message.chat_id
+            wanted_user = update.message.reply_to_message.from_user
+
+            bot.delete_message(chat_id=chat_id, message_id=update.message.reply_to_message.message_id)
+            self.warn(bot, update, wanted_user)
 
 
 group_manager = GroupManager()
