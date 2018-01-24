@@ -142,11 +142,11 @@ class ReverseImageSearch(BaseCommand):
         reply_to_message = update.message.reply_to_message
         if not reply_to_message:
             update.message.reply_text('You have to reply to some media file to start the reverse search.')
-        if reply_to_message.photo:
+        elif reply_to_message.photo:
             self.image_search(bot, update)
-        if reply_to_message.sticker:
+        elif reply_to_message.sticker:
             self.sticker_search(bot, update)
-        if reply_to_message.video or reply_to_message.document:
+        elif reply_to_message.video or reply_to_message.document:
             self.video_search(bot, update)
 
     def reverse_image_search(self, bot: Bot, update: Update, media_file: object, image_extension: str = None):
