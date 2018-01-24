@@ -3,7 +3,7 @@ import re
 from math import *
 
 from telegram import Bot, ParseMode, Update
-from telegram.ext import Filters, MessageHandler
+from telegram.ext import Filters, MessageHandler, run_async
 
 from . import BaseCommand
 
@@ -44,6 +44,7 @@ class Calculator(BaseCommand):
         super(Calculator, self).__init__()
 
     def calcualate(self, bot: Bot, update: Update):
+    @run_async
         """Calculate
 
         Args:
@@ -58,6 +59,7 @@ class Calculator(BaseCommand):
         except (SyntaxError, TypeError) as e:
             pass
 
+    @run_async
     def maths(self, bot: Bot, update: Update):
         """Show available Maths Functions
 
