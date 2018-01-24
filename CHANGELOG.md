@@ -7,5 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+- Add `/calc EQUATION` command to calculate equations inside groups
+
 ### Changed
 - Run math function asynchronous
+- Disable directly solving equations without command sent to groups
