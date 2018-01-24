@@ -51,6 +51,7 @@ class Calculator(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
         equation = update.message.text
+        equation = re.sub('["\']', '', equation)
         try:
             result = eval(equation, {"__builtins__": None}, self.safe_dict)
             update.message.reply_text('`{} = {}`'.format(equation, result), parse_mode=ParseMode.MARKDOWN)
