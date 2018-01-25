@@ -30,7 +30,11 @@ class GroupManager(BaseCommand):
             },
             {
                 'title': 'Kick',
-                'description': 'Kick a user for 10 min. Reply to one of his messages with this command (Group Only)',
+                'description': 'Kick a user for 10 min or give a specific amount of time (in min) between 30sec '
+                               '(0.5 min) and 366 days (527040 min). Reply to one of his messages with this command '
+                               '(Group Only)',
+                'args': '[TIME]',
+                'options': {'pass_args': True},
                 'command': self.kick
             },
             {
@@ -149,12 +153,13 @@ class GroupManager(BaseCommand):
             return True
         return False
 
-    def kick(self, bot: Bot, update: Update, is_allowed: bool = False):
-        """Kick a user for 30 sec
+    def kick(self, bot: Bot, update: Update, args: list=None, is_allowed: bool = False):
+        """Kick a user for 30 sec or a specific amount of time
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            args (:obj:`list`): Time in min
             is_allowed (:obj:`bool`, optional): If the is_allowed check was already run so you don't have to again
         """
         if update.message.reply_to_message is None:
@@ -165,24 +170,37 @@ class GroupManager(BaseCommand):
         from_user = update.message.from_user
         wanted_user = update.message.reply_to_message.from_user
         if is_allowed or self.is_allowed(bot, update):
-            now = datetime.datetime.now()
+            time = 10
+            if args:
+                try:
+                    time = float(args[0])
+                    if not 0.5 <= time <= 527040:
+                        update.message.reply_text('Time must be between 30 sec (0.5 min) and 366 days (527040 min).')
+                        return
+                except ValueError:
+                    update.message.reply_text('You have to give me the time in min like `/kick 30`')
+                    return
 
+            now = datetime.datetime.now()
+            kick_until = now - datetime.timedelta(minutes=time)
             bot.kick_chat_member(
                 chat_id=chat_id,
                 user_id=wanted_user.id,
-                until_date=now + datetime.timedelta(minutes=10))
+                until_date=kick_until)
 
             xenian_bot.job_queue.run_once(
                 callback=(
                     lambda bot, job: bot.send_message(
                         chat_id,
-                        '@{wanted_user.username} was kicked 10 min ago and can now join again'.format(
+                        '@{wanted_user.username} was kicked {time} min ago and can now join again'.format(
+                            time=time,
                             wanted_user=wanted_user))),
                 when=10 * 60)
 
             bot.send_message(
                 chat_id=chat_id,
-                text='@{wanted_user.username} was kicked for 10 min by @{from_user.username}'.format(
+                text='@{wanted_user.username} was kicked for {time} min by @{from_user.username}'.format(
+                    time=time,
                     from_user=from_user,
                     wanted_user=wanted_user))
 
