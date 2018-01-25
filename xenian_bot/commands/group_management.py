@@ -1,6 +1,6 @@
 import datetime
 
-from telegram import Bot, Update, User
+from telegram import Bot, Update, User, ParseMode
 
 import xenian_bot
 from xenian_bot.commands import BaseCommand
@@ -44,6 +44,22 @@ class GroupManager(BaseCommand):
                 'description': 'Remove all warnings from a User. Reply to one of his messages with this command '
                                '(Group Only)',
                 'command': self.unwarn,
+            },
+            {
+                'title': 'Rules',
+                'description': 'Show rules for this group (Group Only)',
+                'command': self.rules,
+            },
+            {
+                'title': 'Define Rules',
+                'description': 'Define rules for this group (Group Only)',
+                'args': 'YOUR_RULES',
+                'command': self.rules_define,
+            },
+            {
+                'title': 'Remove Rules',
+                'description': 'Remove rules for this group (Group Only)',
+                'command': self.rules_remove,
             }
         ]
 
@@ -307,6 +323,90 @@ class GroupManager(BaseCommand):
 
             bot.delete_message(chat_id=chat_id, message_id=update.message.reply_to_message.message_id)
             self.warn(bot, update, wanted_user)
+
+    def rules_define(self, bot: Bot, update: Update):
+        """Define new rules for a group
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        if not self.is_admin(bot, update) or not self.in_group(update):
+            return
+
+        split_text = update.message.text.split(' ', 1)
+        if len(split_text) < 2:
+            update.message.reply_text('You forgot to give me the rules.')
+            return
+        elif len(split_text[1]) > 4000:
+            update.message.reply_text('Rules must be less than 4000 characters.')
+            return
+
+        text = split_text[1]
+        chat_id = update.message.chat_id
+        from_user = update.message.from_user
+
+        group_data = data.get(self.group_data_set)
+
+        if not group_data.get(chat_id, None):
+            group_data[chat_id] = {}
+
+        group_data[chat_id]['rules'] = text
+        data.save(self.group_data_set, group_data)
+
+        bot.send_message(
+            chat_id=chat_id,
+            text='@{from_user.username} has set new /rules.'.format(from_user=from_user))
+
+    def rules_remove(self, bot: Bot, update: Update):
+        """Remove rules for a group
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        if not self.is_admin(bot, update) or not self.in_group(update):
+            return
+
+        chat_id = update.message.chat_id
+        from_user = update.message.from_user
+        group_data = data.get(self.group_data_set)
+
+        if not group_data.get(chat_id, None) or not group_data[chat_id].get('rules', None):
+            bot.send_message(
+                chat_id=chat_id,
+                text='This group has no rules defined, use /rules_define to add them.')
+            return
+
+        group_data[chat_id]['rules'] = ''
+        data.save(self.group_data_set, group_data)
+        bot.send_message(
+            chat_id=chat_id,
+            text='@{from_user.username} has set removed the groups rules.'.format(from_user=from_user))
+
+    def rules(self, bot: Bot, update: Update):
+        """Show the defined group rules
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        if not self.in_group(update):
+            return
+
+        chat_id = update.message.chat_id
+        group_data = data.get(self.group_data_set)
+
+        if not group_data.get(chat_id, None) or not group_data[chat_id].get('rules', None):
+            bot.send_message(
+                chat_id=chat_id,
+                text='This group has no rules defined, use /rules_define to add them.')
+            return
+
+        bot.send_message(
+            chat_id=chat_id,
+            text=group_data[chat_id]['rules'],
+            parse_mode=ParseMode.MARKDOWN)
 
 
 group_manager = GroupManager()
