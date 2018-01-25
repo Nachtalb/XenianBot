@@ -208,11 +208,17 @@ class Danbooru(BaseCommand):
                 except (BadRequest, TimedOut):
                     errors += 1
                 del media_list[0]
+        reply = ''
+        if update.message.chat.type not in ['group', 'supergroup']:
+            reply = 'Images has been sent'
+            if errors:
+                reply += ', but '
 
-        reply = 'Images has been sent'
         if errors:
-            reply += (', but {} of the request {} are not publicly available'.format(errors, query['limit']))
-        update.message.reply_text(reply)
+            reply += ('{} of the request {} are not publicly available'.format(errors, query['limit']))
+
+        if reply:
+            update.message.reply_text(reply)
 
 
 danbooru = Danbooru()
