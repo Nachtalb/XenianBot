@@ -38,6 +38,12 @@ class GroupManager(BaseCommand):
                 'description': 'Delete a message from a user and warn them. Reply to one of his messages with this '
                                'command (Group Only)',
                 'command': self.delete,
+            },
+            {
+                'title': 'Remove Warnings',
+                'description': 'Remove all warnings from a User. Reply to one of his messages with this command '
+                               '(Group Only)',
+                'command': self.unwarn,
             }
         ]
 
@@ -219,6 +225,38 @@ class GroupManager(BaseCommand):
                     warns=group_data[chat_id][wanted_user.id]))
 
             data.save(self.group_data_set, group_data)
+
+    def unwarn(self, bot: Bot, update: Update, wanted_user: User = None):
+        """Remove all warnings from a user
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            wanted_user (:obj:`telegram.user.User`): Telegram User object of the user which should be warned
+        """
+        if update.message.reply_to_message is None:
+            update.message.reply_text('You have to reply to a message from this user to warn him.')
+            return
+        chat_id = update.message.chat_id
+        from_user = update.message.from_user
+        wanted_user = wanted_user or update.message.reply_to_message.from_user
+        if self.is_allowed(bot, update):
+            group_data = data.get(self.group_data_set)
+
+            if not group_data.get(chat_id, None) or not group_data[chat_id].get(wanted_user.id, None):
+                bot.send_message(
+                    chat_id=chat_id,
+                    text='@{wanted_user.username} was never warned.'.format(wanted_user=wanted_user))
+                return
+
+            group_data[chat_id][wanted_user.id] = 0
+            data.save(self.group_data_set, group_data)
+            bot.send_message(
+                chat_id=chat_id,
+                text='@{from_user.username} removed @{wanted_user.username} warnings.'.format(
+                    wanted_user=wanted_user,
+                    from_user=from_user,
+                ))
 
     def delete(self, bot: Bot, update: Update):
         """Delete a post from a user
