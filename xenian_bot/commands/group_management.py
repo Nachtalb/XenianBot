@@ -61,6 +61,49 @@ class GroupManager(BaseCommand):
         """
         return [admin.user.id for admin in bot.get_chat_administrators(chat_id)]
 
+    def is_admin(self, bot: Bot, update: Update) -> bool:
+        """Check if user and bot is admin
+
+              If not send message
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+
+        Returns:
+            :obj:`bool`: True if the bot is allowed, false otherwise
+        """
+
+        from_user = update.message.from_user
+        admins_in_group = self.get_admin_ids(bot, update.effective_chat.id)
+        this_bot = get_self(bot)
+
+        if this_bot.id not in admins_in_group:
+            if from_user.id in admins_in_group:
+                update.message.reply_text('I cannot do this as long as I am not admin.'.format(
+                    username=from_user.username))
+            else:
+                update.message.reply_text('@{username} is not allowed to run this command.'.format(
+                    username=update.message.from_user.username))
+            return False
+        return True
+
+    def in_group(self, update: Update) -> bool:
+        """Check if bot is in group
+
+        If not send message
+
+        Args:
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+
+        Returns:
+            :obj:`bool`: True if chat is a group, false otherwise
+        """
+        if update.message.chat.type not in ['group', 'supergroup']:
+            update.message.reply_text('This command only works in groups')
+            return False
+        return True
+
     def is_allowed(self, bot: Bot, update: Update) -> bool:
         """Check if bot is allowed to do banning and warning
 
@@ -73,23 +116,14 @@ class GroupManager(BaseCommand):
         Returns:
             :obj:`bool`: True if the bot is allowed, false otherwise
         """
-        if update.message.chat.type not in ['group', 'supergroup']:
-            update.message.reply_text('This command only works in groups')
+        if not self.in_group(update):
             return False
 
         wanted_user = update.message.reply_to_message.from_user
-        from_user = update.message.from_user
-
         admins_in_group = self.get_admin_ids(bot, update.effective_chat.id)
-        this_bot = get_self(bot)
 
-        if this_bot.id not in admins_in_group:
-            if from_user.id in admins_in_group:
-                update.message.reply_text('I cannot do this as long as I am not admin.'.format(
-                    username=from_user.username))
-            else:
-                update.message.reply_text('@{username} is not allowed to run this command.'.format(
-                    username=update.message.from_user.username))
+        if not self.is_admin(bot, update):
+            pass
         elif wanted_user.id in admins_in_group:
             update.message.reply_text('This command cannot be used on admins like @{username}.'.format(
                 username=wanted_user.username))
