@@ -5,10 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [1.0.0] - 2018-01-26
 
 ### Added
 
+- `/delete` has to be a reply to another message to delete this message and warn the user
+- `/unwarn` to remove all warnings from a user. Reply with it to a message
+- Add command `/rules` to show a groups rules
 - Add command `/rules` to show a groups rules
 - Add command `/rules_define YOUR_RULES` to define new rules in a group
 - Add command `/rules_remvoe` to remove the groups rules
@@ -17,6 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added `LOG_LEVEL` to settings
 - Instagram credentials to the `settings.py`, which are used for one central Instagram account, instead of `/instali` and `/instalo`
 - `/insta_follow PROFILE_LINK/S OR USERNAME/S` Instagram Follow: Tell @XenianBot to follow a specific user on Instagram, this is used to access private accounts.
+- `/contribute YOUR_REQUEST` Send the supporters and admins a request of any kind
+- `/error ERROR_DESCRIPTION` If you have found an error please use this command.
 
 ### Changed
 - Run math function asynchronous

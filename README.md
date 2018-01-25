@@ -29,6 +29,8 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/start` - Start: Initialize the bot
 - `/commands` - Commands: Show all available commands
 - `/support` - Support: Contact bot maintainer for support of any kind
+- `/contribute YOUR_REQUEST` - Contribute: Send the supporters and admins a request of any kind
+- `/error ERROR_DESCRIPTION` - Error: If you have found an error please use this command.
 - `/define` TEXT - Urban Dictionary Definition: Define a word or a sentence via urban dictionary
 - `/roll` - MIN MAX - Rolling Dice: Roll a number between 0 and 6 or give me another range
 - `/insta` POST_LINK OR POST_ID - Instagram Post Download: Download a post from Instagram via its link or its ID
@@ -41,9 +43,11 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/danbooru_latest` page=PAGE_NUM limit=LIMIT - Danobooru Latest: Get latest uploads from danbooru you can use the options page (default 0) and limit (default 5, max 100)
 - `/decide`- Decide: Yes or No
 - `/maths` - Math Functions: Show all available math functions
-- `ban` - Ban: Ban a user. Reply to one of his messages with this command **(Group Only)**
-- `warn` - Strike: Warn a user, after 3 warnings he get banned. Reply to one of his messages with this command **(Group Only)**
-- `kick [TIME]` - Kick: Kick a user for 10 min or give a specific amount of time (in min) between 30sec  (0.5 min) and 366 days (527040 min). Reply to one of his messages with this command (Group Only)
+- `/ban` - Ban: Ban a user. Reply to one of his messages with this command **(Group Only)**
+- `/warn` - Strike: Warn a user, after 3 warnings he get banned. Reply to one of his messages with this command **(Group Only)**
+- `/kick [TIME]` - Kick: Kick a user for 10 min or give a specific amount of time (in min) between 30sec  (0.5 min) and 366 days (527040 min). Reply to one of his messages with this command (Group Only)
+- `/delete` - Delete and Warn: Delete a message from a user and warn them. Reply to one of his messages with this command (Group Only)
+- `/unwarn` - Remove Warnings: Remove all warnings from a User. Reply to one of his messages with this command (Group Only)
 - `/rules` - Rules: Show rules for this group (Group Only)
 - `/rules_define YOUR_RULES` - Define Rules: Define rules for this group (Group Only)
 - `/rules_remove` - Remove Rules: Remove rules for this group (Group Only)
