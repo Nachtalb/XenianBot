@@ -64,6 +64,7 @@ class Calculator(BaseCommand):
         """
         equation = equation or update.message.text
         equation = re.sub('["\']', '', equation)
+        equation = re.sub('(true|false)', '', equation, flags=re.IGNORECASE)
         message = ''
         try:
             result = eval(equation, {"__builtins__": None}, self.safe_dict)
