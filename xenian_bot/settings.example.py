@@ -30,3 +30,10 @@ UPLOADER = {
 }
 
 LOG_LEVEL = logging.INFO
+
+# These Instagram credentials are used for the centralized Instagram account which automatically follows private
+# accounts and downloads images / videos
+INSTAGRAM_CREDENTIALS = {
+    'username': 'INSTAGRAM_USERNAME',
+    'password': 'INSTAGRAM_PASSWORD',
+}
