@@ -1,3 +1,5 @@
+import logging
+
 TELEGRAM_API_TOKEN = 'YOUR_API_TOKEN'
 
 ADMINS = ['@SOME_TELEGRAM_USERS', ]
@@ -26,3 +28,5 @@ UPLOADER = {
         'key_filename': 'PATH_TO_PUBLIC_SSH_KEY',  # This is not mandatory but some server configurations require it
     }
 }
+
+LOG_LEVEL = logging.INFO
