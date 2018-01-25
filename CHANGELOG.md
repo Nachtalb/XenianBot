@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+
+- Add command `/rules` to show a groups rules
+- Add command `/rules_define YOUR_RULES` to define new rules in a group
+- Add command `/rules_remvoe` to remove the groups rules
+- Specify a time until user can return from kick with `/kick [TIME]`
 - Add `/calc EQUATION` command to calculate equations inside groups
 
 ### Changed

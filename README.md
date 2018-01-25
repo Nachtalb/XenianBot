@@ -44,7 +44,10 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/maths` - Math Functions: Show all available math functions
 - `ban` - Ban: Ban a user. Reply to one of his messages with this command **(Group Only)**
 - `warn` - Strike: Warn a user, after 3 warnings he get banned. Reply to one of his messages with this command **(Group Only)**
-- `kick` - Kick: Kick a user for 10 min. Reply to one of his messages with this command **(Group Only)**
+- `kick [TIME]` - Kick: Kick a user for 10 min or give a specific amount of time (in min) between 30sec  (0.5 min) and 366 days (527040 min). Reply to one of his messages with this command (Group Only)
+- `/rules` - Rules: Show rules for this group (Group Only)
+- `/rules_define YOUR_RULES` - Define Rules: Define rules for this group (Group Only)
+- `/rules_remove` - Remove Rules: Remove rules for this group (Group Only)
 - More will come soon if you have any ideas or stuff you want: [Contributions](#contributions)
 
 
