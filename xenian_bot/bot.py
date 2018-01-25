@@ -8,9 +8,9 @@ from telegram.ext import CommandHandler, Filters, Updater
 
 import xenian_bot
 from .commands import BaseCommand
-from .settings import ADMINS, MODE, TELEGRAM_API_TOKEN
+from .settings import ADMINS, MODE, TELEGRAM_API_TOKEN, LOG_LEVEL
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
 

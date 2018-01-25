@@ -105,3 +105,8 @@ settings.py
 log/
 tmp/
 data/
+
+#### InstagramBot
+followed.txt
+skipped.txt
+*.checkpoint

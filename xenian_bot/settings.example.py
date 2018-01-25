@@ -1,6 +1,9 @@
+import logging
+
 TELEGRAM_API_TOKEN = 'YOUR_API_TOKEN'
 
-ADMINS = ['@SOME_TELEGRAM_USERS', ]
+ADMINS = ['@SOME_TELEGRAM_USERS', ]  # Users which can do admin tasks like /restart
+SUPPORTER = ['@SOME_TELEGRAM_USERS', ]  # Users which to contact fo support
 
 # More information about polling and webhooks can be found here:
 # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks
@@ -25,4 +28,13 @@ UPLOADER = {
         'upload_dir': 'HOST_UPLOAD_DIRECTORY',
         'key_filename': 'PATH_TO_PUBLIC_SSH_KEY',  # This is not mandatory but some server configurations require it
     }
+}
+
+LOG_LEVEL = logging.INFO
+
+# These Instagram credentials are used for the centralized Instagram account which automatically follows private
+# accounts and downloads images / videos
+INSTAGRAM_CREDENTIALS = {
+    'username': 'INSTAGRAM_USERNAME',
+    'password': 'INSTAGRAM_PASSWORD',
 }
