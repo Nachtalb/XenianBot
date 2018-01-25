@@ -33,8 +33,7 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/roll` - MIN MAX - Rolling Dice: Roll a number between 0 and 6 or give me another range
 - `/insta` POST_LINK OR POST_ID - Instagram Post Download: Download a post from Instagram via its link or its ID
 - `/instap` PROFILE_LINK OR USERNAME - Instagram Profile Download: Download a all posts from an user
-- `/instali` USERNAME PASSWORD - Instagram Login: Login to instagram. DO NOT USE THIS IN GROUPS you can login in privat chat with @XenianBot
-- `/instalo` - Instagram Logout: Logout from instagram
+- `/insta_follow PROFILE_LINK/S OR USERNAME/S` - Instagram Follow: Tell @XenianBot to follow a specific user on Instagram, this is used to access private accounts.
 - `/download_mode` - Toggle Download Mode on / off: If on download stickers and gifs sent to the bot of off reverse search is reactivated. Does not work in groups
 - `/download` - Reply download: Reply to media for download
 - `/search`- Reply reverse search: Reply to media for reverse search

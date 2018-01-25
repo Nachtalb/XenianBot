@@ -1,18 +1,22 @@
+import logging
 import os
 import re
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 
-import requests
+import instabot
 from instaLooter import InstaLooter
 from telegram import Bot, ChatAction, InputMediaPhoto, InputMediaVideo, MessageEntity, Update
 from telegram.ext import Filters, MessageHandler, run_async, BaseFilter
 
 from xenian_bot.commands.filters.download_mode import download_mode_filter
-from xenian_bot.utils import data
+from xenian_bot.settings import INSTAGRAM_CREDENTIALS, LOG_LEVEL
 from . import BaseCommand
 
 __all__ = ['instagram']
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
+logger = logging.getLogger(__name__)
 
 
 class Instagram(BaseCommand):
@@ -23,10 +27,21 @@ class Instagram(BaseCommand):
         data_name (:obj:`str`): The name for the data set where the user credentials are saved
         base_url (:obj:`str`): Base URL of Instagram
         link_pattern (:obj:`_sre.SRE_Pattern`): A regex compiled string which matches any Instagram link
+        looter (:obj:`InstaLooter`): Logged in looter for Instagram
+        bot_api (:obj:`instabot.Bot`): Instagram bot used to follow people
+        logged_in (:obj:`bool`): If login at start of bot was successful
     """
     data_name = 'instagram'
     base_url = 'instagram.com'
     link_pattern = re.compile('^((http(s)?:)?//)?(www\.)?{}'.format(base_url.replace('.', '\.')))
+    looter = InstaLooter()
+    bot_api = instabot.Bot(
+        max_followers_to_follow=64**64,  # take any really big number
+        max_following_to_follow=64**64,
+        max_followers_to_following_ratio=64**64,
+        max_following_to_followers_ratio=64**64,
+    )
+    logged_in = False
 
     def __init__(self):
         self.commands = [
@@ -45,20 +60,16 @@ class Instagram(BaseCommand):
                 'options': {'pass_args': True}
             },
             {
-                'title': 'Instagram Login',
-                'description': 'Login to Instagram, does not work in groups for security.',
-                'args': 'USERNAME PASSWORD',
-                'command': self.instali,
-                'options': {'pass_args': True, 'filters': ~ Filters.group}
-            },
-            {
-                'title': 'Instagram Logout',
-                'description': 'Logout from Instagram',
-                'command': self.instalo,
+                'title': 'Instagram Follow',
+                'description': 'Tell @XenianBot to follow a specific user on Instagram, this is used to access private '
+                               'accounts.',
+                'args': 'PROFILE_LINK/S OR USERNAME/S',
+                'command': self.insta_follow,
+                'options': {'pass_args': True}
             },
             {
                 'title': 'Instagram Auto Link',
-                'description': 'Turn on /download_mode and send links to Instargam posts to auto-download them',
+                'description': 'Turn on /download_mode and send links to Instagram posts to auto-download them',
                 'command': self.insta_link_auto,
                 'handler': MessageHandler,
                 'options': {
@@ -66,8 +77,20 @@ class Instagram(BaseCommand):
                 },
             }
         ]
+        self.login()
 
         super(Instagram, self).__init__()
+
+    def login(self):
+        if not self.logged_in and 'username' in INSTAGRAM_CREDENTIALS and 'password' in INSTAGRAM_CREDENTIALS:
+            try:
+                logging.info('Login to InstaLooter')
+                self.looter.login(**INSTAGRAM_CREDENTIALS)
+                logging.info('Login to InstaBot')
+                self.bot_api.login(**INSTAGRAM_CREDENTIALS)
+                self.logged_in = True
+            except ValueError:
+                pass
 
     @staticmethod
     def insta_link_filter():
@@ -99,29 +122,16 @@ class Instagram(BaseCommand):
             return
 
         post_token = self.link_to_post_token(args[0]) or args[0]
-        telegram_user = None
-        is_public = True
-        if not self.is_post_public(post_token):
-            is_public = False
-            telegram_user = update.message.from_user.id
-
-            if not self.logged_in(telegram_user):
-                update.message.reply_text('This content is private, please login first.')
-                return
-
-        looter = self.get_looter(telegram_user_id=telegram_user)
-        if not looter:
-            update.message.reply_text(
-                'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
+        try:
+            post = self.looter.get_post_info(post_token)
+        except KeyError:
+            update.message.reply_text('This content is non existing or private, please use `/insta_follow USERNAME` '
+                                      'so I can follow the account.')
             return
-        post = looter.get_post_info(post_token)
 
         try:
             chat_id = update.message.chat_id
-            if is_public:
-                media_array = self.get_linked_input_media_from_post(post)
-            else:
-                media_array = self.get_file_input_media_from_post(update, looter, post)
+            media_array = self.get_file_input_media_from_post(update, post)
 
             if len(media_array) > 1:
                 bot.send_media_group(chat_id, media_array, reply_to_message_id=update.message.message_id)
@@ -148,24 +158,15 @@ class Instagram(BaseCommand):
             return
 
         username = self.link_to_username(args[0]) or args[0]
-        telegram_user = None
 
-        is_public = True
+        self.looter.target = username
         if not self.is_public_profile(username):
-            is_public = False
-            telegram_user = update.message.from_user.id
-
-            if not self.logged_in(telegram_user):
-                update.message.reply_text('This content is private, please login first.')
-                return
-
-        looter = self.get_looter(telegram_user_id=telegram_user, profile=username)
-        if not looter:
-            update.message.reply_text(
-                'There was a problem while logging in, please logout (/instalo) and login (/instali)again.')
+            self.bot_api.follow(username)
+            update.message.reply_text('The account you sent me is private. I started following the account please try '
+                                      'later again to see if the follow request was accepted')
             return
 
-        media_generator = looter.medias(with_pbar=True)
+        media_generator = self.looter.medias(with_pbar=True)
         try:
             chat_id = update.message.chat_id
 
@@ -180,11 +181,9 @@ class Instagram(BaseCommand):
 
             media_array = []
             for media in media_generator:
-                post = looter.get_post_info(media['code'])
-                if is_public:
-                    media_array += self.get_linked_input_media_from_post(post)
-                else:
-                    media_array += self.get_file_input_media_from_post(update, looter, post)
+                post = self.looter.get_post_info(media['code'])
+                media_array += self.get_file_input_media_from_post(update, post)
+
                 if len(media_array) >= 10:
                     send_media_array(media_array[:10])
                     del media_array[:10]
@@ -195,43 +194,26 @@ class Instagram(BaseCommand):
                 'Could not get image, either the provided post link / id is incorrect or the user is private.')
         update.message.reply_text('Everything has been sent.')
 
-    def instali(self, bot: Bot, update: Update, args: list = None):
-        """Login the user to instagram
+    @run_async
+    def insta_follow(self, bot: Bot, update: Update, args: list = None):
+        """Follow a user
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`, optional): List of arguments passed by the user. First argument must be must be the
-                username and the second the password
+            args (:obj:`list`, optional): List of arguments passed by the user. First argument must be must be a link to
+                a user or his username
         """
-        telegram_user = update.message.from_user.id
-        if self.logged_in(telegram_user):
-            update.message.reply_text('Already logged in as %s' % self.current_user(telegram_user)['username'])
-        else:
-            if len(args) < 2 or len(args) > 2:
-                update.message.reply_text('You have to give me the username and password.')
-                return
-            username, password = args
-            insta_looter = InstaLooter()
-            try:
-                insta_looter.login(username, password)
-                self.safe_login(telegram_user, username, password)
-                update.message.reply_text('Logged in')
-            except ValueError:
-                update.message.reply_text('Username or password wrong')
+        if not args:
+            update.message.reply_text('You have to give me at lease one link or one username.')
+            return
 
-    def instalo(self, bot: Bot, update: Update):
-        """Logout the instagram user
+        user_names = []
+        for user in args:
+            user_names.append(self.link_to_username(user))
 
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        if self.logged_in(update.message.from_user.id):
-            if self.remove_user(update.message.from_user.id):
-                update.message.reply_text('Logged out')
-        else:
-            update.message.reply_text('You were not logged in')
+        self.bot_api.follow_users(args)
+        update.message.reply_text('I started following these users: {}'.format(', '.join(user_names)))
 
     def insta_link_auto(self, bot: Bot, update: Update):
         """Auto read instagram urls
@@ -244,19 +226,18 @@ class Instagram(BaseCommand):
         if post_token:
             self.insta(bot, update, [post_token, ])
 
-    def get_file_input_media_from_post(self, update: Update, looter: InstaLooter, post: dict) -> list:
+    def get_file_input_media_from_post(self, update: Update, post: dict) -> list:
         """Download a post by its link
 
         Args:
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            looter (:class:`InstaLooter`): A logged in InstaLooter object
             post (:obj:`dict`): The post object given by InstaLooter
 
         Returns:
             :obj:`list`: List of input media classes :class:`InputMediaPhoto` and :class:`InputMediaVideo`
         """
         result = []
-        with self.download_to_object(looter, post) as files:
+        with self.download_to_object(self.looter, post) as files:
             if not files:
                 update.message.reply_text('Something went wrong while downloading the post, please try again')
 
@@ -286,88 +267,6 @@ class Instagram(BaseCommand):
             else:
                 result.append(InputMediaPhoto(media=post['display_src']))
         return result
-
-    def logged_in(self, telegram_user_id: str) -> bool:
-        """Check if user is logged into Instagram
-
-        Args:
-            telegram_user_id (:obj:`str`): Username of the telegram user.
-
-        Returns:
-            :obj:`bool`: Returns whether the user is logged in ot not
-        """
-        return bool(self.current_user(telegram_user_id))
-
-    def current_user(self, telegram_user_id: str) -> str:
-        """Get Instagram username of Telegram user
-
-        Args:
-            telegram_user_id (:obj:`str`): Username of the Telegram user.
-
-        Returns:
-            :obj:`str`: Returns the name if existing otherwise None
-        """
-        user_dict = data.get(self.data_name)
-        return user_dict.get(telegram_user_id, None)
-
-    def remove_user(self, telegram_user_id: str) -> bool:
-        """Remove login of a specific Telegram user
-
-        Args:
-            telegram_user_id (:obj:`str`): Username of the Telegram user.
-
-        Returns:
-            :obj:`bool`: Returns true if the user was removed and false if the user didn't exist
-        """
-        user_dict = data.get(self.data_name)
-        if user_dict.get(telegram_user_id, None):
-            del user_dict[telegram_user_id]
-            data.save(self.data_name, user_dict)
-            return True
-        return False
-
-    def safe_login(self, telegram_user_id: str, username: str, password: str) -> bool:
-        """Safe the login for a user
-
-        Args:
-            telegram_user_id (:obj:`str`): Username of the telegram user.
-            username (:obj:`str`): Username of the instagram user.
-            password (:obj:`str`): Password of the instagram user.
-
-        Returns:
-            :obj:`bool`: Returns true if the user was removed and false if the user didn't exist
-        """
-        user_dict = data.get(self.data_name)
-        data.save(self.data_name, {
-            **user_dict,
-            **{
-                telegram_user_id: {
-                    'username': username,
-                    'password': password
-                }
-            }
-        })
-
-    def get_looter(self, telegram_user_id: str = None, profile: str = None) -> InstaLooter:
-        """Create a :class:`InstaLooter` instance
-
-        Args:
-            telegram_user_id (:obj:`str`, optional): Username of the Telegram user to directly log in.
-            profile (:obj:`str`, optional): Username of an Instagram user.
-
-        Returns:
-            :class:`InstaLooter`: An InstaLooter object
-        """
-        insta_looter = InstaLooter(profile=profile)
-
-        if telegram_user_id:
-            user = self.current_user(telegram_user_id)
-            try:
-                insta_looter.login(**user)
-            except ValueError:
-                return False
-
-        return insta_looter
 
     @contextmanager
     def download_to_object(self, looter: InstaLooter, media: dict) -> list:
@@ -402,6 +301,7 @@ class Instagram(BaseCommand):
             path = post_pattern.sub('', post_link)
             post_token = path.split('?', 1)[0].strip(' /')
             return post_token
+        return post_link
 
     def link_to_username(self, user_link: str) -> str:
         """Converts a user link to its username
@@ -416,20 +316,7 @@ class Instagram(BaseCommand):
             path = self.link_pattern.sub('', user_link)
             username = path.split('?', 1)[0].strip(' /')
             return username
-
-    def is_post_public(self, post: str) -> bool:
-        """Check if the post is public or not
-
-        Args:
-            post (:obj:`str`): Either the link to a post or the post_id
-
-        Returns:
-            :obj:`bool`: True if it is public false if not
-        """
-        if not self.link_pattern.findall(post):
-            post = 'https://{}/p/{}'.format(self.base_url, post)
-        request = requests.head(post)
-        return 200 <= request.status_code < 400
+        return user_link
 
     def is_public_profile(self, user: str) -> bool:
         """Check if the profile is pubic
@@ -440,11 +327,9 @@ class Instagram(BaseCommand):
         Returns:
             :obj:`bool`: True if it is public false if not
         """
-        if not self.link_pattern.findall(user):
-            user = 'https://{}/{}'.format(self.base_url, user)
-        request = requests.get(user)
-
-        return b'"is_private": true' not in request.content
+        username = self.link_to_username(user)
+        user_info = self.bot_api.get_user_info(username)
+        return user_info['is_private']
 
 
 instagram = Instagram()
