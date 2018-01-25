@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Specify a time until user can return from kick with `/kick [TIME]`
 - Add `/calc EQUATION` command to calculate equations inside groups
 - Added `LOG_LEVEL` to settings
+- Instagram credentials to the `settings.py`, which are used for one central Instagram account, instead of `/instali` and `/instalo`
+- `/insta_follow PROFILE_LINK/S OR USERNAME/S` Instagram Follow: Tell @XenianBot to follow a specific user on Instagram, this is used to access private accounts.
 
 ### Changed
 - Run math function asynchronous
@@ -22,3 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix not shortening solutions form the calculator
 - Fix message too long for Telegram, for too long solutions from the calculator
 - Remove all `True` and `False` before trying to calculate so a message with just "true" doesn't get returned
+
+### Removed
+
+- `/instali`, `/instalo` have both been removed in order to have one central defined account

@@ -16,6 +16,7 @@ requests = "*"
 moviepy = "*"
 pybooru = "*"
 youtube-dl = "*"
+instabot = "*"
 
 
 [dev-packages]

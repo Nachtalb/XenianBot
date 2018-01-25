@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "0cd0159fee1638eecb917a07531720b6d2a15791576ce24ac66c5153b0e8e254"
+            "sha256": "802a369afc4079e3eba5f1a655cc30c1d4d5cb1c21a1226b6638b0b02170030b"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -199,12 +199,18 @@
             ],
             "version": "==2.1.2"
         },
+        "instabot": {
+            "hashes": [
+                "sha256:7b8daf347347ad2dddcb681a4903a15e6973f709dc854f5b5ca4050989dfa5eb"
+            ],
+            "version": "==0.3.4"
+        },
         "instalooter": {
             "hashes": [
-                "sha256:bd79cfa9e011fe52c77f559ebcce7df65486ee95180f8641e842f3531aada390",
-                "sha256:a2360c7995463142e2c4d331e9694ff489cc8bb18390566ce52a45fb0405c632"
+                "sha256:e411660e71c8be36ec50124eff8be46421f2c0b99118805e61cce9abeb2b0373",
+                "sha256:06b46baf62452c19ce4a3fcf06ec1ce3aa2c7556eca85eec24811a383855197e"
             ],
-            "version": "==0.13.3"
+            "version": "==0.14.0"
         },
         "moviepy": {
             "hashes": [
@@ -405,6 +411,20 @@
                 "sha256:9c443e7324ba5b85070c4a818ade28bfabedf16ea10206da1132edaa6dda237e"
             ],
             "version": "==2.18.4"
+        },
+        "requests-toolbelt": {
+            "hashes": [
+                "sha256:42c9c170abc2cacb78b8ab23ac957945c7716249206f90874651971a4acff237",
+                "sha256:f6a531936c6fa4c6cfce1b9c10d5c4f498d16528d2a54a22ca00011205a187b5"
+            ],
+            "version": "==0.8.0"
+        },
+        "schedule": {
+            "hashes": [
+                "sha256:a24e75fc5e5acbd204049d55329e39a2a9a3479bca2e34c7fde81386c9d8d2fa",
+                "sha256:1003a07c2dce12828c25a03a611a7371cedfa956e5f1b4abc32bcc94eb5a335b"
+            ],
+            "version": "==0.5.0"
         },
         "six": {
             "hashes": [
