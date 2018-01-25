@@ -2,7 +2,8 @@ import logging
 
 TELEGRAM_API_TOKEN = 'YOUR_API_TOKEN'
 
-ADMINS = ['@SOME_TELEGRAM_USERS', ]
+ADMINS = ['@SOME_TELEGRAM_USERS', ]  # Users which can do admin tasks like /restart
+SUPPORTER = ['@SOME_TELEGRAM_USERS', ]  # Users which to contact fo support
 
 # More information about polling and webhooks can be found here:
 # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks

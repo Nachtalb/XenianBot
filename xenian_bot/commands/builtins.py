@@ -2,7 +2,7 @@ from telegram import Bot, Update
 from telegram.ext import CommandHandler, MessageHandler
 from telegram.parsemode import ParseMode
 
-from xenian_bot.settings import ADMINS
+from xenian_bot.settings import SUPPORTER
 from .base import BaseCommand
 
 __all__ = ['builtins']
@@ -11,6 +11,7 @@ __all__ = ['builtins']
 class Builtins(BaseCommand):
     """A set of base commands which every bot should have
     """
+
     def __init__(self):
         self.commands = [
             {'command': self.start, 'description': 'Initialize the bot'},
@@ -84,7 +85,7 @@ class Builtins(BaseCommand):
         """
         update.message.reply_text(
             'If you need any help do not hesitate to contact me via {}.\n\nIf you like this bot you can give me rating '
-            'here: https://telegram.me/storebot?start=xenianbot'.format(ADMINS[0]))
+            'here: https://telegram.me/storebot?start=xenianbot'.format(SUPPORTER[0]))
 
 
 builtins = Builtins()
