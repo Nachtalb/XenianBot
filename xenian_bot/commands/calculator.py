@@ -2,13 +2,17 @@ import re
 # noinspection PyUnresolvedReferences
 from math import *
 
+import logzero
 from telegram import Bot, ParseMode, Update
 from telegram.error import BadRequest
 from telegram.ext import Filters, MessageHandler, run_async
 
+from xenian_bot.settings import LOG_LEVEL
 from . import BaseCommand
 
 __all__ = ['calculator']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class Calculator(BaseCommand):

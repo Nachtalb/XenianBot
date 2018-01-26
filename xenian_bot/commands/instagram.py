@@ -5,9 +5,10 @@ from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 
 import instabot
+import logzero
 from instaLooter import InstaLooter
 from telegram import Bot, ChatAction, InputMediaPhoto, InputMediaVideo, MessageEntity, Update
-from telegram.ext import Filters, MessageHandler, run_async, BaseFilter
+from telegram.ext import BaseFilter, Filters, MessageHandler, run_async
 
 from xenian_bot.commands.filters.download_mode import download_mode_filter
 from xenian_bot.settings import INSTAGRAM_CREDENTIALS, LOG_LEVEL
@@ -15,8 +16,7 @@ from . import BaseCommand
 
 __all__ = ['instagram']
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
-logger = logging.getLogger(__name__)
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class Instagram(BaseCommand):

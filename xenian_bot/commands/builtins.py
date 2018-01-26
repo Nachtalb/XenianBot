@@ -1,12 +1,15 @@
+import logzero
 from telegram import Bot, Update
 from telegram.ext import CommandHandler, MessageHandler
 from telegram.parsemode import ParseMode
 
-from xenian_bot.settings import SUPPORTER, ADMINS
+from xenian_bot.settings import ADMINS, LOG_LEVEL, SUPPORTER
 from xenian_bot.utils import data
 from .base import BaseCommand
 
 __all__ = ['builtins']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class Builtins(BaseCommand):

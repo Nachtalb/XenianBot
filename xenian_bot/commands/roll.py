@@ -1,11 +1,15 @@
 import re
 from random import randint
 
+import logzero
 from telegram import Bot, Update
 
 from xenian_bot.commands import BaseCommand
+from xenian_bot.settings import LOG_LEVEL
 
 __all__ = ['roll']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class Roll(BaseCommand):

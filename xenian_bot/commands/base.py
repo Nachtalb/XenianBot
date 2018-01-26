@@ -1,6 +1,12 @@
-from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler
+import logzero
+from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler
+
+from xenian_bot.settings import LOG_LEVEL
+from xenian_bot.utils import log_command
 
 __all__ = ['BaseCommand']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class BaseCommand:
@@ -96,5 +102,6 @@ class BaseCommand:
             if command['handler'] == CallbackQueryHandler and command['options'].get('callback', None) is None:
                 command['options']['callback'] = command['command']
 
+            command['options']['callback'] = log_command(command['options']['callback'])
             updated_commands.append(command)
         self.commands = updated_commands

@@ -1,10 +1,14 @@
 from random import randint
 
+import logzero
 from telegram import Bot, Update
 
+from xenian_bot.settings import LOG_LEVEL
 from . import BaseCommand
 
 __all__ = ['decide']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class Decide(BaseCommand):

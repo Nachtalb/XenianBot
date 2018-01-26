@@ -3,6 +3,7 @@ import re
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from uuid import uuid4
 
+import logzero
 import youtube_dl
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from telegram import Bot, ChatAction, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, ParseMode, Update
@@ -10,13 +11,15 @@ from telegram.error import BadRequest, NetworkError, TimedOut
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, run_async
 from youtube_dl import DownloadError
 
-from xenian_bot.settings import UPLOADER
+from xenian_bot.settings import LOG_LEVEL, UPLOADER
 from xenian_bot.uploaders import uploader
 from xenian_bot.utils import TelegramProgressBar
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 
 __all__ = ['download', 'video_downloader']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class Download(BaseCommand):

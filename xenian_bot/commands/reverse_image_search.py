@@ -3,6 +3,7 @@ import os
 from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
+import logzero
 from PIL import Image
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from telegram import Bot, ChatAction, InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -15,9 +16,12 @@ from xenian_bot.commands.reverse_image_search_engines.google import GoogleRevers
 from xenian_bot.commands.reverse_image_search_engines.iqdb import IQDBReverseImageSearchEngine
 from xenian_bot.commands.reverse_image_search_engines.tineye import TinEyeReverseImageSearchEngine
 from xenian_bot.commands.reverse_image_search_engines.yandex import YandexReverseImageSearchEngine
+from xenian_bot.settings import LOG_LEVEL
 from . import BaseCommand
 
 __all__ = ['reverse_image_search']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class ReverseImageSearch(BaseCommand):

@@ -1,10 +1,14 @@
+import logzero
 import urbandictionary as ud
 from emoji import emojize
 from telegram import Bot, ParseMode, Update
 
 from xenian_bot.commands import BaseCommand
+from xenian_bot.settings import LOG_LEVEL
 
 __all__ = ['urban_dictionary']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class UrbanDictionary(BaseCommand):

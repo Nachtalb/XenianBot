@@ -1,10 +1,14 @@
 import json
+import logging
 import os
 import time
 from codecs import open as copen
 
+import logzero
 from emoji import emojize
-from telegram import Bot, ParseMode, User
+from telegram import Bot, ParseMode, Update, User
+
+from xenian_bot.settings import LOG_LEVEL
 
 
 class Data:
@@ -335,3 +339,36 @@ def get_self(bot: Bot) -> User:
         :obj:`User`: The user object of this bot
     """
     return bot.get_me()
+
+
+def log_command(command) -> callable:
+    """Decorater to log your command
+    """
+    def wrapper(bot: Bot, update: Update, *args, **kwargs) -> callable:
+        logger = logzero.setup_logger(name=command.__name__)
+
+        message_type = (update.message or
+                        update.edited_message or
+                        update.channel_post or
+                        update.edited_channel_post or
+                        update.inline_query or
+                        update.chosen_inline_result or
+                        update.callback_query or
+                        update.shipping_query or
+                        update.pre_checkout_query)
+
+        chat = update.effective_chat
+        user = update.effective_user
+        message = update.effective_message
+
+        logger.info('{command.__name__} CHAT_ID: {chat.id}, TYPE: {message_type.__class__.__name__}, '
+                    'USER_ID: {user.id}'.format(
+            command=command,
+            chat=chat,
+            user=user,
+            message=message,
+            message_type=message_type
+        ))
+        return command(bot, update, *args, **kwargs)
+
+    return wrapper

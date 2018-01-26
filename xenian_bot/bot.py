@@ -1,17 +1,18 @@
-import logging
 import os
 import sys
 from threading import Thread
 
+import logzero
 from telegram import Bot, TelegramError, Update
 from telegram.ext import CommandHandler, Filters, Updater
 
 import xenian_bot
 from .commands import BaseCommand
-from .settings import ADMINS, MODE, TELEGRAM_API_TOKEN, LOG_LEVEL
+from .settings import ADMINS, LOG_LEVEL, MODE, TELEGRAM_API_TOKEN
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=LOG_LEVEL)
-logger = logging.getLogger(__name__)
+log_format = '%(color)s[%(levelname)s %(asctime)s %(module)s:%(lineno)d]%(end_color)s %(message)s'
+formatter = logzero.LogFormatter(fmt=log_format)
+logger = logzero.setup_default_logger(level=LOG_LEVEL, formatter=formatter)
 
 
 def error(bot: Bot, update: Update, error: TelegramError):

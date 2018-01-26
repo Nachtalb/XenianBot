@@ -1,12 +1,16 @@
 import datetime
 
-from telegram import Bot, Update, User, ParseMode
+import logzero
+from telegram import Bot, ParseMode, Update, User
 
 import xenian_bot
 from xenian_bot.commands import BaseCommand
+from xenian_bot.settings import LOG_LEVEL
 from xenian_bot.utils import data, get_self
 
 __all__ = ['group_manager']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class GroupManager(BaseCommand):

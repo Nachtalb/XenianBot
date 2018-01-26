@@ -1,14 +1,18 @@
 import re
 from collections import OrderedDict
 
+import logzero
 from pybooru import Danbooru as PyDanbooru
 from telegram import Bot, ChatAction, InputMediaPhoto, Update
 from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
+from xenian_bot.settings import LOG_LEVEL
 from . import BaseCommand
 
 __all__ = ['danbooru']
+
+logger = logzero.setup_logger(name=__name__, level=LOG_LEVEL)
 
 
 class Danbooru(BaseCommand):
