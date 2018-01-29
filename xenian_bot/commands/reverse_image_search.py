@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from PIL import Image
 from moviepy.video.io.VideoFileClip import VideoFileClip
-from telegram import Bot, ChatAction, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Bot, ChatAction, InlineKeyboardButton, InlineKeyboardMarkup, Message, Update
 from telegram.ext import Filters, run_async
 from telegram.ext.messagehandler import MessageHandler
 
@@ -65,7 +65,7 @@ class ReverseImageSearch(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        update.message.reply_text('Please wait for your results ...')
+        wait_message = update.message.reply_text('Please wait for your results ...')
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
         document = (update.message.document or update.message.video or update.message.reply_to_message.document or
@@ -85,9 +85,9 @@ class ReverseImageSearch(BaseCommand):
 
                 os.system('gifsicle -O3 --lossy=50 -o {dst} {src}'.format(dst=compressed_gif_path, src=gif_file.name))
                 if os.path.isfile(compressed_gif_path):
-                    self.reverse_image_search(bot, update, compressed_gif_path, 'gif')
+                    self.reverse_image_search(bot, update, compressed_gif_path, 'gif', wait_message)
                 else:
-                    self.reverse_image_search(bot, update, gif_file.name, 'gif')
+                    self.reverse_image_search(bot, update, gif_file.name, 'gif', wait_message)
 
     @run_async
     def image_search(self, bot: Bot, update: Update):
@@ -97,7 +97,7 @@ class ReverseImageSearch(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        update.message.reply_text('Please wait for your results ...')
+        wait_message = update.message.reply_text('Please wait for your results ...')
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
         photo_message = update.message.photo or update.message.reply_to_message.photo
@@ -106,7 +106,7 @@ class ReverseImageSearch(BaseCommand):
         with io.BytesIO() as image_buffer:
             photo.download(out=image_buffer)
             with io.BufferedReader(image_buffer) as image_file:
-                self.reverse_image_search(bot, update, image_file)
+                self.reverse_image_search(bot, update, image_file, message=wait_message)
 
     @run_async
     def sticker_search(self, bot: Bot, update: Update):
@@ -116,7 +116,7 @@ class ReverseImageSearch(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        update.message.reply_text('Please wait for your results ...')
+        wait_message = update.message.reply_text('Please wait for your results ...')
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
         sticker = update.message.sticker or update.message.reply_to_message.sticker
@@ -130,7 +130,7 @@ class ReverseImageSearch(BaseCommand):
                 pil_image = Image.open(image_file).convert("RGBA")
                 pil_image.save(converted_image, 'png')
 
-                self.reverse_image_search(bot, update, converted_image, 'png')
+                self.reverse_image_search(bot, update, converted_image, 'png', wait_message)
 
     def reply_search(self, bot: Bot, update: Update):
         """Reply to media to reverse search
@@ -149,7 +149,8 @@ class ReverseImageSearch(BaseCommand):
         elif reply_to_message.video or reply_to_message.document:
             self.video_search(bot, update)
 
-    def reverse_image_search(self, bot: Bot, update: Update, media_file: object, image_extension: str = None):
+    def reverse_image_search(self, bot: Bot, update: Update, media_file: object, image_extension: str = None,
+                             message: Message = None):
         """Send a reverse image search link for the image sent to us
 
         Args:
@@ -157,6 +158,7 @@ class ReverseImageSearch(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             media_file: File like image to search for
             image_extension (:obj:`str`, optional): What extension the image should have. Default is 'jpg'
+            message (:obj:`telegram.message.Message`, optional): An message object to update. Instead of sending a new
         """
 
         image_extension = image_extension or 'jpg'
@@ -189,10 +191,18 @@ class ReverseImageSearch(BaseCommand):
 
         reply = 'Tap on the search engine of your choice.'
         reply_markup = InlineKeyboardMarkup(button_list)
-        update.message.reply_text(
-            text=reply,
-            reply_markup=reply_markup
-        )
+        if message:
+            bot.edit_message_text(
+                chat_id=update.message.chat_id,
+                message_id=message.message_id,
+                text=reply,
+                reply_markup=reply_markup
+            )
+        else:
+            update.message.reply_text(
+                text=reply,
+                reply_markup=reply_markup
+            )
 
 
 reverse_image_search = ReverseImageSearch()
