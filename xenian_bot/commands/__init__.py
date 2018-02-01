@@ -9,3 +9,4 @@ from .danbooru import *
 from .decide import *
 from .calculator import *
 from .group_management import *
+from .google import *

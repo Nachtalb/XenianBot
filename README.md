@@ -51,6 +51,7 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/rules` - Rules: Show rules for this group (Group Only)
 - `/rules_define YOUR_RULES` - Define Rules: Define rules for this group (Group Only)
 - `/rules_remove` - Remove Rules: Remove rules for this group (Group Only)
+- `/tty [TEXT] [-l LANG]` - Text to speech: Convert text the given text or the message replied to, to text. Use `-l` to define a language, like de, en or ru
 - More will come soon if you have any ideas or stuff you want: [Contributions](#contributions)
 
 
