@@ -17,6 +17,7 @@ moviepy = "*"
 pybooru = "*"
 youtube-dl = "*"
 instabot = "*"
+gtts = "*"
 
 
 [dev-packages]
