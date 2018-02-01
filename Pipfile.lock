@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "802a369afc4079e3eba5f1a655cc30c1d4d5cb1c21a1226b6638b0b02170030b"
+            "sha256": "ba99ad5db0a3e44cae10b1cc1c1b5a540becec92a56433b5520c4a736f5b81f6"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -9,9 +9,9 @@
             "os_name": "posix",
             "platform_machine": "x86_64",
             "platform_python_implementation": "CPython",
-            "platform_release": "4.9.0-deepin13-amd64",
+            "platform_release": "4.14.0-deepin2-amd64",
             "platform_system": "Linux",
-            "platform_version": "#1 SMP PREEMPT Deepin 4.9.57-1 (2017-10-19)",
+            "platform_version": "#1 SMP PREEMPT Deepin 4.14.12-2 (2018-01-06)",
             "python_full_version": "3.6.3",
             "python_version": "3.6",
             "sys_platform": "linux"
@@ -177,6 +177,18 @@
                 "sha256:e39ced1ab767b5936646cedba8bcce582398233d6a627067d4c6a454c90cfedb"
             ],
             "version": "==0.16.0"
+        },
+        "gtts": {
+            "hashes": [
+                "sha256:63edbd7babebc60ba328fd6a798961f9ec757852b0e947d064b4b958116e4516"
+            ],
+            "version": "==1.2.2"
+        },
+        "gtts-token": {
+            "hashes": [
+                "sha256:74badf3ba37773d8ba4a462a09b64de76a0ebd4015d667a6fdb041c2219283ef"
+            ],
+            "version": "==1.1.1"
         },
         "hues": {
             "hashes": [
@@ -453,12 +465,18 @@
             ],
             "version": "==1.22"
         },
+        "yandex.translate": {
+            "hashes": [
+                "sha256:e3a50330a48355b4b325dcc30047fb643af044ea56bc9a58c3bd638db3c69e88"
+            ],
+            "version": "==0.3.5"
+        },
         "youtube-dl": {
             "hashes": [
-                "sha256:6fe61fd319917f7beab87ea453df1b90c4a5638f166af162b79bdd8cd63091ea",
-                "sha256:f5fe51b868a5b5a2adbcfe574b8a3f26be38ebaabdd7e74b3cf9301e6d83babc"
+                "sha256:fa13bebaabacbe76e002619f11737cdd746bd3903ec71a8aedc0f5620228c5a6",
+                "sha256:6a9ea1e21f3d492604d140a8feb40af5870500e4dc7e54e2593eb06d21f84263"
             ],
-            "version": "==2018.1.21"
+            "version": "==2018.1.27"
         }
     },
     "develop": {}
