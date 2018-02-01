@@ -465,6 +465,12 @@
             ],
             "version": "==1.22"
         },
+        "yandex.translate": {
+            "hashes": [
+                "sha256:e3a50330a48355b4b325dcc30047fb643af044ea56bc9a58c3bd638db3c69e88"
+            ],
+            "version": "==0.3.5"
+        },
         "youtube-dl": {
             "hashes": [
                 "sha256:fa13bebaabacbe76e002619f11737cdd746bd3903ec71a8aedc0f5620228c5a6",
