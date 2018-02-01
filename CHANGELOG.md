@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changes
 - Update reverse image search wait message if possible
+- Danbooru search only sends finished messages in private chat
 
 ## [1.0.0] - 2018-01-26
 
