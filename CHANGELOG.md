@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Add utility function `get_option_from_string` to extract options from strings sent by a user
+
 ### Changes
 - Update reverse image search wait message if possible
 
