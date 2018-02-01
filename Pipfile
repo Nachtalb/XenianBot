@@ -18,6 +18,7 @@ pybooru = "*"
 youtube-dl = "*"
 instabot = "*"
 gtts = "*"
+"yandex.translate" = "*"
 
 
 [dev-packages]
