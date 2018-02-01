@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- `/tty [TEXT] [-l LANG]` - Text to speech: Convert text the given text or the message replied to, to text. Use `-l` to define a language, like de, en or ru
 - Add utility function `get_option_from_string` to extract options from strings sent by a user
 
 ### Changes
