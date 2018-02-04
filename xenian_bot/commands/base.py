@@ -1,6 +1,4 @@
-from logging import Handler
-
-from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler
+from telegram.ext import CommandHandler, Filters, MessageHandler
 
 __all__ = ['BaseCommand']
 
@@ -93,6 +91,9 @@ class BaseCommand:
 
             if command['handler'] == CommandHandler and command['options'].get('command', None) is None:
                 command['options']['command'] = command['command_name']
+
+            if command['handler'] == MessageHandler and command['options'].get('filters', None) is None:
+                command['options']['filters'] = Filters.all
 
             # Set CallbackQueryHandler options if not yet set
             if command['options'].get('callback', None) is None:

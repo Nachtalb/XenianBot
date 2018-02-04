@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changes
 - Fix command default options
+- Use Filters.all as default for MessageHandler
 
 
 ## [1.1.2] - 2018-02-04
