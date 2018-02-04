@@ -143,7 +143,7 @@ class GroupManager(BaseCommand):
         admins_in_group = self.get_admin_ids(bot, update.effective_chat.id)
 
         if not self.is_admin(bot, update):
-            pass
+            return False
         elif wanted_user.id in admins_in_group:
             update.message.reply_text('This command cannot be used on admins like @{username}.'.format(
                 username=wanted_user.username))
@@ -303,7 +303,7 @@ class GroupManager(BaseCommand):
             wanted_user (:obj:`telegram.user.User`): Telegram User object of the user which should be warned
         """
         if update.message.reply_to_message is None:
-            update.message.reply_text('You have to reply to a message from this user to warn him.')
+            update.message.reply_text('You have to reply to a message from a user to warn him.')
             return
         chat_id = update.message.chat_id
         from_user = update.message.from_user
