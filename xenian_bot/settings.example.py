@@ -39,3 +39,9 @@ INSTAGRAM_CREDENTIALS = {
     'username': 'INSTAGRAM_USERNAME',
     'password': 'INSTAGRAM_PASSWORD',
 }
+
+MONGODB_CONFIGURATION = {
+    'host': 'HOST_OF_YOUR_DB',  # default: localhost
+    'port': 'PORT_OF_YOUR_DB_AS_INT',  # default: 27017
+    'db_name': 'DATABASE_NAME',
+}

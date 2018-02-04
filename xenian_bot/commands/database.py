@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from telegram import Bot, Chat, Message, Update, User
 from telegram.ext import MessageHandler, run_async, Handler, Filters
 
+from xenian_bot import mongodb_database
 from .base import BaseCommand
 
 __all__ = ['database']
@@ -11,8 +12,6 @@ class Database(BaseCommand):
     """A set of database commands
 
     Attributes:
-        client (:obj:`pymongo.mongo_client.MongoClient`): Connection to the pymongo databased
-        database (:obj:`pymongo.database.Database`): Connection to the pymongo databased
         users (:obj:`pymongo.collection.Collection`): Connection to the pymongo databased
     """
 
@@ -27,11 +26,9 @@ class Database(BaseCommand):
             },
         ]
 
-        self.client = MongoClient()
-        self.database = self.client.XenianBot
-        self.users = self.database.users
-        self.chats = self.database.chats
-        self.messages = self.database.messages
+        self.users = mongodb_database.users
+        self.chats = mongodb_database.chats
+        self.messages = mongodb_database.messages
 
         super(Database, self).__init__()
 
