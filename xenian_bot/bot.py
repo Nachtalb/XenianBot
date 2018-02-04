@@ -54,7 +54,7 @@ def main():
 
     for command_class in BaseCommand.all_commands:
         for command in command_class.commands:
-            dispatcher.add_handler(command['handler'](**command['options']))
+            dispatcher.add_handler(command['handler'](**command['options']), command['group'])
 
     # log all errors
     dispatcher.add_error_handler(error)
