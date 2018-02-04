@@ -1,4 +1,4 @@
-from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler
+from telegram.ext import CommandHandler, Filters, MessageHandler
 
 __all__ = ['BaseCommand']
 
@@ -28,6 +28,7 @@ class BaseCommand:
         >>>                 'command': self.echo,
         >>>                 'handler': MessageHandler,
         >>>                 'options': {'filters': Filters.text},
+        >>>                 'group': 0
         >>>             }
         >>>         ]
         >>>
@@ -49,6 +50,7 @@ class BaseCommand:
                 Default {'callback': command, 'command': command_name}
             - hidden (:class:`bool`): If the command is shown in the overview of `/commands`
             - args (:class:`str`): If the command has arguments define them here as text like: "USERNAME PASSWORD"
+            - group (:class:`int`): Which handler group the command should be in
     """
     all_commands = []
     commands = []
@@ -71,29 +73,30 @@ class BaseCommand:
             command = {
                 'title': command.get('title', None) or command['command'].__name__.capitalize().replace('_', ' '),
                 'description': command.get('description', ''),
-                'command_name': command.get('command_name', None) or command['command'].__name__,
+                'command_name': command.get('command_name', command['command'].__name__),
                 'command': command['command'],
-                'handler': command.get('handler', None) or CommandHandler,
-                'options': command.get('options', None),
+                'handler': command.get('handler', CommandHandler),
+                'options': command.get('options', {}),
                 'hidden': command.get('hidden', False),
-                'args': command.get('args', None)
+                'args': command.get('args', None),
+                'group': command.get('group', 0)
             }
-            # Set options if not yet set
-            if command['options'] is None:
-                command['options'] = {'callback': command['command'], 'command': command['command_name']}
 
-            # Set CommandHandler options if not yet set
-            if command['handler'] == CommandHandler and command['options'].get('callback', None) is None:
-                command['options']['callback'] = command['command']
+            try:
+                int(command['group'])
+            except ValueError:
+                raise ValueError('Command group has to be an integer: command {}, given group {}'.format(
+                    command['command_name'], command['group']
+                ))
+
             if command['handler'] == CommandHandler and command['options'].get('command', None) is None:
                 command['options']['command'] = command['command_name']
 
-            # Set MessageHandler options if not yet set
-            if command['handler'] == MessageHandler and command['options'].get('callback', None) is None:
-                command['options']['callback'] = command['command']
+            if command['handler'] == MessageHandler and command['options'].get('filters', None) is None:
+                command['options']['filters'] = Filters.all
 
             # Set CallbackQueryHandler options if not yet set
-            if command['handler'] == CallbackQueryHandler and command['options'].get('callback', None) is None:
+            if command['options'].get('callback', None) is None:
                 command['options']['callback'] = command['command']
 
             updated_commands.append(command)
