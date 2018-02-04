@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Group setting for commands
 - Use MongoDB as database, configuration must be set in settings.py
 - Create collection in database with all user, messages and chats
+- `/itt [-l LANG]` - Image to Text: Extract text from images
+- `/itt_lang` - Languages for ItT: Available languages for Image to Text
 
 ### Changes
 - Fix command default options

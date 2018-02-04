@@ -20,6 +20,8 @@ instabot = "*"
 gtts = "*"
 "yandex.translate" = "*"
 pymongo = "*"
+pytesseract = "*"
+pillow = "*"
 
 
 [dev-packages]

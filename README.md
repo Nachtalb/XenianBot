@@ -53,6 +53,8 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 - `/rules_remove` - Remove Rules: Remove rules for this group (Group Only)
 - `/tty [TEXT] [-l LANG]` - Text to speech: Convert text the given text or the message replied to, to text. Use `-l` to define a language, like de, en or ru
 - `/translate [TEXT] [-lf LANG] [-lt LANG]` - Translate a reply or a given text from `-lf` (default: detect) language to `-lt` (default: en) language
+- `/itt [-l LANG]` - Image to Text: Extract text from images
+- `/itt_lang` - Languages for ItT: Available languages for Image to Text
 - More will come soon if you have any ideas or stuff you want: [Contributions](#contributions)
 
 
