@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Group setting for commands
-- Create MongoDB database with all user, messages and chats
+- Use MongoDB as database, configuration must be set in settings.py
+- Create collection in database with all user, messages and chats
 
 ### Changes
 - Fix command default options
