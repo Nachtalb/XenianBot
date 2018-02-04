@@ -1,4 +1,5 @@
 from .base import *
+from .database import *
 from .builtins import *
 from .urban_dictionary import *
 from .roll import *
