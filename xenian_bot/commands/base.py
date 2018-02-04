@@ -1,3 +1,5 @@
+from logging import Handler
+
 from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler
 
 __all__ = ['BaseCommand']
@@ -28,6 +30,7 @@ class BaseCommand:
         >>>                 'command': self.echo,
         >>>                 'handler': MessageHandler,
         >>>                 'options': {'filters': Filters.text},
+        >>>                 'group': 0
         >>>             }
         >>>         ]
         >>>
@@ -49,6 +52,7 @@ class BaseCommand:
                 Default {'callback': command, 'command': command_name}
             - hidden (:class:`bool`): If the command is shown in the overview of `/commands`
             - args (:class:`str`): If the command has arguments define them here as text like: "USERNAME PASSWORD"
+            - group (:class:`int`): Which handler group the command should be in
     """
     all_commands = []
     commands = []
@@ -76,8 +80,16 @@ class BaseCommand:
                 'handler': command.get('handler', CommandHandler),
                 'options': command.get('options', {}),
                 'hidden': command.get('hidden', False),
-                'args': command.get('args', None)
+                'args': command.get('args', None),
+                'group': command.get('group', 0)
             }
+
+            try:
+                int(command['group'])
+            except ValueError:
+                raise ValueError('Command group has to be an integer: command {}, given group {}'.format(
+                    command['command_name'], command['group']
+                ))
 
             if command['handler'] == CommandHandler and command['options'].get('command', None) is None:
                 command['options']['command'] = command['command_name']
