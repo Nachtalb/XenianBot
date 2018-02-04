@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Group setting for commands
+- Create MongoDB database with all user, messages and chats
 
 ### Changes
 - Fix command default options

@@ -19,6 +19,7 @@ youtube-dl = "*"
 instabot = "*"
 gtts = "*"
 "yandex.translate" = "*"
+pymongo = "*"
 
 
 [dev-packages]
