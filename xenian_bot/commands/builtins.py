@@ -3,7 +3,7 @@ from telegram.ext import CommandHandler, MessageHandler
 from telegram.parsemode import ParseMode
 
 from xenian_bot.settings import SUPPORTER, ADMINS
-from xenian_bot.utils import data
+from xenian_bot.utils import data, get_user_link
 from .base import BaseCommand
 
 __all__ = ['builtins']
@@ -118,9 +118,10 @@ class Builtins(BaseCommand):
             return
 
         text = split_text[1]
-        admin_text = 'Contribution form @{from_user.username}: {text}'.format(
-            from_user=update.message.from_user,
-            text=text
+        admin_text = 'Contribution form {user}: {text}'.format(
+            user=get_user_link(update.message.from_user),
+            text=text,
+            parse_mode=ParseMode.MARKDOWN
         )
 
         self.write_admins(bot, admin_text)
@@ -141,9 +142,10 @@ class Builtins(BaseCommand):
             return
 
         text = split_text[1]
-        admin_text = 'Error form @{from_user.username}: {text}'.format(
-            from_user=update.message.from_user,
-            text=text
+        admin_text = 'Error form {user}: {text}'.format(
+            user=get_user_link(update.message.from_user),
+            text=text,
+            parse_mode=ParseMode.MARKDOWN
         )
 
         self.write_admins(bot, admin_text)

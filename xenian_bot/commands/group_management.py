@@ -1,10 +1,10 @@
 import datetime
 
-from telegram import Bot, Update, User, ParseMode
+from telegram import Bot, ParseMode, Update, User
 
 import xenian_bot
 from xenian_bot.commands import BaseCommand
-from xenian_bot.utils import data, get_self
+from xenian_bot.utils import data, get_self, get_user_link
 
 __all__ = ['group_manager']
 
@@ -100,11 +100,12 @@ class GroupManager(BaseCommand):
 
         if this_bot.id not in admins_in_group:
             if from_user.id in admins_in_group:
-                update.message.reply_text('I cannot do this as long as I am not admin.'.format(
-                    username=from_user.username))
+                update.message.reply_text('I cannot do this as long as I am not admin.')
             else:
-                update.message.reply_text('@{username} is not allowed to run this command.'.format(
-                    username=update.message.from_user.username))
+                update.message.reply_text('{from_user} is not allowed to run this command.'.format(
+                    from_user=get_user_link(update.message.from_user)),
+                    parse_mode=ParseMode.MARKDOWN
+                )
             return False
         return True
 
@@ -145,15 +146,17 @@ class GroupManager(BaseCommand):
         if not self.is_admin(bot, update):
             return False
         elif wanted_user.id in admins_in_group:
-            update.message.reply_text('This command cannot be used on admins like @{username}.'.format(
-                username=wanted_user.username))
+            update.message.reply_text('This command cannot be used on admins like {wanted_user}.'.format(
+                wanted_user=get_user_link(wanted_user)),
+                parse_mode=ParseMode.MARKDOWN
+            )
         elif update.message.chat.all_members_are_administrators:
             update.message.reply_text('I cannot do this in a group where all members are admin.')
         else:
             return True
         return False
 
-    def kick(self, bot: Bot, update: Update, args: list=None, is_allowed: bool = False):
+    def kick(self, bot: Bot, update: Update, args: list = None, is_allowed: bool = False):
         """Kick a user for 30 sec or a specific amount of time
 
         Args:
@@ -192,17 +195,19 @@ class GroupManager(BaseCommand):
                 callback=(
                     lambda bot, job: bot.send_message(
                         chat_id,
-                        '@{wanted_user.username} was kicked {time} min ago and can now join again'.format(
+                        '{wanted_user} was kicked {time} min ago and can now join again'.format(
                             time=time,
-                            wanted_user=wanted_user))),
+                            wanted_user=get_user_link(wanted_user)),
+                        parse_mode=ParseMode.MARKDOWN)),
                 when=10 * 60)
 
             bot.send_message(
                 chat_id=chat_id,
-                text='@{wanted_user.username} was kicked for {time} min by @{from_user.username}'.format(
+                text='{wanted_user} was kicked for {time} min by {from_user}'.format(
                     time=time,
-                    from_user=from_user,
-                    wanted_user=wanted_user))
+                    from_user=get_user_link(from_user),
+                    wanted_user=get_user_link(wanted_user)),
+                parse_mode=ParseMode.MARKDOWN)
 
     def ban(self, bot: Bot, update: Update, is_allowed: bool = False):
         """Ban a user
@@ -230,7 +235,8 @@ class GroupManager(BaseCommand):
                 if group_data[chat_id][wanted_user.id] == 'banned':
                     bot.send_message(
                         chat_id=chat_id,
-                        text='@{wanted_user.username} was already banned.'.format(wanted_user=wanted_user))
+                        text='{wanted_user} was already banned.'.format(wanted_user=get_user_link(wanted_user)),
+                        parse_mode=ParseMode.MARKDOWN)
                     return
                 else:
                     group_data[chat_id][wanted_user.id] = 'banned'
@@ -243,9 +249,10 @@ class GroupManager(BaseCommand):
                 until_date=now + datetime.timedelta(seconds=5))
             bot.send_message(
                 chat_id=chat_id,
-                text='@{wanted_user.username} was banned by @{from_user.username}'.format(
-                    from_user=from_user,
-                    wanted_user=wanted_user))
+                text='{wanted_user} was banned by {from_user}'.format(
+                    from_user=get_user_link(from_user),
+                    wanted_user=get_user_link(wanted_user)),
+                parse_mode=ParseMode.MARKDOWN)
 
             data.save(self.group_data_set, group_data)
 
@@ -276,7 +283,8 @@ class GroupManager(BaseCommand):
                 if group_data[chat_id][wanted_user.id] == 'banned':
                     bot.send_message(
                         chat_id=chat_id,
-                        text='@{wanted_user.username} was already banned.'.format(wanted_user=wanted_user))
+                        text='{wanted_user} was already banned.'.format(wanted_user=get_user_link(wanted_user)),
+                        parse_mode=ParseMode.MARKDOWN)
                     return
                 else:
                     group_data[chat_id][wanted_user.id] += 1
@@ -286,11 +294,12 @@ class GroupManager(BaseCommand):
 
             bot.send_message(
                 chat_id=chat_id,
-                text=('@{wanted_user.username} was warned by @{from_user.username}\n'
-                      'User has now {warns} waning/s. With 3 warnings user gets banned.').format(
-                    from_user=from_user,
-                    wanted_user=wanted_user,
-                    warns=group_data[chat_id][wanted_user.id]))
+                text=('{wanted_user} was warned by {from_user}\n User has now {warns} waning/s. With 3 warnings user '
+                      'gets banned.').format(
+                    from_user=get_user_link(from_user),
+                    wanted_user=get_user_link(wanted_user),
+                    warns=group_data[chat_id][wanted_user.id]),
+                parse_mode=ParseMode.MARKDOWN)
 
             data.save(self.group_data_set, group_data)
 
@@ -314,17 +323,19 @@ class GroupManager(BaseCommand):
             if not group_data.get(chat_id, None) or not group_data[chat_id].get(wanted_user.id, None):
                 bot.send_message(
                     chat_id=chat_id,
-                    text='@{wanted_user.username} was never warned.'.format(wanted_user=wanted_user))
+                    text='{wanted_user} was never warned.'.format(
+                        wanted_user=get_user_link(wanted_user)),
+                    parse_mode=ParseMode.MARKDOWN)
                 return
 
             group_data[chat_id][wanted_user.id] = 0
             data.save(self.group_data_set, group_data)
             bot.send_message(
                 chat_id=chat_id,
-                text='@{from_user.username} removed @{wanted_user.username} warnings.'.format(
-                    wanted_user=wanted_user,
-                    from_user=from_user,
-                ))
+                text='{from_user} removed {wanted_user} warnings.'.format(
+                    from_user=get_user_link(from_user),
+                    wanted_user=get_user_link(wanted_user)),
+                parse_mode=ParseMode.MARKDOWN)
 
     def delete(self, bot: Bot, update: Update):
         """Delete a post from a user
@@ -374,7 +385,9 @@ class GroupManager(BaseCommand):
 
         bot.send_message(
             chat_id=chat_id,
-            text='@{from_user.username} has set new /rules.'.format(from_user=from_user))
+            text='{user} has set new /rules.'.format(user=get_user_link(from_user)),
+            parse_mode=ParseMode.MARKDOWN
+        )
 
     def rules_remove(self, bot: Bot, update: Update):
         """Remove rules for a group
@@ -400,7 +413,11 @@ class GroupManager(BaseCommand):
         data.save(self.group_data_set, group_data)
         bot.send_message(
             chat_id=chat_id,
-            text='@{from_user.username} has set removed the groups rules.'.format(from_user=from_user))
+            text='{user} has set removed the groups rules.'.format(
+                user=get_user_link(from_user)
+            ),
+            parse_mode=ParseMode.MARKDOWN
+        )
 
     def rules(self, bot: Bot, update: Update):
         """Show the defined group rules

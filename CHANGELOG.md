@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [1.2.1] - 2018.02.04
+
+### Changes
+- Fix links to users
+- Fix image to text and translate command name in CHANGELOG and README 
+
+
 ## [1.2.0] - 2018.02.04
 
 ### Added
@@ -13,7 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Create collection in database with all user, messages and chats
 - `/itt [-l LANG]` - Image to Text: Extract text from images
 - `/itt_lang` - Languages for ItT: Available languages for Image to Text
-- `/translate_image [TEXT] [-lf LANG] [-lt LANG]`  - Image to Text Translation: Extract text from images and translate it. `-lf` (default: detect, /itt_lang) language on image, to `-lt` (default: en, normal language codes) language.
+- `/itt_translate [TEXT] [-lf LANG] [-lt LANG]`  - Image to Text Translation: Extract text from images and translate it. `-lf` (default: detect, /itt_lang) language on image, to `-lt` (default: en, normal language codes) language.
 
 ### Changes
 - Fix command default options

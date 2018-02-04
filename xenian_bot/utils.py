@@ -369,3 +369,20 @@ def get_option_from_string(option_short: str, string: str) -> tuple:
             string = ' '.join(splitted_text)
             return option, string
     return None, None
+
+
+def get_user_link(user: User) -> str:
+    """Get the link to a user
+
+    Either the @Username or [First Name](tg://user?id=123456)
+
+    Args:
+        user (:obj:`telegram.user.User`): A Telegram User Object
+
+    Returns:
+        :obj:`str`: The link to a user
+    """
+    if user.username:
+        return '@{}'.format(user.username)
+    else:
+        return '[{}](tg://user?id={})'.format(user.first_name, user.id)
