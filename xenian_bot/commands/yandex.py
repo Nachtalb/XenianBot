@@ -1,10 +1,10 @@
 from telegram import Bot, Update
-from telegram.ext import CommandHandler, MessageHandler, run_async
+from telegram.ext import run_async
 from telegram.parsemode import ParseMode
 from yandex_translate import YandexTranslate
 
-from xenian_bot.settings import SUPPORTER, ADMINS, YANDEX_API_TOKEN
-from xenian_bot.utils import data, get_option_from_string
+from xenian_bot.settings import YANDEX_API_TOKEN
+from xenian_bot.utils import get_option_from_string
 from .base import BaseCommand
 
 __all__ = ['yandex']
@@ -53,7 +53,8 @@ class Yandex(BaseCommand):
         if len(split_text) > 1:
             secondary_text = split_text[1]
 
-        direction = 'en'
+        translate_from = None
+        translate_to = None
         if secondary_text:
             translate_from, new_text = get_option_from_string('lf', secondary_text)
             if translate_from:
@@ -71,8 +72,6 @@ class Yandex(BaseCommand):
             else:
                 translate_to = 'en'
 
-            direction = '{}-{}'.format(translate_from, translate_to) if translate_from else translate_to
-
             if not primary_text:
                 primary_text = secondary_text
 
@@ -80,13 +79,34 @@ class Yandex(BaseCommand):
             update.message.reply_text('You either have to reply to a message or give me some text.')
             return
 
-        translated = self.translator.translate(primary_text, direction)
+        translated = self.translate_text(primary_text, translate_from, translate_to)
 
         reply = '*TRANSLATION*: `{direction}`\n\n{translate_text}\n\n- Powered by Yandex.Translate'.format(
             direction=translated['lang'],
             translate_text=translated['text'][0]
         )
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+
+    def translate_text(self, text: str, lang_from: str = None, lang_to: str = None) -> dict:
+        """Translate text from one lang to another
+
+        Args:
+            text (:obj:`str`): Text to translate
+            lang_from (:obj:`str`): Language to translate from
+            lang_to (:obj:`str`): Language to translate to
+
+        Returns:
+            :obj:`dict`: Translated text
+        """
+        direction = 'en'
+        if lang_from and not lang_to:
+            direction = '{}-en'.format(lang_from)
+        elif lang_from and lang_to:
+            direction = '{}-{}'.format(lang_from, lang_to)
+        elif not lang_from and lang_to:
+            direction = lang_to
+
+        return self.translator.translate(text, direction)
 
 
 yandex = Yandex()
