@@ -84,7 +84,7 @@ class GroupManager(BaseCommand):
     def is_admin(self, bot: Bot, update: Update) -> bool:
         """Check if user and bot is admin
 
-              If not send message
+        If neither are admin an error message is sent
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
@@ -109,10 +109,10 @@ class GroupManager(BaseCommand):
             return False
         return True
 
-        """Check if bot is in group
     def is_group(self, update: Update) -> bool:
+        """Check if the current chat is a group
 
-        If not send message
+        If it is a chanel or a private chat send an error message
 
         Args:
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
@@ -126,9 +126,15 @@ class GroupManager(BaseCommand):
         return True
 
     def is_allowed(self, bot: Bot, update: Update) -> bool:
-        """Check if bot is allowed to do banning and warning
+        """Check if it is even possible for the bot to run a group management command
 
-        If the bot is not allowed to do so, a message will automatically sent to the group why he couldn't do it.
+        This checks
+        - if the current chat is a group
+        - if the bot is an admin
+        - if the user running the command is an admin
+        - if the command the user is running the command on is an admin (eg. wwarn / ban etc. can not be used on other
+        admins)
+        - and if the group is a "all users admin" group in which commands like warn etc. are not working.
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
