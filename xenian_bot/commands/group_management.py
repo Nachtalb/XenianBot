@@ -109,8 +109,8 @@ class GroupManager(BaseCommand):
             return False
         return True
 
-    def in_group(self, update: Update) -> bool:
         """Check if bot is in group
+    def is_group(self, update: Update) -> bool:
 
         If not send message
 
@@ -137,7 +137,7 @@ class GroupManager(BaseCommand):
         Returns:
             :obj:`bool`: True if the bot is allowed, false otherwise
         """
-        if not self.in_group(update):
+        if not self.is_group(update):
             return False
 
         wanted_user = update.message.reply_to_message.from_user
@@ -360,7 +360,7 @@ class GroupManager(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        if not self.is_admin(bot, update) or not self.in_group(update):
+        if not self.is_admin(bot, update) or not self.is_group(update):
             return
 
         split_text = update.message.text.split(' ', 1)
@@ -396,7 +396,7 @@ class GroupManager(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        if not self.is_admin(bot, update) or not self.in_group(update):
+        if not self.is_admin(bot, update) or not self.is_group(update):
             return
 
         chat_id = update.message.chat_id
@@ -426,7 +426,7 @@ class GroupManager(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        if not self.in_group(update):
+        if not self.is_group(update):
             return
 
         chat_id = update.message.chat_id
