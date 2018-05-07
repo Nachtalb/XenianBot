@@ -99,13 +99,13 @@ class GroupManager(BaseCommand):
         this_bot = get_self(bot)
 
         if this_bot.id not in admins_in_group:
-            if from_user.id in admins_in_group:
-                update.message.reply_text('I cannot do this as long as I am not admin.')
-            else:
-                update.message.reply_text('{from_user} is not allowed to run this command.'.format(
-                    from_user=get_user_link(update.message.from_user)),
-                    parse_mode=ParseMode.MARKDOWN
-                )
+            update.message.reply_text('I cannot do this as long as I am not admin.')
+            return False
+        elif from_user.id not in admins_in_group:
+            update.message.reply_text('{from_user} is not allowed to run this command.'.format(
+                from_user=get_user_link(update.message.from_user)),
+                parse_mode=ParseMode.MARKDOWN
+            )
             return False
         return True
 
