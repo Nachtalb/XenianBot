@@ -11,6 +11,8 @@ class UrbanDictionary(BaseCommand):
     """Urban Dictionary integration into this bot
     """
 
+    group = 'Misc'
+
     def __init__(self):
         self.commands = [
             {
@@ -20,7 +22,7 @@ class UrbanDictionary(BaseCommand):
                 'options': {
                     'pass_args': True
                 },
-                'args': 'WORD(S)'
+                'args': ['text']
             }
         ]
 

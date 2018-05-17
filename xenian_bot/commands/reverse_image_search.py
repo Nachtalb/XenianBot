@@ -24,6 +24,8 @@ class ReverseImageSearch(BaseCommand):
     """Reverse Image Search integration for this bot
     """
 
+    group = 'Image'
+
     def __init__(self):
         self.commands = [
             {

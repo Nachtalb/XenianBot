@@ -12,12 +12,14 @@ class Roll(BaseCommand):
     """Roll a dice
     """
 
+    group = 'Misc'
+
     def __init__(self):
         self.commands = [
             {
                 'title': 'Rolling Dice',
                 'description': 'Roll a number between 0 and 6 or give me another range',
-                'args': 'MIN MAX',
+                'args': ['min', 'max'],
                 'options': {'pass_args': True},
                 'command': self.roll
             }

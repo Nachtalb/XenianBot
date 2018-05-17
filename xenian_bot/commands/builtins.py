@@ -2,8 +2,8 @@ from telegram import Bot, Update
 from telegram.ext import CommandHandler, MessageHandler
 from telegram.parsemode import ParseMode
 
-from xenian_bot.settings import SUPPORTER, ADMINS
-from xenian_bot.utils import data, get_user_link
+from xenian_bot.settings import ADMINS, SUPPORTER
+from xenian_bot.utils import data, get_user_link, render_template
 from .base import BaseCommand
 
 __all__ = ['builtins']
@@ -13,6 +13,7 @@ class Builtins(BaseCommand):
     """A set of base commands which every bot should have
     """
 
+    Group = 'Bot Helpers'
     data_set_name = 'builtins'
 
     def __init__(self):
@@ -24,12 +25,12 @@ class Builtins(BaseCommand):
             {
                 'command': self.contribute,
                 'description': 'Send the supporters and admins a request of any kind',
-                'args': 'YOUR_REQUEST'
+                'args': ['text']
             },
             {
                 'command': self.error,
                 'description': 'If you have found an error please use this command.',
-                'args': 'ERROR_DESCRIPTION'
+                'args': ['text']
             },
         ]
 
@@ -56,40 +57,39 @@ class Builtins(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        command_lists = []
-
-        direct_commands = ''
+        direct_commands = {}
+        indirect_commands = {}
         for command_class in BaseCommand.all_commands:
+            group_name = command_class.group
+
+            direct_commands.setdefault(group_name, [])
+            indirect_commands.setdefault(group_name, [])
+
+            # Direct commands (CommandHandler)
             for command in [cmd for cmd in command_class.commands
                             if cmd['handler'] == CommandHandler and not cmd['hidden']]:
-                direct_commands += '/{command_name}{args} - {title}: {description}\n'.format(
-                    command_name=command['command_name'],
-                    args='%s' % ' ' + command['args'] if command['args'] else '',
-                    title=command['title'],
-                    description=command['description']
-                )
-        if direct_commands:
-            direct_commands = 'List of direct commands:\n' + direct_commands
-            command_lists.append(direct_commands)
+                direct_commands[group_name].append({
+                    'command': command['command_name'],
+                    'args': command['args'],
+                    'description': command['description'],
+                })
+            if not direct_commands[group_name]:
+                del direct_commands[group_name]
 
-        indirect_commands = ''
-        for command_class in BaseCommand.all_commands:
+            # Indirect commands (MessageHandler)
             for command in [cmd for cmd in command_class.commands
                             if cmd['handler'] == MessageHandler and not cmd['hidden']]:
-                indirect_commands += '- {title}: {description}\n'.format(
-                    title=command['title'],
-                    description=command['description']
-                )
-        if indirect_commands:
-            indirect_commands = 'List of indirect commands:\n' + indirect_commands
-            command_lists.append(indirect_commands)
+                indirect_commands[group_name].append({
+                    'title': command['command_name'],
+                    'description': command['description'],
+                })
 
-        reply = ''
-        for command_list in command_lists:
-            reply += '\n\n' + command_list
-        reply.strip()
-
-        update.message.reply_text(reply)
+            if not indirect_commands[group_name]:
+                del indirect_commands[group_name]
+        reply = render_template('commands.html.mako',
+                               direct_commands=direct_commands,
+                               indirect_commands=indirect_commands)
+        update.message.reply_text(reply, parse_mode=ParseMode.HTML)
 
     def support(self, bot: Bot, update: Update):
         """Contact bot maintainer for support of any kind

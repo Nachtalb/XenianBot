@@ -14,6 +14,7 @@ __all__ = ['danbooru']
 class Danbooru(BaseCommand):
     """The class for all danbooru related commands
     """
+    name = 'Image'
 
     def __init__(self):
         self.commands = [
@@ -23,7 +24,7 @@ class Danbooru(BaseCommand):
                                '(default 0) and the limit (default 5, max 100)',
                 'command': self.danbooru_search,
                 'options': {'pass_args': True},
-                'args': 'TAG_1, TAG_2 page=PAGE_NUM limit=LIMIT'
+                'args': ['tag_1', 'tag_2', 'page=PAGE_NUM', 'limit=LIMIT']
             },
             {
                 'title': 'Danbooru Latest',
@@ -31,7 +32,7 @@ class Danbooru(BaseCommand):
                                '(default 5, max 100)',
                 'command': self.danbooru_latest,
                 'options': {'pass_args': True},
-                'args': 'page=PAGE_NUM limit=LIMIT'
+                'args': ['page=PAGE_NUM', 'limit=LIMIT']
             }
         ]
 

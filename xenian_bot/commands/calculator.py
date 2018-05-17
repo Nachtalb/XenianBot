@@ -25,6 +25,7 @@ class Calculator(BaseCommand):
         'hypot', 'ldexp', 'log', 'log10', 'modf', 'pi', 'pow', 'radians', 'sin', 'sinh', 'sqrt', 'tan', 'tanh'
     ]
     safe_dict = dict([(k, globals().get(k, None)) for k in safe_list])
+    group = 'Misc'
 
     def __init__(self):
         self.commands = [
@@ -44,7 +45,7 @@ class Calculator(BaseCommand):
             {
                 'title': 'Calculate',
                 'description': 'Solve an equation you send me, all math functions can be seen with /maths',
-                'args': 'EQUATION',
+                'args': ['equation'],
                 'command_name': 'calc',
                 'options': {'pass_args': True},
                 'command': self.calcualate_command,

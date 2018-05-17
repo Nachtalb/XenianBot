@@ -20,6 +20,9 @@ __all__ = ['download', 'video_downloader']
 
 
 class Download(BaseCommand):
+
+    group = 'Download'
+
     def __init__(self):
         self.commands = [
             {

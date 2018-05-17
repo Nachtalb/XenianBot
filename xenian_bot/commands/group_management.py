@@ -13,6 +13,7 @@ class GroupManager(BaseCommand):
     """Roll a dice
     """
 
+    group = 'Group Management'
     group_data_set = 'group_management'
 
     def __init__(self):
@@ -33,7 +34,7 @@ class GroupManager(BaseCommand):
                 'description': 'Kick a user for 10 min or give a specific amount of time (in min) between 30sec '
                                '(0.5 min) and 366 days (527040 min). Reply to one of his messages with this command '
                                '(Group Only)',
-                'args': '[TIME]',
+                'args': ['time'],
                 'options': {'pass_args': True},
                 'command': self.kick
             },
@@ -57,7 +58,7 @@ class GroupManager(BaseCommand):
             {
                 'title': 'Define Rules',
                 'description': 'Define rules for this group (Group Only)',
-                'args': 'YOUR_RULES',
+                'args': ['text'],
                 'command': self.rules_define,
             },
             {

@@ -18,6 +18,8 @@ class ImageToText(BaseCommand):
     """Extract text from images
     """
 
+    group = 'Image'
+
     def __init__(self):
         self.commands = [
             {
@@ -25,7 +27,7 @@ class ImageToText(BaseCommand):
                 'command_name': 'itt',
                 'title': 'Image to Text',
                 'description': 'Extract text from images',
-                'args': '[-l LANG]'
+                'args': ['-l LANG']
             },
             {
                 'command': self.image_to_text_translate,
@@ -33,7 +35,7 @@ class ImageToText(BaseCommand):
                 'title': 'Image to Text Translation',
                 'description': 'Extract text from images and translate it. `-lf` (default: detect, /itt_lang) language '
                                'on image, to `-lt` (default: en, normal language codes) language.',
-                'args': '[TEXT] [-lf LANG] [-lt LANG]'
+                'args': ['text', '-lf LANG', '-lt LANG']
             },
             {
                 'command': self.available_languages,

@@ -16,6 +16,8 @@ class Google(BaseCommand):
     """A set of commands using google API's
     """
 
+    group = 'Misc'
+
     def __init__(self):
         self.commands = [
             {
@@ -23,7 +25,7 @@ class Google(BaseCommand):
                 'command': self.text_to_speech,
                 'description': 'Convert text the given text or the message replied to, to text. Use `-l` to define a '
                                'language, like de, en or ru',
-                'args': '[TEXT] [-l LANG]'
+                'args': ['text', '-l LANG']
             },
         ]
 

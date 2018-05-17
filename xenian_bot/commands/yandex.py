@@ -17,6 +17,7 @@ class Yandex(BaseCommand):
         translator (:obj:`YandexTranslate`): Translator object
     """
 
+    group = 'Misc'
     translator = None
 
     def __init__(self):
@@ -26,7 +27,7 @@ class Yandex(BaseCommand):
                 'title': 'Translation by Yandex',
                 'description': 'Translate a reply or a given text from `-lf` (default: detect) language to `-lt` '
                                '(default: en) language',
-                'args': '[TEXT] [-lf LANG] [-lt LANG]'
+                'args': ['text','-lf LANG','-lt LANG']
             },
         ]
 

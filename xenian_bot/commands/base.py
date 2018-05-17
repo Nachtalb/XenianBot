@@ -51,9 +51,11 @@ class BaseCommand:
             - hidden (:class:`bool`): If the command is shown in the overview of `/commands`
             - args (:class:`str`): If the command has arguments define them here as text like: "USERNAME PASSWORD"
             - group (:class:`int`): Which handler group the command should be in
+        group (:class:`str`): The group name shown in the /commands message
     """
     all_commands = []
     commands = []
+    group = 'Base Group'
 
     def __init__(self):
         """Initialize the command class
@@ -78,7 +80,7 @@ class BaseCommand:
                 'handler': command.get('handler', CommandHandler),
                 'options': command.get('options', {}),
                 'hidden': command.get('hidden', False),
-                'args': command.get('args', None),
+                'args': command.get('args', []),
                 'group': command.get('group', 0)
             }
 

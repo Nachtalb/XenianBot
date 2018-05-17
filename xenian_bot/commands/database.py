@@ -15,6 +15,8 @@ class Database(BaseCommand):
         users (:obj:`pymongo.collection.Collection`): Connection to the pymongo databased
     """
 
+    name = 'Bot Helpers'
+
     def __init__(self):
         self.commands = [
             {
