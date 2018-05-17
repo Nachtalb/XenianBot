@@ -1,10 +1,15 @@
 import json
 import os
+import re
 import time
 from codecs import open as copen
 
 from emoji import emojize
+from htmlmin import minify
+from mako.template import Template
 from telegram import Bot, ParseMode, User
+
+from .settings import TEMPLATE_DIR
 
 
 class Data:
@@ -386,3 +391,13 @@ def get_user_link(user: User) -> str:
         return '@{}'.format(user.username)
     else:
         return '[{}](tg://user?id={})'.format(user.first_name, user.id)
+
+
+def render_template(template_name: str, **kwargs):
+    template = Template(filename=os.path.join(TEMPLATE_DIR, template_name))
+    rendered_template = template.render(**kwargs)
+    minified = minify(rendered_template, remove_empty_space=True).replace('\\n', '\n')
+    cleaned = ''
+    for part in minified.split('\n'):
+        cleaned += part.strip() + '\n'
+    return cleaned.strip()

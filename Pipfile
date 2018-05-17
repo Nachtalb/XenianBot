@@ -17,6 +17,8 @@ gtts = "*"
 pymongo = "*"
 pytesseract = "*"
 pillow = "*"
+mako = "*"
+htmlmin = "*"
 
 [dev-packages]
 

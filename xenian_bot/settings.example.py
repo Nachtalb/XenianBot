@@ -1,10 +1,15 @@
 import logging
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TELEGRAM_API_TOKEN = 'YOUR_API_TOKEN'
 YANDEX_API_TOKEN = 'YOUR_YANDEX_API_TOKEN'
 
 ADMINS = ['@SOME_TELEGRAM_USERS', ]  # Users which can do admin tasks like /restart
 SUPPORTER = ['@SOME_TELEGRAM_USERS', ]  # Users which to contact fo support
+
+TEMPLATE_DIR = os.path.join(BASE_DIR, 'xenian_bot/commands/templates')
 
 # More information about polling and webhooks can be found here:
 # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks
