@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - Unreleased
+
+
+## [1.3.0] - 2018.05.18
+
+### Added
+- Mako Template Engine integration
+
+### Changes
+- Reimplemented the `/commands` command with a mako template
+
+### Removed
+- Temporarily remove the Instagram functionality, better version will come back in the future
+
 
 ## [1.2.1] - 2018.02.04
 
