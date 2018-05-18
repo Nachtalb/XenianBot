@@ -14,7 +14,7 @@ __all__ = ['danbooru']
 class Danbooru(BaseCommand):
     """The class for all danbooru related commands
     """
-    name = 'Image'
+    group = 'Anime'
 
     def __init__(self):
         self.commands = [

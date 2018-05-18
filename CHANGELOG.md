@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `/toggle_gif_save` - _hidden_ - toggle auto save sent gifs as anime gif
 - New filter `anime_save_mode` to determine if gif save mode is turned on 
 
+### Changes
+- Move dabooru to the __Anime__ group
 
 ## [1.3.0] - 2018.05.18
 
