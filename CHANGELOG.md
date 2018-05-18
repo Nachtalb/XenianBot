@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changes
 - Move dabooru to the __Anime__ group
+- Move Video Downloader to the Download group
 
 ### Fixed
 - Use title for indirect commands instead of command name

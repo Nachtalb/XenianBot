@@ -173,6 +173,8 @@ class VideoDownloader(BaseCommand):
     Key must always be user_id
     """
 
+    group = 'Download'
+
     def __init__(self):
         self.commands = [
             {
