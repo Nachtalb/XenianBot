@@ -77,7 +77,7 @@ class Builtins(BaseCommand):
             for command in [cmd for cmd in command_class.commands
                             if cmd['handler'] == MessageHandler and not cmd['hidden']]:
                 indirect_commands[group_name].append({
-                    'title': command['command_name'],
+                    'title': command['title'],
                     'description': command['description'],
                 })
 

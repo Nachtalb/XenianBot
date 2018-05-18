@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changes
 - Move dabooru to the __Anime__ group
 
+### Fixed
+- Use title for indirect commands instead of command name
+
+
 ## [1.3.0] - 2018.05.18
 
 ### Added

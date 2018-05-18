@@ -80,20 +80,19 @@ If you like this bot you can rate it [here](https://telegram.me/storebot?start=x
 
 ### Indirect Commands:
 #### Base Group
-add_to_database_command - Adds user, message and chat to database
-video_from_url - Turn on /download_mode and send links to videos like a youtube video
+Video from URL - Turn on /download_mode and send links to videos like a youtube video
 
 #### Download
-download_stickers - Turn on /download_mode and send stickers
-download_gif - Turn on /download_mode and send videos and gifs
+Download Stickers - Turn on /download_mode and send stickers
+Download Gifs - Turn on /download_mode and send videos and gifs
 
 #### Image
-video_search - Turn off /download_mode and send a video or a gif to search for it online.
-image_search - Turn off /download_mode and send an image to search for it online.
-sticker_search - Turn off /download_mode and send a sticker to search for it online.
+Reverse Gif / Video Search - Turn off /download_mode and send a video or a gif to search for it online.
+Reverse Sticker Search - Turn off /download_mode and send an image to search for it online.
+Reverse Sticker Search - Turn off /download_mode and send a sticker to search for it online.
 
 #### Misc
-calcualate - Solve equations you send me, to get a full list of supported math functions use /maths (PRIVATE CHAT ONLY)
+Calculator - Solve equations you send me, to get a full list of supported math functions use /maths (PRIVATE CHAT ONLY)
 
 
 ## Contributions
