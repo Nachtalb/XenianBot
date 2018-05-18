@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - New filter `bot_admin`, check if current user is a bot admin
+- `/random` - send a random anime gif
+- `/save_gif` - _hidden_ - save the gif replied to as an anime gif
+- `/toggle_gif_save` - _hidden_ - toggle auto save sent gifs as anime gif
+- New filter `anime_save_mode` to determine if gif save mode is turned on 
+
 
 ## [1.3.0] - 2018.05.18
 
