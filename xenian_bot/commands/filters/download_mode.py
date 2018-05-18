@@ -3,6 +3,8 @@ from telegram.ext import BaseFilter
 
 from xenian_bot.utils import data
 
+__all__ = ['download_mode_filter']
+
 
 class DownloadMode(BaseFilter):
     """Filter which manages the download mode for each user
