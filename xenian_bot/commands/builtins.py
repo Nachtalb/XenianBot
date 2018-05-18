@@ -19,7 +19,7 @@ class Builtins(BaseCommand):
     def __init__(self):
         self.commands = [
             {'command': self.start, 'description': 'Initialize the bot'},
-            {'command': self.commands, 'description': 'Show all available commands'},
+            {'command': self.commands, 'description': 'Show all available commands', 'options': {'pass_args': True}},
             {'command': self.support, 'description': 'Contact bot maintainer for support of any kind'},
             {'command': self.register, 'description': 'Register the chat_id for admins and supporters', 'hidden': True},
             {
@@ -45,12 +45,13 @@ class Builtins(BaseCommand):
         """
         update.message.reply_text(render_template('start.html.mako'), parse_mode=ParseMode.HTML)
 
-    def commands(self, bot: Bot, update: Update):
+    def commands(self, bot: Bot, update: Update, args: list = None):
         """Generate and show list of available commands
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            args (:obj:`list`, optional): List of sent arguments
         """
         direct_commands = {}
         indirect_commands = {}
@@ -66,6 +67,7 @@ class Builtins(BaseCommand):
                 direct_commands[group_name].append({
                     'command': command['command_name'],
                     'args': command['args'],
+                    'title': command['title'],
                     'description': command['description'],
                 })
             if not direct_commands[group_name]:
@@ -81,9 +83,12 @@ class Builtins(BaseCommand):
 
             if not indirect_commands[group_name]:
                 del indirect_commands[group_name]
-        reply = render_template('commands.html.mako',
-                               direct_commands=direct_commands,
-                               indirect_commands=indirect_commands)
+        if 'raw' in args:
+            reply = render_template('commands_raw.html.mako', direct_commands=direct_commands)
+        else:
+            reply = render_template('commands.html.mako',
+                                    direct_commands=direct_commands,
+                                    indirect_commands=indirect_commands)
         update.message.reply_text(reply, parse_mode=ParseMode.HTML)
 
     def support(self, bot: Bot, update: Update):

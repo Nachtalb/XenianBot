@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Print raw commands list for the BotFather with `/commands raw`
 - New filter `bot_admin`, check if current user is a bot admin
 - `/random` - send a random anime gif
 - `/save_gif` - _hidden_ - save the gif replied to as an anime gif
