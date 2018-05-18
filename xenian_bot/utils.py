@@ -396,7 +396,7 @@ def get_user_link(user: User) -> str:
 def render_template(template_name: str, **kwargs):
     template = Template(filename=os.path.join(TEMPLATE_DIR, template_name))
     rendered_template = template.render(**kwargs)
-    minified = minify(rendered_template, remove_empty_space=True).replace('\\n', '\n')
+    minified = re.sub('(<br\s?/?>|\\\\n)', '\n', minify(rendered_template, remove_empty_space=True))
     cleaned = ''
     for part in minified.split('\n'):
         cleaned += part.strip() + '\n'
