@@ -24,7 +24,8 @@ class Database(BaseCommand):
                 'title': 'Add to Database',
                 'description': 'Adds user, message and chat to database',
                 'handler': MessageHandler,
-                'group': 1
+                'group': 1,
+                'hidden': True,
             },
         ]
 
