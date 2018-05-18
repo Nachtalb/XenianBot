@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `/save_gif` - _hidden_ - save the gif replied to as an anime gif
 - `/toggle_gif_save` - _hidden_ - toggle auto save sent gifs as anime gif
 - New filter `anime_save_mode` to determine if gif save mode is turned on 
+- New filters for group permissions: `bot_group_admin`, `user_group_admin`, `reply_user_group_admin`, `all_admin_group` 
 
 ### Changes
 - Move dabooru to the __Anime__ group
