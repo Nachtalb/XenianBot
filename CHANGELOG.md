@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [1.3.1] - Unreleased
 
+### Added
+
+- New filter `bot_admin`, check if current user is a bot admin
 
 ## [1.3.0] - 2018.05.18
 
