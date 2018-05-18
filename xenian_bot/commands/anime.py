@@ -35,6 +35,7 @@ class Anime(BaseCommand):
                 'title': 'Save Anime Gif',
                 'handler': MessageHandler,
                 'command': self.save_gif,
+                'hidden': True,
                 'options': {
                     'filters': (
                             (Filters.video | Filters.document)
