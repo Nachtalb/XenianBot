@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changes
 - Split utils up and put them in an `utils` package
+- Moved the download functions from the reverse search image commands to the utils
+- Combined the reverse search MessageHandlers to one
+- Cleaned up reverse search image command
 
 
 ## [1.4.0] - 2018.05.18
