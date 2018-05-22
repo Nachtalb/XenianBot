@@ -1,6 +1,7 @@
 from .base import *
 from .database import *
 from .builtins import *
+from .custom_db import *
 from .anime import *
 from .urban_dictionary import *
 from .roll import *
