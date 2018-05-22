@@ -3,6 +3,7 @@ from telegram.ext import Filters, MessageHandler
 
 from xenian_bot import mongodb_database
 from xenian_bot.commands import filters
+from xenian_bot.utils import render_template
 from .base import BaseCommand
 
 __all__ = ['image_db']
@@ -35,6 +36,11 @@ class CustomDB(BaseCommand):
                 'options': {
                     'pass_args': True,
                 },
+            },
+            {
+                'title': 'Available DBs',
+                'command': self.available,
+                'description': 'Show created databases',
             },
             {
                 'title': 'Save object',
@@ -194,6 +200,38 @@ class CustomDB(BaseCommand):
         self.telegram_object_collection.update(message, message, upsert=True)
 
         update.message.reply_text('{} was saved!'.format(message['type'].title()), parse_mode=ParseMode.MARKDOWN)
+
+    def available(self, bot: Bot, update: Update):
+        """Show available databases
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        db_items = self.telegram_object_collection.find({'chat_id': update.message.chat_id})
+        data = {}
+        for item in db_items:
+            tag = item['tag']
+            title = tag.title() or 'User'
+            data_category = data.get(tag, {
+                'title': title,
+                'tag': tag,
+                'video': 0,
+                'document': 0,
+                'photo': 0,
+                'sticker': 0,
+                'audio': 0,
+                'voice': 0,
+                'text': 0,
+                'items': []
+            })
+            data_category[item['type']] += 1
+            data_category['items'].append(item)
+
+            data[tag] = data_category
+
+        update.message.reply_text(render_template('available_dbs.html.mako', categories=data),
+                                  parse_mode=ParseMode.HTML)
 
 
 image_db = CustomDB()
