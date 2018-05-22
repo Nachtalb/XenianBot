@@ -1,5 +1,6 @@
-from telegram import Audio, Bot, Document, ParseMode, PhotoSize, Sticker, Update, Video
-from telegram.ext import Filters, MessageHandler
+from telegram import Audio, Bot, Document, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, PhotoSize, Sticker, \
+    Update, Video
+from telegram.ext import CallbackQueryHandler, Filters, MessageHandler
 
 from xenian_bot import mongodb_database
 from xenian_bot.commands import filters
@@ -41,6 +42,20 @@ class CustomDB(BaseCommand):
                 'title': 'Available DBs',
                 'command': self.available,
                 'description': 'Show created databases',
+            },
+            {
+                'title': 'Remove DB',
+                'command': self.delete,
+                'description': 'Delete selected database',
+            },
+            {
+                'title': 'Remove DB',
+                'command': self.real_delete,
+                'handler': CallbackQueryHandler,
+                'description': 'Delete the database for real',
+                'options': {
+                    'pattern': '^(delete\s\w+|sure\s\w+|cancel)$',
+                }
             },
             {
                 'title': 'Save object',
@@ -212,7 +227,7 @@ class CustomDB(BaseCommand):
         data = {}
         for item in db_items:
             tag = item['tag']
-            title = tag.title() or 'User'
+            title = tag.title()
             data_category = data.get(tag, {
                 'title': title,
                 'tag': tag,
@@ -232,6 +247,51 @@ class CustomDB(BaseCommand):
 
         update.message.reply_text(render_template('available_dbs.html.mako', categories=data),
                                   parse_mode=ParseMode.HTML)
+
+    def delete(self, bot: Bot, update: Update):
+        """Show database delete list
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        db_items = self.telegram_object_collection.find({'chat_id': update.message.chat_id})
+        tag_list = list(set([item['tag'] for item in db_items]))
+
+        button_list = [tag_list[i:i + 3] for i in range(0, len(tag_list), 3)]
+        button_list = [[InlineKeyboardButton(tag, callback_data='sure %s' % tag) for tag in group]
+                       for group in button_list]
+        button_list.append([InlineKeyboardButton('Cancel', callback_data='cancel')])
+
+        update.message.reply_text(
+            text='Select the database to delete:',
+            reply_markup=InlineKeyboardMarkup(button_list)
+        )
+
+    def real_delete(self, bot: Bot, update: Update):
+        """Actually delete a databases
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        data = update.callback_query.data
+        if data.startswith('sure'):
+            update.callback_query.message.edit_text(
+                'Are you sure:',
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton('Yes', callback_data='delete %s' % data.split(' ')[1]),
+                    InlineKeyboardButton('Cancel', callback_data='cancel'),
+                ]])
+            )
+        elif data == 'cancel':
+            update.callback_query.message.delete()
+        elif data.startswith('delete'):
+            tag = data.split(' ')[1]
+            self.telegram_object_collection.delete_many({'chat_id': update.callback_query.message.chat_id, 'tag': tag})
+            update.callback_query.message.edit_text('%s deleted!' % tag.title())
+        else:
+            update.callback_query.message.edit_text('Something went wrong, try again or contact admin via /error.')
 
 
 image_db = CustomDB()
