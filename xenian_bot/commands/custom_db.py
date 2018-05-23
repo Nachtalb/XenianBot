@@ -107,6 +107,18 @@ class CustomDB(BaseCommand):
 
         super(CustomDB, self).__init__()
 
+    def is_group_admin_if_group(self, update: Update):
+        """Check if current user is admin of current group if the chat is one
+
+        Args:
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+
+        Returns:
+            :obj:`bool`: True if he is admin or this chat is not a group
+         """
+        return not (update.effective_chat.type in [Chat.GROUP, Chat.SUPERGROUP]
+                    and not user_is_admin_of_group(update.effective_chat, update.effective_user))
+
     def get_current_tag(self, update: Update, tags: list = None):
         """Get the current active tag
 
@@ -164,8 +176,7 @@ class CustomDB(BaseCommand):
             return ValueError('Wither callback_query or method must be set')
 
         if callback_query:
-            if (update.effective_chat.type in [Chat.GROUP, Chat.SUPERGROUP]
-                    and not user_is_admin_of_group(update.effective_chat, update.effective_user)):
+            if not self.is_group_admin_if_group(update):
                 return
             args = callback_query.data.split(' ')
             args = list(filter(lambda string: string.strip() if string.strip() else None, args))
@@ -352,6 +363,9 @@ class CustomDB(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
+        if not self.is_group_admin_if_group(update):
+            return
+
         data = update.callback_query.data
         if data.startswith('sure'):
             update.callback_query.message.edit_text(
