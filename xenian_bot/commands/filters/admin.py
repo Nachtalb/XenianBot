@@ -1,10 +1,11 @@
-from telegram import Message
+from telegram import Chat, Message
 from telegram.ext import BaseFilter
 
 from xenian_bot.settings import ADMINS
 from xenian_bot.utils.telegram import user_is_admin_of_group
 
-__all__ = ['bot_admin', 'bot_group_admin', 'user_group_admin', 'reply_user_group_admin', 'all_admin_group']
+__all__ = ['bot_admin', 'bot_group_admin', 'user_group_admin', 'reply_user_group_admin', 'all_admin_group',
+           'user_group_admin_if_group']
 
 
 class AdminFilter:
@@ -30,6 +31,14 @@ class AdminFilter:
             """
             return user_is_admin_of_group(message.chat, message.from_user)
 
+    class UserGroupAdminIfGroup(BaseFilter):
+        def filter(self, message: Message) -> bool:
+            """Check if the current user is admin of the [current] group if the current chat is a group
+            """
+            if message.chat.type in [Chat.GROUP, Chat.SUPERGROUP]:
+                return user_is_admin_of_group(message.chat, message.from_user)
+            return True
+
     class ReplyUserGroupAdmin(BaseFilter):
         def filter(self, message: Message) -> bool:
             """Check the user replying to is admin in the [current] group
@@ -50,3 +59,4 @@ bot_group_admin = AdminFilter.BotGroupAdmin()
 user_group_admin = AdminFilter.UserGroupAdmin()
 reply_user_group_admin = AdminFilter.ReplyUserGroupAdmin()
 all_admin_group = AdminFilter.AllAdminGroup()
+user_group_admin_if_group = AdminFilter.UserGroupAdminIfGroup()

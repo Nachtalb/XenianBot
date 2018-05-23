@@ -55,8 +55,12 @@ class CustomDB(BaseCommand):
             },
             {
                 'title': 'Remove DB',
-                'command': self.delete,
+                'command': self.command_wrapper(self.show_tag_chooser, 'sure', 'Select the database to delete:'),
+                'command_name': 'delete_db',
                 'description': 'Delete selected database',
+                'options': {
+                    'filters': filters.user_group_admin_if_group,
+                }
             },
             {
                 'title': 'Remove DB',
@@ -340,26 +344,6 @@ class CustomDB(BaseCommand):
 
         update.message.reply_text(render_template('available_dbs.html.mako', categories=data),
                                   parse_mode=ParseMode.HTML)
-
-    def delete(self, bot: Bot, update: Update):
-        """Show database delete list
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        db_items = self.telegram_object_collection.find({'chat_id': update.message.chat_id})
-        tag_list = list(set([item['tag'] for item in db_items]))
-
-        button_list = [tag_list[i:i + 3] for i in range(0, len(tag_list), 3)]
-        button_list = [[InlineKeyboardButton(tag, callback_data='sure %s' % tag) for tag in group]
-                       for group in button_list]
-        button_list.append([InlineKeyboardButton('Cancel', callback_data='cancel')])
-
-        update.message.reply_text(
-            text='Select the database to delete:',
-            reply_markup=InlineKeyboardMarkup(button_list)
-        )
 
     def real_delete(self, bot: Bot, update: Update):
         """Actually delete a databases
