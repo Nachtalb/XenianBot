@@ -50,8 +50,18 @@ class CustomDB(BaseCommand):
             },
             {
                 'title': 'Available DBs',
-                'command': self.available,
+                'command': self.command_wrapper(self.show_tag_chooser, 'info', 'Select a database to see it\'s info:'),
+                'command_name': 'db_info',
                 'description': 'Show created databases',
+            },
+            {
+                'title': 'Available DBs',
+                'command': self.show_info,
+                'handler': CallbackQueryHandler,
+                'description': 'Show info about created databases',
+                'options': {
+                    'pattern': '^(info\s\w+)$',
+                },
             },
             {
                 'title': 'Remove DB',
@@ -324,37 +334,33 @@ class CustomDB(BaseCommand):
         update.message.reply_text('{} was saved to `{}`!'.format(message['type'].title(), tag),
                                   parse_mode=ParseMode.MARKDOWN)
 
-    def available(self, bot: Bot, update: Update):
-        """Show available databases
+    def show_info(self, bot: Bot, update: Update):
+        """Show info about custom db
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        db_items = self.telegram_object_collection.find({'chat_id': update.message.chat_id})
-        data = {}
+
+        tag = update.callback_query.data.split(' ')[1]
+        db_items = self.telegram_object_collection.find({'chat_id': update.effective_chat.id, 'tag': tag})
+        data = {
+            'tag': tag,
+            'video': 0,
+            'document': 0,
+            'photo': 0,
+            'sticker': 0,
+            'audio': 0,
+            'voice': 0,
+            'text': 0,
+            'total': 0
+        }
         for item in db_items:
-            tag = item['tag']
-            title = tag.title()
-            data_category = data.get(tag, {
-                'title': title,
-                'tag': tag,
-                'video': 0,
-                'document': 0,
-                'photo': 0,
-                'sticker': 0,
-                'audio': 0,
-                'voice': 0,
-                'text': 0,
-                'items': []
-            })
-            data_category[item['type']] += 1
-            data_category['items'].append(item)
+            data[item['type']] += 1
+            data['total'] += 1
 
-            data[tag] = data_category
-
-        update.message.reply_text(render_template('available_dbs.html.mako', categories=data),
-                                  parse_mode=ParseMode.HTML)
+        update.callback_query.message.edit_text(text=render_template('db_info.html.mako', info=data),
+                                                parse_mode=ParseMode.HTML)
 
     def real_delete(self, bot: Bot, update: Update):
         """Actually delete a databases
