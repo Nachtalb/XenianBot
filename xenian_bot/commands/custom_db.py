@@ -20,13 +20,18 @@ class CustomDB(BaseCommand):
     def __init__(self):
         self.commands = [
             {
-                'command': self.toggle_mode,
-                'description': 'Create an custom database',
-                'args': ['tag'],
+                'command': self.pre_toggle_mode,
+                'description': 'Start database save mode and send your objects',
                 'command_name': 'save_mode',
                 'options': {
                     'filters': ~ Filters.group,
-                    'pass_args': True,
+                },
+            },
+            {
+                'command': self.toggle_mode,
+                'handler': CallbackQueryHandler,
+                'options': {
+                    'pattern': '^toggle_save_mode\s\w+$',
                 },
             },
             {
@@ -147,29 +152,45 @@ class CustomDB(BaseCommand):
             return chat['tag'].lower()
         return ''
 
-    def toggle_mode(self, bot: Bot, update: Update, args: list = None):
+    def pre_toggle_mode(self, bot: Bot, update: Update):
+        """Pre Toggle save mode
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        data = self.custom_db_save_mode.find_one({'chat_id': update.effective_chat.id})
+        current_mode = data['mode'] if data else False
+
+        if current_mode:
+            self.toggle_mode(bot, update)
+        else:
+            self.show_tag_chooser(bot, update, 'toggle_save_mode', 'Choose a database:')
+
+    def toggle_mode(self, bot: Bot, update: Update):
         """Toggle save mode
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`, optional): List of sent arguments
         """
-        tag = 'user'
-        if args:
-            tag = args[0].lower()
+        tag = ''
+        if getattr(update, 'callback_query', None):
+            tag = update.callback_query.data.split(' ')[1]
 
-        chat_id = update.message.chat_id
+        chat_id = update.effective_chat.id
         data = self.custom_db_save_mode.find_one({'chat_id': chat_id})
         new_mode = not data['mode'] if data else True
         self.custom_db_save_mode.update({'chat_id': chat_id},
                                         {'chat_id': chat_id, 'mode': new_mode, 'tag': tag},
                                         upsert=True)
         if new_mode:
-            update.message.reply_text('Save mode turned of for `[%s]`. You can send me any type of Telegram object not '
-                                      'to save it.' % tag, parse_mode=ParseMode.MARKDOWN)
+            update.callback_query.message.edit_text(
+                'Save mode turned on for `[%s]`. You can send me any type of Telegram object to save it.' % tag,
+                parse_mode=ParseMode.MARKDOWN
+            )
         else:
-            update.message.reply_text('Save mode turned off')
+            bot.send_message(chat_id, 'Save mode turned off')
 
     @run_async
     def show_tag_chooser(self, bot: Bot, update: Update, method: str = None, message: str = None):
