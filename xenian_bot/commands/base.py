@@ -72,6 +72,9 @@ class BaseCommand:
         """
         updated_commands = []
         for command in self.commands:
+            if command['command'].__name__ == '<lambda>' and not command.get('command_name'):
+                raise ValueError('If "command_wrapper" is used a "command_name" has to be defined!')
+
             command = {
                 'title': command.get('title', None) or command['command'].__name__.capitalize().replace('_', ' '),
                 'description': command.get('description', ''),
@@ -103,3 +106,6 @@ class BaseCommand:
 
             updated_commands.append(command)
         self.commands = updated_commands
+
+    def command_wrapper(self, method: callable, *args, **kwargs):
+        return lambda bot, update, *args2, **kwargs2: method(bot, update, *args2, *args, **kwargs2, **kwargs)
