@@ -216,7 +216,7 @@ class CustomDB(BaseCommand):
         reply_to_message = getattr(update.message, 'reply_to_message', None)
         previous_message = self.ram_db['save_reply'].get(update.effective_user.id, None)
         if not reply_to_message and not previous_message:
-            update.message.reply_text('You have to reply to some media file.')
+            update.message.reply_text('You have to reply to some message.')
             return
 
         callback_query = getattr(update, 'callback_query', None)
