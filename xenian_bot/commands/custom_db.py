@@ -1,10 +1,10 @@
-from telegram import Audio, Bot, Document, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, PhotoSize, Sticker, \
-    Update, Video
+from telegram import Audio, Bot, Chat, Document, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, PhotoSize, \
+    Sticker, Update, Video
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler
 
 from xenian_bot import mongodb_database
 from xenian_bot.commands import filters
-from xenian_bot.utils import render_template
+from xenian_bot.utils import render_template, user_is_admin_of_group
 from .base import BaseCommand
 
 __all__ = ['image_db']
@@ -15,6 +15,7 @@ class CustomDB(BaseCommand):
     """
 
     group = 'Custom'
+    ram_db = {}
 
     def __init__(self):
         self.commands = [
@@ -39,6 +40,15 @@ class CustomDB(BaseCommand):
                 },
             },
             {
+                'title': 'Save object',
+                'command': self.save_command,
+                'handler': CallbackQueryHandler,
+                'hidden': True,
+                'options': {
+                    'pattern': '^save\s\w+$',
+                },
+            },
+            {
                 'title': 'Available DBs',
                 'command': self.available,
                 'description': 'Show created databases',
@@ -55,6 +65,15 @@ class CustomDB(BaseCommand):
                 'description': 'Delete the database for real',
                 'options': {
                     'pattern': '^(delete\s\w+|sure\s\w+|cancel)$',
+                }
+            },
+            {
+                'title': 'Show available tags as keyboard buttons',
+                'command': self.show_tag_chooser,
+                'handler': CallbackQueryHandler,
+                'hidden': True,
+                'options': {
+                    'pattern': '^show_tags',
                 }
             },
             {
@@ -126,6 +145,59 @@ class CustomDB(BaseCommand):
         else:
             update.message.reply_text('Save mode turned off')
 
+    def show_tag_chooser(self, bot: Bot, update: Update, method: str = None, message: str = None):
+        """Show available tags in inline-keyboard-buttons
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            method (:obj:`str`, optional): Method to call when clicked (callback query method), is obligatory if you
+                method is not called by the bot itself
+            message (:obj:`str`, optional): Message to send to the user
+        """
+        callback_query = getattr(update, 'callback_query', None)
+        if not callback_query and not method:
+            return ValueError('Wither callback_query or method must be set')
+
+        if callback_query:
+            if (update.effective_chat.type in [Chat.GROUP, Chat.SUPERGROUP]
+                    and not user_is_admin_of_group(update.effective_chat, update.effective_user)):
+                return
+            args = callback_query.data.split(' ')
+            args = list(filter(lambda string: string.strip() if string.strip() else None, args))
+
+            if args[1] == 'cancel':
+                update.callback_query.message.delete()
+                return
+
+            if callback_query:
+                method = args[1] if len(args) > 1 else ''
+                if not method:
+                    update.message.reply_text('Something went wrong, try again or contact an admin /error')
+
+            if len(args) > 2:
+                message = ' '.join(args[2:])
+        message = message or 'Choose a tag:'
+
+        db_items = self.telegram_object_collection.find({'chat_id': update.message.chat_id})
+        tag_list = list(set([item['tag'] for item in db_items]))
+        if tag_list:
+            button_list = [tag_list[i:i + 3] for i in range(0, len(tag_list), 3)]
+            button_list = [
+                [InlineKeyboardButton(tag, callback_data='{} {}'.format(method, tag)) for tag in group]
+                for group in button_list
+            ]
+        else:
+            button_list = [[InlineKeyboardButton('user', callback_data='%s user' % method)]]
+
+        button_list.append([InlineKeyboardButton('Cancel', callback_data='show_tags cancel')])
+
+        buttons = InlineKeyboardMarkup(button_list)
+        if callback_query:
+            callback_query.message.edit(message, reply_markup=buttons)
+        else:
+            update.message.reply_text(message, reply_markup=buttons)
+
     def save_command(self, bot: Bot, update: Update, args: list = None):
         """Save image in reply
 
@@ -134,12 +206,32 @@ class CustomDB(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             args (:obj:`list`, optional): List of sent arguments
         """
-        reply_to_message = update.message.reply_to_message
-        if not reply_to_message:
+        if (update.effective_chat.type in [Chat.GROUP, Chat.SUPERGROUP]
+                and not user_is_admin_of_group(update.effective_chat, update.effective_user)):
+            if update.message:
+                update.message.reply_text('Only admins can use this command in groups')
+            return
+
+        self.ram_db.setdefault('save_reply', {})
+        reply_to_message = getattr(update.message, 'reply_to_message', None)
+        previous_message = self.ram_db['save_reply'].get(update.effective_user.id, None)
+        if not reply_to_message and not previous_message:
             update.message.reply_text('You have to reply to some media file.')
             return
+
+        callback_query = getattr(update, 'callback_query', None)
+        if callback_query:
+            args = list(set(callback_query.data.split(' ')) - {'save'})
+            callback_query.message.delete()
+            update.message = previous_message
+        elif not args:
+            self.ram_db['save_reply'][update.effective_user.id] = update.message
+            self.show_tag_chooser(bot, update, 'save')
+            return
+
         tag = self.get_current_tag(update, args)
         self.save(bot, update, tag)
+        self.ram_db['save_reply'][update.effective_user.id] = None
 
     def save(self, bot: Bot, update: Update, tag: str = None):
         """Save a gif

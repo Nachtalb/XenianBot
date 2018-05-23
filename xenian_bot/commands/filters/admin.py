@@ -1,25 +1,10 @@
 from telegram import Message
 from telegram.ext import BaseFilter
-from xenian_bot.settings import ADMINS
 
+from xenian_bot.settings import ADMINS
+from xenian_bot.utils.telegram import user_is_admin_of_group
 
 __all__ = ['bot_admin', 'bot_group_admin', 'user_group_admin', 'reply_user_group_admin', 'all_admin_group']
-
-
-def user_is_admin_of_group(chat, user):
-    """Check if the given user is admin of the chat
-
-    Attributes:
-        chat (:obj:`Chat`): Telegram Chat Object
-        user (:obj:`User`): Telegram User Object
-    """
-    if chat.all_members_are_administrators:
-        return True
-
-    for member in chat.get_administrators():
-        if user == member.user:
-            return True
-    return False
 
 
 class AdminFilter:

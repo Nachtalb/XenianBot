@@ -2,7 +2,7 @@ from telegram import Bot, User
 
 from . import MWT
 
-__all__ = ['get_self', 'get_user_link', 'get_option_from_string']
+__all__ = ['get_self', 'get_user_link', 'get_option_from_string', 'user_is_admin_of_group']
 
 
 @MWT(timeout=60 * 60)
@@ -67,3 +67,19 @@ def get_option_from_string(option_short: str, string: str) -> tuple:
             string = ' '.join(splitted_text)
             return option, string
     return None, None
+
+
+def user_is_admin_of_group(chat, user):
+    """Check if the given user is admin of the chat
+
+    Attributes:
+        chat (:obj:`Chat`): Telegram Chat Object
+        user (:obj:`User`): Telegram User Object
+    """
+    if chat.all_members_are_administrators:
+        return True
+
+    for member in chat.get_administrators():
+        if user == member.user:
+            return True
+    return False
