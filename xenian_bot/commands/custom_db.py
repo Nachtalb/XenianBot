@@ -306,7 +306,8 @@ class CustomDB(BaseCommand):
         message['tag'] = tag
         self.telegram_object_collection.update(message, message, upsert=True)
 
-        update.message.reply_text('{} was saved!'.format(message['type'].title()), parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text('{} was saved to `{}`!'.format(message['type'].title(), tag),
+                                  parse_mode=ParseMode.MARKDOWN)
 
     def available(self, bot: Bot, update: Update):
         """Show available databases
