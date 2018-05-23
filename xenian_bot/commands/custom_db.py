@@ -1,6 +1,6 @@
 from telegram import Audio, Bot, Chat, Document, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, PhotoSize, \
     Sticker, Update, Video
-from telegram.ext import CallbackQueryHandler, Filters, MessageHandler
+from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, run_async
 
 from xenian_bot import mongodb_database
 from xenian_bot.commands import filters
@@ -171,6 +171,7 @@ class CustomDB(BaseCommand):
         else:
             update.message.reply_text('Save mode turned off')
 
+    @run_async
     def show_tag_chooser(self, bot: Bot, update: Update, method: str = None, message: str = None):
         """Show available tags in inline-keyboard-buttons
 
@@ -334,6 +335,7 @@ class CustomDB(BaseCommand):
         update.message.reply_text('{} was saved to `{}`!'.format(message['type'].title(), tag),
                                   parse_mode=ParseMode.MARKDOWN)
 
+    @run_async
     def show_info(self, bot: Bot, update: Update):
         """Show info about custom db
 
