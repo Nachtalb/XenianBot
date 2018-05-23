@@ -33,7 +33,7 @@ class CustomDB(BaseCommand):
                 'title': 'Save object',
                 'command': self.save_command,
                 'command_name': 'save',
-                'description': 'Reply to save an object to a custom db',
+                'description': 'Reply to save an object to a custom database',
                 'args': ['tag'],
                 'options': {
                     'pass_args': True,
