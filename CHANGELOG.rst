@@ -13,6 +13,8 @@ Added
 ~~~~~
 
 -  Custom user specific databases, use commands ``/save`` and ``/save_mode`` more information in ``/commands``
+-  Add functionality to add alias commands just like a normal command but a string as ``command`` value, which points to
+   a ``command_name``. Additionally ``title``, ``description``, ``hidden`` and ``group`` can be set.
 
 Changes
 ~~~~~~~
