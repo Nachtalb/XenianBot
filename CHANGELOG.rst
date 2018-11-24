@@ -26,6 +26,7 @@ Changes
 -  Combined the reverse search MessageHandlers to one
 -  Cleaned up reverse search image command
 -  Autodownload ffmpeg if it cannot be found by imageio
+-  Improve windows compatibility with file handling
 
 
 [1.4.0] - 2018.05.18

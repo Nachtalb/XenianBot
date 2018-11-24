@@ -43,7 +43,9 @@ class Data:
         name = os.path.splitext(os.path.basename(name))[0]
         path = os.path.join(self.data_dir, name + '.json')
         if not os.path.isfile(path):
-            os.mknod(path, 0o644)
+            file = copen(path, encoding='utf-8', mode='w')
+            file.close()
+
         with copen(path, encoding='utf-8') as data_file:
             content = data_file.read()
             content = content or '{}'
