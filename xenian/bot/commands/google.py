@@ -66,9 +66,12 @@ class Google(BaseCommand):
             try:
                 spoken = gTTS(primary_text, lang=speak_in)
                 spoken.save(mp3_file.name)
-            except Exception:
+            except ValueError:
                 update.message.reply_text('Could not translate {}'.format(primary_text))
                 return
+            except BaseException as error:
+                update.message.reply_text('An error occurred, please try again later or contact the bot owner /error.')
+                raise error
 
             filename = 'XenianBot-TTS-{lang}-{text}-{random}.mp3'.format(
                 lang=speak_in,
