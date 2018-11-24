@@ -91,8 +91,8 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        chat_id = update.message.chat_id
-        bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
+        message = update.message
+        bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.TYPING)
 
         document = (update.message.document or update.message.video or update.message.reply_to_message.document or
                     update.message.reply_to_message.video)
@@ -135,16 +135,18 @@ class Download(BaseCommand):
                         zip_path = os.path.join(temp_folder, os.path.basename(host_path))
                         created_zip = shutil.make_archive(zip_path, format='zip', root_dir=zip_content_path, base_dir='.')
                         if os.path.getsize(created_zip) > 52428800:
-                            bot.send_message(chat_id, 'File is too big, sorry!')
+                            message.reply_text('File is too big, sorry!', reply_to_message_id=message.message_id)
                         else:
                             with open(created_zip, mode='br') as zip_file:
-                                bot.send_document(chat_id, zip_file, filename=os.path.basename(created_zip))
+                                message.reply_document(zip_file, filename=os.path.basename(created_zip),
+                                                       reply_to_message_id=message.message_id)
                     uploader.close()
                     return
                 uploader.close()
 
                 reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Download GIF", url=host_path), ], ])
-                bot.send_photo(chat_id, host_path, 'Instant GIF Download', reply_markup=reply_markup)
+                message.reply_photo(host_path, 'Instant GIF Download', reply_markup=reply_markup,
+                                    reply_to_message_id=message.message_id)
 
     @run_async
     def download(self, bot: Bot, update: Update):

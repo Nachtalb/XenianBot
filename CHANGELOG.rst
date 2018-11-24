@@ -29,6 +29,7 @@ Changes
 -  Improve windows compatibility with file handling
 -  Optimized GIF downloader for local file uploader
 -  Run GIF downloader asynchronously so users won't get stuck
+-  Reply to user message on GIF download, so that the user sees to which GIF the message belongs
 
 
 [1.4.0] - 2018.05.18
