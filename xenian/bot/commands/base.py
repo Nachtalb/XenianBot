@@ -65,10 +65,10 @@ class BaseCommand:
         """
         BaseCommand.all_commands.append(self)
 
-        self.check_commands()
+        self.normalize_commands()
 
-    def check_commands(self):
-        """Check commands for faults, add defaults and add them to :obj:`BaseCommand.all_commands`
+    def normalize_commands(self):
+        """Normalize commands faults, add defaults and add them to :obj:`BaseCommand.all_commands`
         """
         updated_commands = []
         for command in self.commands:
