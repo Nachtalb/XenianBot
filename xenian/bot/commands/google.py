@@ -21,11 +21,16 @@ class Google(BaseCommand):
     def __init__(self):
         self.commands = [
             {
-                'command_name': 'tty',
+                'command_name': 'tts',
                 'command': self.text_to_speech,
                 'description': 'Convert text the given text or the message replied to, to text. Use `-l` to define a '
                                'language, like de, en or ru',
                 'args': ['text', '-l LANG']
+            },
+            {
+                'command_name': 'tty',
+                'alias': 'tts',
+                'hidden': True
             },
         ]
 
