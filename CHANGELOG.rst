@@ -25,6 +25,8 @@ Changes
 -  Moved the download functions from the reverse search image commands to the utils
 -  Combined the reverse search MessageHandlers to one
 -  Cleaned up reverse search image command
+-  Autodownload ffmpeg if it cannot be found by imageio
+
 
 [1.4.0] - 2018.05.18
 --------------------
