@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 import xenian.bot
 from xenian.bot.utils import CustomNamedTemporaryFile
@@ -43,7 +44,15 @@ class FileSystemUploader(UploaderBase):
         save_path = os.path.join(save_dir, filename)
         os.makedirs(save_dir, exist_ok=True)
 
-        os.system('cp {src} {dst} && chmod 664 {dst}'.format(src=real_file, dst=save_path))
+        save_path = os.path.realpath(save_path)
+        real_file = os.path.realpath(real_file)
+        if os.name == 'nt':
+            copy_outcome = subprocess.call(['copy', real_file, save_path], shell=True)
+        else:
+            copy_outcome = subprocess.call(['cp', real_file, save_path], shell=True)
+
+        if copy_outcome != 0:
+            raise IOError(f'Copying file from {real_file} to {save_path} did not work.')
 
         if remove_after:
             xenian.bot.job_queue.run_once(
