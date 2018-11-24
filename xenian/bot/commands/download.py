@@ -83,6 +83,7 @@ class Download(BaseCommand):
             image.save()
             bot.send_photo(update.message.chat_id, photo=image)
 
+    @run_async
     def download_gif(self, bot: Bot, update: Update):
         """Download videos as gifs
 
