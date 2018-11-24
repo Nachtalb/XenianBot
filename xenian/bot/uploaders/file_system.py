@@ -1,7 +1,7 @@
 import os
-from tempfile import NamedTemporaryFile
 
 import xenian.bot
+from xenian.bot.utils import CustomNamedTemporaryFile
 from .base import UploaderBase
 
 
@@ -27,9 +27,10 @@ class FileSystemUploader(UploaderBase):
         if is_file_object:
             if filename is None:
                 raise ValueError('filename must be set when file is a file like object')
-            with NamedTemporaryFile(delete=False) as new_file:
+            with CustomNamedTemporaryFile(delete=False) as new_file:
                 file.seek(0)
                 new_file.write(file.read())
+                new_file.save()
 
                 real_file = new_file.name
                 filename = filename

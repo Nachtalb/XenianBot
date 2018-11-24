@@ -1,6 +1,6 @@
 import os
 import re
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 import youtube_dl
@@ -12,6 +12,7 @@ from youtube_dl import DownloadError
 
 from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
+from xenian.bot.utils import CustomNamedTemporaryFile
 from xenian.bot.utils import TelegramProgressBar
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
@@ -20,7 +21,6 @@ __all__ = ['download', 'video_downloader']
 
 
 class Download(BaseCommand):
-
     group = 'Download'
 
     def __init__(self):
@@ -77,8 +77,9 @@ class Download(BaseCommand):
         """
         sticker = update.message.sticker or update.message.reply_to_message.sticker
         sticker = bot.get_file(sticker.file_id)
-        with NamedTemporaryFile() as image:
-            sticker.download(image.name)
+        with CustomNamedTemporaryFile() as image:
+            sticker.download(out=image)
+            image.save()
             bot.send_photo(update.message.chat_id, photo=image)
 
     def download_gif(self, bot: Bot, update: Update):
@@ -94,12 +95,14 @@ class Download(BaseCommand):
                     update.message.reply_to_message.video)
         video = bot.getFile(document.file_id)
 
-        with NamedTemporaryFile() as video_file:
+        with CustomNamedTemporaryFile() as video_file:
             video.download(out=video_file)
+            video_file.close()
             video_clip = VideoFileClip(video_file.name, audio=False)
 
-            with NamedTemporaryFile(suffix='.gif') as gif_file:
+            with CustomNamedTemporaryFile(suffix='.gif') as gif_file:
                 video_clip.write_gif(gif_file.name)
+                video_clip.close()
 
                 dirname = os.path.dirname(gif_file.name)
                 file_name = os.path.splitext(gif_file.name)[0]
