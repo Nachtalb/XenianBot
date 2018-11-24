@@ -27,6 +27,7 @@ Changes
 -  Cleaned up reverse search image command
 -  Autodownload ffmpeg if it cannot be found by imageio
 -  Improve windows compatibility with file handling
+-  Optimized GIF downloader for local file uploader
 
 
 [1.4.0] - 2018.05.18

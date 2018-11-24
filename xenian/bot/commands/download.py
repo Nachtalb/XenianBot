@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
@@ -89,7 +90,8 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
+        chat_id = update.message.chat_id
+        bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
 
         document = (update.message.document or update.message.video or update.message.reply_to_message.document or
                     update.message.reply_to_message.video)
@@ -118,13 +120,30 @@ class Download(BaseCommand):
 
                 uploader.connect()
                 uploader.upload(path, upload_file_name)
-                uploader.close()
 
                 path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
                 host_path = path + '/' + upload_file_name
 
+                # If the host path a local path we can't send it as an URL, so we send the gif just as a ZIP file.
+                if os.path.isfile(host_path):
+                    with TemporaryDirectory() as temp_folder:
+                        zip_content_path = os.path.join(temp_folder, 'zip_content')
+                        os.mkdir(zip_content_path)
+                        uploader.upload(host_path, zip_content_path)
+
+                        zip_path = os.path.join(temp_folder, os.path.basename(host_path))
+                        created_zip = shutil.make_archive(zip_path, format='zip', root_dir=zip_content_path, base_dir='.')
+                        if os.path.getsize(created_zip) > 52428800:
+                            bot.send_message(chat_id, 'File is too big, sorry!')
+                        else:
+                            with open(created_zip, mode='br') as zip_file:
+                                bot.send_document(chat_id, zip_file, filename=os.path.basename(created_zip))
+                    uploader.close()
+                    return
+                uploader.close()
+
                 reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Download GIF", url=host_path), ], ])
-                bot.send_photo(update.message.chat_id, host_path, 'Instant GIF Download', reply_markup=reply_markup)
+                bot.send_photo(chat_id, host_path, 'Instant GIF Download', reply_markup=reply_markup)
 
     @run_async
     def download(self, bot: Bot, update: Update):
