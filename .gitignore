@@ -105,6 +105,7 @@ settings.py
 log/
 tmp/
 data/
+.idea/
 
 #### InstagramBot
 followed.txt
