@@ -1,11 +1,11 @@
 import os
-from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
 from gtts import gTTS
 from telegram import Bot, Update, ChatAction
 from telegram.ext import run_async
 
+from xenian.bot.utils import CustomNamedTemporaryFile
 from xenian.bot.utils import get_option_from_string
 from .base import BaseCommand
 
@@ -61,14 +61,17 @@ class Google(BaseCommand):
             update.message.reply_text('You either have to reply to a message or give me some text.')
             return
 
-        with NamedTemporaryFile() as mp3_file:
+        with CustomNamedTemporaryFile() as mp3_file:
             bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.RECORD_AUDIO)
             try:
                 spoken = gTTS(primary_text, lang=speak_in)
                 spoken.save(mp3_file.name)
-            except Exception:
+            except ValueError:
                 update.message.reply_text('Could not translate {}'.format(primary_text))
                 return
+            except BaseException as error:
+                update.message.reply_text('An error occurred, please try again later or contact the bot owner /error.')
+                raise error
 
             filename = 'XenianBot-TTS-{lang}-{text}-{random}.mp3'.format(
                 lang=speak_in,

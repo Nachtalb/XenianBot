@@ -1,6 +1,7 @@
 import os
 import re
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+import shutil
+from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 import youtube_dl
@@ -12,6 +13,7 @@ from youtube_dl import DownloadError
 
 from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
+from xenian.bot.utils import CustomNamedTemporaryFile
 from xenian.bot.utils import TelegramProgressBar
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
@@ -20,7 +22,6 @@ __all__ = ['download', 'video_downloader']
 
 
 class Download(BaseCommand):
-
     group = 'Download'
 
     def __init__(self):
@@ -77,10 +78,12 @@ class Download(BaseCommand):
         """
         sticker = update.message.sticker or update.message.reply_to_message.sticker
         sticker = bot.get_file(sticker.file_id)
-        with NamedTemporaryFile() as image:
-            sticker.download(image.name)
+        with CustomNamedTemporaryFile() as image:
+            sticker.download(out=image)
+            image.save()
             bot.send_photo(update.message.chat_id, photo=image)
 
+    @run_async
     def download_gif(self, bot: Bot, update: Update):
         """Download videos as gifs
 
@@ -88,18 +91,21 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
+        message = update.message
+        bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.TYPING)
 
         document = (update.message.document or update.message.video or update.message.reply_to_message.document or
                     update.message.reply_to_message.video)
         video = bot.getFile(document.file_id)
 
-        with NamedTemporaryFile() as video_file:
+        with CustomNamedTemporaryFile() as video_file:
             video.download(out=video_file)
+            video_file.close()
             video_clip = VideoFileClip(video_file.name, audio=False)
 
-            with NamedTemporaryFile(suffix='.gif') as gif_file:
+            with CustomNamedTemporaryFile(suffix='.gif') as gif_file:
                 video_clip.write_gif(gif_file.name)
+                video_clip.close()
 
                 dirname = os.path.dirname(gif_file.name)
                 file_name = os.path.splitext(gif_file.name)[0]
@@ -115,13 +121,32 @@ class Download(BaseCommand):
 
                 uploader.connect()
                 uploader.upload(path, upload_file_name)
-                uploader.close()
 
                 path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
                 host_path = path + '/' + upload_file_name
 
+                # If the host path a local path we can't send it as an URL, so we send the gif just as a ZIP file.
+                if os.path.isfile(host_path):
+                    with TemporaryDirectory() as temp_folder:
+                        zip_content_path = os.path.join(temp_folder, 'zip_content')
+                        os.mkdir(zip_content_path)
+                        uploader.upload(host_path, zip_content_path)
+
+                        zip_path = os.path.join(temp_folder, os.path.basename(host_path))
+                        created_zip = shutil.make_archive(zip_path, format='zip', root_dir=zip_content_path, base_dir='.')
+                        if os.path.getsize(created_zip) > 52428800:
+                            message.reply_text('File is too big, sorry!', reply_to_message_id=message.message_id)
+                        else:
+                            with open(created_zip, mode='br') as zip_file:
+                                message.reply_document(zip_file, filename=os.path.basename(created_zip),
+                                                       reply_to_message_id=message.message_id)
+                    uploader.close()
+                    return
+                uploader.close()
+
                 reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Download GIF", url=host_path), ], ])
-                bot.send_photo(update.message.chat_id, host_path, 'Instant GIF Download', reply_markup=reply_markup)
+                message.reply_photo(host_path, 'Instant GIF Download', reply_markup=reply_markup,
+                                    reply_to_message_id=message.message_id)
 
     @run_async
     def download(self, bot: Bot, update: Update):

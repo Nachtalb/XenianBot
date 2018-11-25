@@ -3,8 +3,17 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 
 from PIL import Image
-from moviepy.video.io.VideoFileClip import VideoFileClip
+from imageio.core import NeedDownloadError
+from imageio import plugins
 from telegram import Bot, Update, Message
+
+try:
+    from moviepy.video.io.VideoFileClip import VideoFileClip
+except NeedDownloadError as error:
+    if 'ffmpeg.download()' in error.args[0]:
+        plugins.ffmpeg.download()
+    else:
+        raise error
 
 __all__ = ['image_download', 'sticker_download', 'video_download', 'video_to_gif', 'video_to_gif_download',
            'auto_download']

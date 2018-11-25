@@ -25,6 +25,13 @@ Changes
 -  Moved the download functions from the reverse search image commands to the utils
 -  Combined the reverse search MessageHandlers to one
 -  Cleaned up reverse search image command
+-  Autodownload ffmpeg if it cannot be found by imageio
+-  Improve windows compatibility with file handling
+-  Optimized GIF downloader for local file uploader
+-  Run GIF downloader asynchronously so users won't get stuck
+-  Reply to user message on GIF download, so that the user sees to which GIF the message belongs
+-  Improve TTS error message
+
 
 [1.4.0] - 2018.05.18
 --------------------
