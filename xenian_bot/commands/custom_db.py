@@ -330,6 +330,16 @@ class CustomDB(BaseCommand):
         if not tag:
             tag = self.get_current_tag(update)
 
+        if isinstance(telegram_object, list):
+            actual_object = None
+            for object in telegram_object:
+                if isinstance(object, PhotoSize) and (not actual_object or object.file_size > actual_object.file_size):
+                    actual_object = object
+            telegram_object = actual_object
+            if not telegram_object:
+                update.message.reply_text('An error occurred, please contact an admin with /error.')
+                return
+
         if isinstance(telegram_object, str):
             message = {
                 'type': 'text',
