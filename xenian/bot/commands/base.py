@@ -71,7 +71,11 @@ class BaseCommand:
         """Normalize commands faults, add defaults and add them to :obj:`BaseCommand.all_commands`
         """
         updated_commands = []
+        alias_commands = []
         for command in self.commands:
+            if isinstance(command.get('alias', None), str):
+                alias_commands.append(command)
+                continue
             if command['command'].__name__ == '<lambda>' and not command.get('command_name'):
                 raise ValueError('If "command_wrapper" is used a "command_name" has to be defined!')
 
@@ -87,13 +91,6 @@ class BaseCommand:
                 'group': command.get('group', 0)
             }
 
-            try:
-                int(command['group'])
-            except ValueError:
-                raise ValueError('Command group has to be an integer: command {}, given group {}'.format(
-                    command['command_name'], command['group']
-                ))
-
             if command['handler'] == CommandHandler and command['options'].get('command', None) is None:
                 command['options']['command'] = command['command_name']
 
@@ -105,7 +102,44 @@ class BaseCommand:
                 command['options']['callback'] = command['command']
 
             updated_commands.append(command)
+
         self.commands = updated_commands
+
+        for alias_command in alias_commands:
+            alias_name = alias_command['alias']
+
+            real_command = self.get_command_by_name(alias_name)
+            if not real_command:
+                continue
+
+            new_command = real_command.copy()
+            for key, value in alias_command.items():
+                if key in ['title', 'description', 'hidden', 'group']:
+                    new_command[key] = value
+
+            updated_commands.append(new_command)
+
+        for command in updated_commands:
+            try:
+                int(command['group'])
+            except ValueError:
+                raise ValueError('Command group has to be an integer: command {}, given group {}'.format(
+                    command['command_name'], command['group']
+                ))
+
+        self.commands = updated_commands
+
+    def get_command_by_name(self, name: str) -> dict:
+        """Returns a command form self.command with the given name
+
+        Args:
+            name (:obj:`str`): Name of the command
+
+        Returns:
+            (:obj:`dict` | :obj:`None`): The found command or :obj:`None` if no command was found
+        """
+        commands_found = list(filter(lambda command: command['command_name'] == name, self.commands))
+        return commands_found[0] if commands_found else None
 
     def command_wrapper(self, method: callable, *args, **kwargs):
         return lambda bot, update, *args2, **kwargs2: method(bot, update, *args2, *args, **kwargs2, **kwargs)

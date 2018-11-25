@@ -13,6 +13,8 @@ Added
 ~~~~~
 
 -  Custom user specific databases, use commands ``/save`` and ``/save_mode`` more information in ``/commands``
+-  Add functionality to add alias commands just like a normal command but a string as ``command`` value, which points to
+   a ``command_name``. Additionally ``title``, ``description``, ``hidden`` and ``group`` can be set.
 
 Changes
 ~~~~~~~
@@ -31,6 +33,7 @@ Changes
 -  Run GIF downloader asynchronously so users won't get stuck
 -  Reply to user message on GIF download, so that the user sees to which GIF the message belongs
 -  Improve TTS error message
+-  Rename ``tty`` command to ``tts`` (Text-To-Speech) but add an ``tty`` alias for the time being
 
 
 [1.4.0] - 2018.05.18
