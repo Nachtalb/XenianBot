@@ -1,0 +1,7 @@
+recursive-include xenian.bot *
+include *.txt
+include *.rst
+include *.md
+global-exclude *.pyc
+global-exclude ._*
+global-exclude *.mo
