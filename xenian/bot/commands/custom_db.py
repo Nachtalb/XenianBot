@@ -212,27 +212,10 @@ class CustomDB(BaseCommand):
                 method is not called by the bot itself
             message (:obj:`str`, optional): Message to send to the user
         """
-        callback_query = getattr(update, 'callback_query', None)
-        if not callback_query and not method:
-            return ValueError('Wither callback_query or method must be set')
+        callback_query, message = self.callbackquery_handler(update, method, message)
+        if callback_query is None:
+            return
 
-        if callback_query:
-            if not self.is_group_admin_if_group(update):
-                return
-            args = callback_query.data.split(' ')
-            args = list(filter(lambda string: string.strip() if string.strip() else None, args))
-
-            if args[1] == 'cancel':
-                update.callback_query.message.delete()
-                return
-
-            if callback_query:
-                method = args[1] if len(args) > 1 else ''
-                if not method:
-                    update.message.reply_text('Something went wrong, try again or contact an admin /error')
-
-            if len(args) > 2:
-                message = ' '.join(args[2:])
         message = message or 'Choose a tag:'
 
         db_items = self.telegram_object_collection.find({'chat_id': update.message.chat_id})
@@ -431,6 +414,46 @@ class CustomDB(BaseCommand):
             update.callback_query.message.edit_text('%s deleted!' % tag.title())
         else:
             update.callback_query.message.edit_text('Something went wrong, try again or contact admin via /error.')
+
+    def callbackquery_handler(self, update, method, message):
+        """Handle callbackqueries to a point where we can actually use them
+
+        Args:
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            method (:obj:`str`, optional): Method to call when clicked (callback query method), is obligatory if you
+                method is not called by the bot itself
+            message (:obj:`str`, optional): Message to send to the user
+        Returns:
+            :obj:`tuple`: The first item will either be :obj:`False` if the request was not a callbackquery but still is
+                valid or a :obj:`telegram.callbackquery.CallbackQuery` if the request was a callbackquery.
+                The second item is either a :obj:`str`.
+                Both values are :obj:`None` if something went wrong or the whole operation should be cancelled.
+        Raises:
+            :obj:`ValueError`: If no ``method`` and no ``callbackquery`` was set.
+        """
+        callback_query = getattr(update, 'callback_query', False) or False
+        message = ''
+        if not callback_query and not method:
+            raise ValueError('Wither callback_query or method must be set')
+
+        if callback_query:
+            if not self.is_group_admin_if_group(update):
+                return None, None
+            args = callback_query.data.split(' ')
+            args = list(filter(lambda string: string.strip() if string.strip() else None, args))
+
+            if args[1] == 'cancel':
+                update.callback_query.message.delete()
+                return None, None
+
+            if callback_query:
+                method = args[1] if len(args) > 1 else ''
+                if not method:
+                    update.message.reply_text('Something went wrong, try again or contact an admin /error')
+                    return None, None
+            if len(args) > 2:
+                message = ' '.join(args[2:])
+        return callback_query, message
 
 
 image_db = CustomDB()
