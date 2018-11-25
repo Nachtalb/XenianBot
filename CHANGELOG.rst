@@ -17,6 +17,10 @@ Added
 Changes
 ~~~~~~~
 
+-  Bot refactoring:
+    -  package ``xenian.bot`` instead of ``xenian_bot``
+    -  buildout instead of pipenv
+    -  ``bin/bot`` instead of ``run_bot.py``
 -  Split utils up and put them in an ``utils`` package
 -  Moved the download functions from the reverse search image commands to the utils
 -  Combined the reverse search MessageHandlers to one
