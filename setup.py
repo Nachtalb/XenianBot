@@ -7,7 +7,7 @@ version = '1.5.0.dev0'
 setup(name='XenianBot',
       version=version,
       description="Multifunctional Telegram Bot",
-      long_description=f'{open("README.md").read()}\n{open("CHANGELOG.md").read()}',
+      long_description=f'{open("README.rst").read()}\n{open("CHANGELOG.rst").read()}',
 
       author='Nachtalb',
       url='https://github.com/Nachtalb/XenianBot',
