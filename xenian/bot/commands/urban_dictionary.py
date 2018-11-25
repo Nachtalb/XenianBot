@@ -2,7 +2,7 @@ import urbandictionary as ud
 from emoji import emojize
 from telegram import Bot, ParseMode, Update
 
-from xenian_bot.commands import BaseCommand
+from xenian.bot.commands import BaseCommand
 
 __all__ = ['urban_dictionary']
 

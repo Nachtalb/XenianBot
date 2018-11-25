@@ -2,8 +2,8 @@ from telegram import Bot, Update
 from telegram.ext import CommandHandler, MessageHandler
 from telegram.parsemode import ParseMode
 
-from xenian_bot.settings import ADMINS, SUPPORTER
-from xenian_bot.utils import data, get_user_link, render_template
+from xenian.bot.settings import ADMINS, SUPPORTER
+from xenian.bot.utils import data, get_user_link, render_template
 from .base import BaseCommand
 
 __all__ = ['builtins']

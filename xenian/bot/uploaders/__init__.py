@@ -1,6 +1,6 @@
 from importlib import import_module
 
-from xenian_bot.settings import UPLOADER
+from xenian.bot.settings import UPLOADER
 
 uploader_pkg_name, uploader_class_name = UPLOADER['uploader'].rsplit('.', 1)
 uploader_module = import_module(uploader_pkg_name)

@@ -6,8 +6,8 @@ from pytesseract import TesseractError
 from telegram import Bot, ParseMode, Update
 from telegram.ext import run_async
 
-from xenian_bot.settings import IMAGE_TO_TEXT_LANG
-from xenian_bot.utils import get_option_from_string
+from xenian.bot.settings import IMAGE_TO_TEXT_LANG
+from xenian.bot.utils import get_option_from_string
 from . import yandex
 from .base import BaseCommand
 

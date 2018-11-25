@@ -1,7 +1,7 @@
 from telegram import Message, Chat
 from telegram.ext import BaseFilter
 
-from xenian_bot import mongodb_database
+from xenian.bot import mongodb_database
 
 __all__ = ['custom_db_save_mode']
 

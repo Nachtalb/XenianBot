@@ -3,7 +3,7 @@ from tempfile import NamedTemporaryFile
 
 import paramiko
 
-import xenian_bot
+import xenian.bot
 from .base import UploaderBase
 
 
@@ -83,7 +83,7 @@ class SSHUploader(UploaderBase):
         self.sftp.put(real_file, upload_path)
 
         if remove_after:
-            xenian_bot.job_queue.run_once(
+            xenian.bot.job_queue.run_once(
                 callback=lambda bot, job: self.remove(upload_path, True),
                 when=remove_after,
                 name='Remove on server: {}'.format(upload_path))

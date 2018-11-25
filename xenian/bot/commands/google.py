@@ -6,7 +6,7 @@ from gtts import gTTS
 from telegram import Bot, Update, ChatAction
 from telegram.ext import run_async
 
-from xenian_bot.utils import get_option_from_string
+from xenian.bot.utils import get_option_from_string
 from .base import BaseCommand
 
 __all__ = ['google']

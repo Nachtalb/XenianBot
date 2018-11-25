@@ -11,6 +11,6 @@ then
   /home/web_server/.pyenv/versions/XenianBot-vjGaRaxr/bin/pipenv install
 fi
 
-echo "Restarting xenian_bot.service"
-sudo /home/web_server/admin_services/restart_xenian_bot
+echo "Restarting xenian.bot.service"
+sudo /home/web_server/admin_services/restart_xenian.bot
 echo "Restarted"

@@ -6,7 +6,7 @@ from threading import Thread
 from telegram import Bot, TelegramError, Update
 from telegram.ext import CommandHandler, Filters, Updater
 
-import xenian_bot
+import xenian.bot
 from .commands import BaseCommand
 from .settings import ADMINS, MODE, TELEGRAM_API_TOKEN, LOG_LEVEL
 
@@ -32,7 +32,7 @@ def main():
     updater = Updater(TELEGRAM_API_TOKEN)
     dispatcher = updater.dispatcher
 
-    xenian_bot.job_queue = updater.job_queue
+    xenian.bot.job_queue = updater.job_queue
 
     def stop_and_restart():
         """Gracefully stop the Updater and replace the current process with a new one.

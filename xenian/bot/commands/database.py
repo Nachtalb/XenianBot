@@ -2,7 +2,7 @@ from pymongo import MongoClient
 from telegram import Bot, Chat, Message, Update, User
 from telegram.ext import MessageHandler, run_async, Handler, Filters
 
-from xenian_bot import mongodb_database
+from xenian.bot import mongodb_database
 from .base import BaseCommand
 
 __all__ = ['database']

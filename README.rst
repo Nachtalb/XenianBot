@@ -147,7 +147,7 @@ Token > `@BotFather <https://t.me/BotFather>`__. The ``settings.py`` should be s
 
 .. code:: bash
 
-   cp xenian_bot/settings.example.py  xenian_bot/settings.py
+   cp xenian.bot/settings.example.py  xenian.bot/settings.py
 
 To run the bot simply run
 
@@ -206,7 +206,7 @@ After you create your class, you have to call it at least once. It doesn’t mat
 just call it directly after the code, as you can see in the builtins.py. And do not forget that the file with the
 command must be loaded imported somewhere. I usually do this directly in the ``__init__.py``.
 
-A good example can be found in the ``reverse_image_search.py``: https://github.com/Nachtalb/XenianBot/blob/b482cbf8a1eb2ebe3f9683c9144bd3e222a26716/xenian_bot/commands/reverse_image_search.py#L23-L56
+A good example can be found in the ``reverse_image_search.py``: https://github.com/Nachtalb/XenianBot/blob/b482cbf8a1eb2ebe3f9683c9144bd3e222a26716/xenian.bot/commands/reverse_image_search.py#L23-L56
 
 Uploaders Concept
 ^^^^^^^^^^^^^^^^^
@@ -236,7 +236,7 @@ which means you have to define
 .. code:: python
 
    UPLOADER = {
-       'uploader': 'xenian_bot.uploaders.file_system.FileSystemUploader',  # What uploader to use
+       'uploader': 'xenian.bot.uploaders.file_system.FileSystemUploader',  # What uploader to use
        'configuration': {
            'path': '/some/path/to/your/uploads',
        }
@@ -251,7 +251,7 @@ If you are using the ssh uploader you have to define more:
 .. code:: python
 
    UPLOADER = {
-       'uploader': 'xenian_bot.uploaders.ssh.SSHUploader',
+       'uploader': 'xenian.bot.uploaders.ssh.SSHUploader',
        'configuration': {
            'host': '000.000.000.000',
            'user': 'chuck.norris',

@@ -4,8 +4,8 @@ from urllib.parse import quote_plus
 
 import requests
 
-from xenian_bot.settings import UPLOADER
-from xenian_bot.uploaders import uploader
+from xenian.bot.settings import UPLOADER
+from xenian.bot.uploaders import uploader
 
 __all__ = ['ReverseImageSearchEngine']
 

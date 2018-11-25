@@ -14,7 +14,7 @@ setup(name='XenianBot',
       license='GPL3',
 
       packages=find_packages(exclude=['ez_setup']),
-      namespace_packages=['xenian_bot'],
+      namespace_packages=['xenian'],
       include_package_data=True,
       zip_safe=False,
 
@@ -39,5 +39,5 @@ setup(name='XenianBot',
 
       entry_points={
           'console_scripts': [
-              'bot = xenian_bot.bot:main']
+              'bot = xenian.bot.bot:main']
       })

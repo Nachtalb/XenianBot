@@ -3,8 +3,8 @@ from telegram.ext import run_async
 from telegram.parsemode import ParseMode
 from yandex_translate import YandexTranslate
 
-from xenian_bot.settings import YANDEX_API_TOKEN
-from xenian_bot.utils import get_option_from_string
+from xenian.bot.settings import YANDEX_API_TOKEN
+from xenian.bot.utils import get_option_from_string
 from .base import BaseCommand
 
 __all__ = ['yandex']

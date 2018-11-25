@@ -1,7 +1,7 @@
 import os
 from tempfile import NamedTemporaryFile
 
-import xenian_bot
+import xenian.bot
 from .base import UploaderBase
 
 
@@ -45,7 +45,7 @@ class FileSystemUploader(UploaderBase):
         os.system('cp {src} {dst} && chmod 664 {dst}'.format(src=real_file, dst=save_path))
 
         if remove_after:
-            xenian_bot.job_queue.run_once(
+            xenian.bot.job_queue.run_once(
                 callback=lambda bot, job: self.remove(save_path, True),
                 when=remove_after,
                 name='Remove file locally: {}'.format(save_path))

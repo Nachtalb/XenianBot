@@ -12,12 +12,12 @@ class BaseCommand:
     store all the data for your commands together in one place.
 
     Your commands are also automatically added to the Telegram Updater, as well as listed in the output of the /commands
-    command from the :class:`xenian_bot.commands.builtins.Builtins` commands (unless you have hidden on true for your
+    command from the :class:`xenian.bot.commands.builtins.Builtins` commands (unless you have hidden on true for your
     command).
 
     Examples:
         >>> from telegram.ext import Filters
-        >>> from xenian_bot.commands.base import BaseCommand
+        >>> from xenian.bot import BaseCommand
         >>>
         >>> class MyCommands(BaseCommand):
         >>>     def __init__(self):

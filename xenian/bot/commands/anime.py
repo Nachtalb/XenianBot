@@ -3,8 +3,8 @@ from random import choice
 from telegram import Bot, ParseMode, Update
 from telegram.ext import Filters, MessageHandler, run_async
 
-from xenian_bot import mongodb_database
-from xenian_bot.commands import filters
+from xenian.bot import mongodb_database
+from xenian.bot.commands import filters
 from .base import BaseCommand
 
 __all__ = ['anime']

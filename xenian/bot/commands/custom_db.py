@@ -2,9 +2,9 @@ from telegram import Audio, Bot, Chat, Document, InlineKeyboardButton, InlineKey
     Sticker, Update, Video
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, run_async
 
-from xenian_bot import mongodb_database
-from xenian_bot.commands import filters
-from xenian_bot.utils import render_template, user_is_admin_of_group
+from xenian.bot import mongodb_database
+from xenian.bot.commands import filters
+from xenian.bot.utils import render_template, user_is_admin_of_group
 from .base import BaseCommand
 
 __all__ = ['image_db']

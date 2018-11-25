@@ -3,9 +3,10 @@ import datetime
 from telegram import Bot, ParseMode, Update, User
 from telegram.ext import Filters
 
-import xenian_bot
-from xenian_bot.commands import BaseCommand, filters
-from xenian_bot.utils import data, get_user_link
+import xenian.bot
+from xenian.bot.commands import BaseCommand
+from xenian.bot.commands import filters
+from xenian.bot.utils import data, get_user_link
 
 __all__ = ['group_manager']
 
@@ -162,7 +163,7 @@ class GroupManager(BaseCommand):
             user_id=wanted_user.id,
             until_date=kick_until)
 
-        xenian_bot.job_queue.run_once(
+        xenian.bot.job_queue.run_once(
             callback=(
                 lambda bot, job: bot.send_message(
                     chat_id,

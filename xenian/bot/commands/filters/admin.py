@@ -1,8 +1,8 @@
 from telegram import Chat, Message
 from telegram.ext import BaseFilter
 
-from xenian_bot.settings import ADMINS
-from xenian_bot.utils.telegram import user_is_admin_of_group
+from xenian.bot.settings import ADMINS
+from xenian.bot.utils.telegram import user_is_admin_of_group
 
 __all__ = ['bot_admin', 'bot_group_admin', 'user_group_admin', 'reply_user_group_admin', 'all_admin_group',
            'user_group_admin_if_group']

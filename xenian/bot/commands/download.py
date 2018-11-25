@@ -10,9 +10,9 @@ from telegram.error import BadRequest, NetworkError, TimedOut
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, run_async
 from youtube_dl import DownloadError
 
-from xenian_bot.settings import UPLOADER
-from xenian_bot.uploaders import uploader
-from xenian_bot.utils import TelegramProgressBar
+from xenian.bot.settings import UPLOADER
+from xenian.bot.uploaders import uploader
+from xenian.bot.utils import TelegramProgressBar
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 

@@ -3,7 +3,7 @@ from random import randint
 
 from telegram import Bot, Update
 
-from xenian_bot.commands import BaseCommand
+from xenian.bot.commands import BaseCommand
 
 __all__ = ['roll']
 

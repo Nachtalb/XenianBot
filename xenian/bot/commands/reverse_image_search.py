@@ -4,13 +4,13 @@ from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Message, U
 from telegram.ext import Filters, run_async
 from telegram.ext.messagehandler import MessageHandler
 
-from xenian_bot.commands.filters.download_mode import download_mode_filter
-from xenian_bot.commands.reverse_image_search_engines.bing import BingReverseImageSearchEngine
-from xenian_bot.commands.reverse_image_search_engines.google import GoogleReverseImageSearchEngine
-from xenian_bot.commands.reverse_image_search_engines.iqdb import IQDBReverseImageSearchEngine
-from xenian_bot.commands.reverse_image_search_engines.tineye import TinEyeReverseImageSearchEngine
-from xenian_bot.commands.reverse_image_search_engines.yandex import YandexReverseImageSearchEngine
-from xenian_bot.utils import auto_download
+from xenian.bot.commands.filters import download_mode_filter
+from xenian.bot.commands.reverse_image_search_engines.bing import BingReverseImageSearchEngine
+from xenian.bot.commands.reverse_image_search_engines.google import GoogleReverseImageSearchEngine
+from xenian.bot.commands.reverse_image_search_engines.iqdb import IQDBReverseImageSearchEngine
+from xenian.bot.commands.reverse_image_search_engines.tineye import TinEyeReverseImageSearchEngine
+from xenian.bot.commands.reverse_image_search_engines.yandex import YandexReverseImageSearchEngine
+from xenian.bot.utils import auto_download
 from . import BaseCommand
 
 __all__ = ['reverse_image_search']
