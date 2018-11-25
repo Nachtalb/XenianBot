@@ -103,24 +103,26 @@ If you have found a bug or want a new feature, please file an issue on GitHub [I
 Please use a line length of 120 characters and [Google Style Python Docstrings](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
 
 ### Development
-Instead of the old `pip` with `requirements.txt`, I use the new and fancy [pipenv](https://github.com/pypa/pipfile),
-which works with [pipfile](https://docs.pipenv.org). You can get more information by following the links. If you read
-the pipenv documentation you will also be able to understand by yourself why I use, it instead of me talking about it here.
+For the project I choose [buildout](http://www.buildout.org/en/latest/contents.html) instead of the default pip way. I
+manly did this because it makes installation easier. I recommend to be in an virtualenv for any project, but this is up 
+to you. Now for the installation:
 
-With this info we now install our virtualenv with:
 ```bash
-pip install pipenv      # Install pipenv
-pipenv install --three  # Create virtualeenv from your python3 installation and install the packages from the Pipfile
-pipenv shell            # Spawn shell for your pipenv virtualenv
+ln -s development.cfg buildout.cfg
+python bootstrap.py
+bin/buildout
 ```
 
-After this is complete, you have to get an API Token from Telegram. You can easily get one via the
-[@BotFather](https://t.me/BotFather).
+And everything should be installed. Now you can copy and configure your settings. For this you need an Telegram Bot API
+Token > [@BotFather](https://t.me/BotFather). The `settings.py` should be self explanatory.
 
-Now that you have your API Token, copy the `settings.example.py` to `settings.py` and paste in your API Token. Configure
-the rest of the settings.py and you are ready to go. Start the bot
 ```bash
-python run_bot.py
+cp xenian_bot/settings.example.py  xenian_bot/settings.py 
+```
+
+To run the bot simply run
+```bash
+bin/bot
 ```
 
 #### Command Concept

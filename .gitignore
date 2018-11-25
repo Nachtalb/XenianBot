@@ -241,6 +241,7 @@ log/
 tmp/
 data/
 .idea/
+buildout.cfg
 
 #### InstagramBot
 followed.txt
