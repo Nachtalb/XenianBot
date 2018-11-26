@@ -73,7 +73,7 @@ class CustomDB(BaseCommand):
             {
                 'title': 'Remove DB',
                 'command': self.command_wrapper(self.show_tag_chooser, 'sure', 'Select the database to delete:'),
-                'command_name': 'delete_db',
+                'command_name': 'db_delete',
                 'description': 'Delete selected database',
                 'options': {
                     'filters': filters.user_group_admin_if_group,
