@@ -1,7 +1,18 @@
-recursive-include xenian.bot *
+recursive-include xenian *
+recursive-include .github *
+recursive-include deploy *
 include *.txt
 include *.rst
 include *.md
+include *.py
+include LICENSE
+include development.cfg
+include main.cfg
+include production.cfg
+include versions.cfg
+
+recursive-exclude xenian/bot/utils/data *
+exclude xenian/bot/settings.py
 global-exclude *.pyc
 global-exclude ._*
 global-exclude *.mo
