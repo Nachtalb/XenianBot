@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.0.3 (unreleased)
+2.0.3 (2018-11-26)
 ------------------
 
 - Fix file copying on unix devices
