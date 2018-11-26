@@ -1,5 +1,6 @@
 import os
 import subprocess
+import warnings
 
 import xenian.bot
 from xenian.bot.utils import CustomNamedTemporaryFile
@@ -48,11 +49,16 @@ class FileSystemUploader(UploaderBase):
         real_file = os.path.realpath(real_file)
         if os.name == 'nt':
             copy_outcome = subprocess.call(['copy', real_file, save_path], shell=True)
+            chmod_outcome = 0
         else:
             copy_outcome = subprocess.call(['cp', real_file, save_path])
+            chmod_outcome = subprocess.call(['chmod', '644', save_path])
 
         if copy_outcome != 0:
             raise IOError(f'Copying file from {real_file} to {save_path} did not work.')
+
+        if chmod_outcome != 0:
+            warnings.warn(f'Could not set permissions for "{save_path}".')
 
         if remove_after:
             xenian.bot.job_queue.run_once(
