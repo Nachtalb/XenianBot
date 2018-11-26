@@ -4,7 +4,7 @@ Changelog
 2.0.5 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix error when saving a ``CustomNamedTemporaryFile`` file.
 
 
 2.0.4 (2018-11-26)
