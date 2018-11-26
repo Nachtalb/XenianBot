@@ -368,6 +368,21 @@ class CustomDB(BaseCommand):
         """
 
         tag = update.callback_query.data.split(' ')[1]
+        data = self.get_db_content_summary(update, tag)
+
+        update.callback_query.message.edit_text(text=render_template('db_info.html.mako', info=data),
+                                                parse_mode=ParseMode.HTML)
+
+    def get_db_content_summary(self, update, tag):
+        """Get a summary with available number of available items in db by tag
+
+        Args:
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            tag (:obj:`str`): DB name
+
+        Returns:
+            :obj:`dict`: Dict with number of item of ech content type + tag name + total number of items
+        """
         db_items = self.telegram_object_collection.find({'chat_id': update.effective_chat.id, 'tag': tag})
         data = {
             'tag': tag,
@@ -383,9 +398,7 @@ class CustomDB(BaseCommand):
         for item in db_items:
             data[item['type']] += 1
             data['total'] += 1
-
-        update.callback_query.message.edit_text(text=render_template('db_info.html.mako', info=data),
-                                                parse_mode=ParseMode.HTML)
+        return data
 
     def real_delete(self, bot: Bot, update: Update):
         """Actually delete a databases
