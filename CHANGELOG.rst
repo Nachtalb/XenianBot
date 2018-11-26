@@ -35,6 +35,7 @@ Changes
 -  Reply to user message on GIF download, so that the user sees to which GIF the message belongs
 -  Improve TTS error message
 -  Rename ``tty`` command to ``tts`` (Text-To-Speech) but add an ``tty`` alias for the time being
+-  Be able to set a CallbackQueryHandler for a CallbackQuery sender
 
 
 [1.4.0] - 2018.05.18
