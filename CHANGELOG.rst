@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.0.1 (unreleased)
+2.0.1 (2018-11-26)
 ------------------
 
 - Fix paths in settings template
