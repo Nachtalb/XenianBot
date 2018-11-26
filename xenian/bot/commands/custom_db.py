@@ -89,6 +89,33 @@ class CustomDB(BaseCommand):
                 }
             },
             {
+                'title': 'List DB Content',
+                'command': self.command_wrapper(self.show_tag_chooser, 'ask_content_type'),
+                'command_name': 'db_list',
+                'description': 'List the content of a DB',
+                'options': {
+                    'filters': filters.user_group_admin_if_group,
+                }
+            },
+            {
+                'title': 'List DB Content',
+                'command': self.command_wrapper(self.ask_content_type, 'real_db_list'),
+                'handler': CallbackQueryHandler,
+                'description': 'Now that we know the db, ask for a content type to be listed.',
+                'options': {
+                    'pattern': '^ask_content_type',
+                }
+            },
+            {
+                'title': 'List DB Content',
+                'command': self.real_db_list,
+                'handler': CallbackQueryHandler,
+                'hidden': True,
+                'options': {
+                    'pattern': '^real_db_list',
+                }
+            },
+            {
                 'title': 'Show available tags as keyboard buttons',
                 'command': self.show_tag_chooser,
                 'handler': CallbackQueryHandler,
@@ -236,6 +263,97 @@ class CustomDB(BaseCommand):
             callback_query.message.edit(message, reply_markup=buttons)
         else:
             update.message.reply_text(message, reply_markup=buttons)
+
+    @run_async
+    def ask_content_type(self, bot: Bot, update: Update, method: str = None, message: str = None):
+        """Show available tags in inline-keyboard-buttons
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            method (:obj:`str`, optional): Method to call when clicked (callback query method), is obligatory if you
+                method is not called by the bot itself
+            message (:obj:`str`, optional): Message to send to the user
+        """
+        callback_query, message = self.callbackquery_handler(update, method, message)
+        if callback_query is None:
+            return
+
+        message = message or 'What do you want to see:'
+
+        tag = callback_query.data.split(' ')[1] if callback_query else self.get_current_tag(update) or 'user'
+        data = self.get_db_content_summary(update, tag)
+
+        del data['tag']
+        total = data['total']
+        del data['total']
+
+        data_list = list(data.items())
+        data_list.append(('all', total))
+
+        button_list = [data_list[i:i + 3] for i in range(0, len(data_list), 3)]
+        button_list = [
+            [
+                InlineKeyboardButton(f'{type_tuple[0].capitalize()} [{type_tuple[1]}]',
+                                     callback_data=f'{method} {tag}:{type_tuple[0]}')
+                for type_tuple in group
+            ]
+            for group in button_list
+        ]
+
+        button_list.append([InlineKeyboardButton('Cancel', callback_data='ask_content_type cancel')])
+
+        buttons = InlineKeyboardMarkup(button_list)
+        if callback_query:
+            callback_query.message.edit_text(message, reply_markup=buttons)
+        else:
+            update.message.reply_text(message, reply_markup=buttons)
+
+    def real_db_list(self, bot: Bot, update: Update, method: str = None, message: str = None):
+        """List all items in db for
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            method (:obj:`str`, optional): Method to call when clicked (callback query method), is obligatory if you
+                method is not called by the bot itself
+            message (:obj:`str`, optional): Message to send to the user
+        """
+        callback_query, message = self.callbackquery_handler(update, method, message)
+        if callback_query is None:
+            return
+
+        message_obj = callback_query.message
+
+        tag, type_ = callback_query.data.split(' ')[1].split(':')
+
+        query = {
+            'chat_id': update.effective_chat.id,
+            'tag': tag
+        }
+        if type_ != 'all':
+            query['type'] = type_
+        db_items = list(self.telegram_object_collection.find(query))
+
+        if not db_items:
+            message_obj.edit_text(f'No entries for {tag}:{type_}')
+            return
+
+        message_obj.delete()
+        for item in db_items:
+            item_type = item['type']
+            reply_method = getattr(message_obj, f'reply_{item_type}', None)
+            if not reply_method:
+                message_obj.reply_text('An error occurred please contact an admin /error')
+                return
+
+            if item_type == 'text':
+                reply_method(item['text'])
+            elif item_type == 'sticker':
+                reply_method(item['file_id'])
+            elif item_type in ['document', 'photo', 'video', 'voice', 'audio']:
+                reply_method(item['file_id'], caption=item['text'])
+        message_obj.reply_text(f'{"#" * 20}\nAll content sent')
 
     def save_command(self, bot: Bot, update: Update, args: list = None):
         """Save image in reply
