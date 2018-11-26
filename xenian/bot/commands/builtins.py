@@ -85,6 +85,13 @@ class Builtins(BaseCommand):
                 del indirect_commands[group_name]
         if 'raw' in args:
             reply = render_template('commands_raw.html.mako', direct_commands=direct_commands)
+        if 'rst' in args:
+            reply = render_template('commands_rst.mako',
+                                    direct_commands=direct_commands,
+                                    indirect_commands=indirect_commands)
+            print(reply)
+            update.message.reply_text(reply)
+            return
         else:
             reply = render_template('commands.html.mako',
                                     direct_commands=direct_commands,
