@@ -6,8 +6,9 @@
     Audios: ${info['audio']}
     Voices: ${info['voice']}
     Texts: ${info['text']}</pre>
-
+<br>
+<br>
 <i>In Total:</i> <code>${info['total']}</code>
 <br>
 <br>
-Keep in mind that in Telegram some videos are saved as documents and vis versa, so are voices as audios.
+Keep in mind that in Telegram some <code>videos</code> are saved as <code>documents</code> and vis versa, the same case applies to <code>voices</code> / <code>audios</code>.

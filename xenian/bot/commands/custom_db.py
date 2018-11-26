@@ -22,7 +22,7 @@ class CustomDB(BaseCommand):
             {
                 'command': self.pre_toggle_mode,
                 'description': 'Start database save mode and send your objects',
-                'command_name': 'save_mode',
+                'command_name': 'db_save_mode',
                 'args': ['tag'],
                 'options': {
                     'filters': ~ Filters.group,
@@ -39,7 +39,7 @@ class CustomDB(BaseCommand):
             {
                 'title': 'Save object',
                 'command': self.save_command,
-                'command_name': 'save',
+                'command_name': 'db_save',
                 'description': 'Reply to save an object to a custom database',
                 'args': ['tag'],
                 'options': {
@@ -73,7 +73,7 @@ class CustomDB(BaseCommand):
             {
                 'title': 'Remove DB',
                 'command': self.command_wrapper(self.show_tag_chooser, 'sure', 'Select the database to delete:'),
-                'command_name': 'delete_db',
+                'command_name': 'db_delete',
                 'description': 'Delete selected database',
                 'options': {
                     'filters': filters.user_group_admin_if_group,
