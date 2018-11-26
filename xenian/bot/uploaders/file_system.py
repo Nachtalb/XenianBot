@@ -49,7 +49,7 @@ class FileSystemUploader(UploaderBase):
         if os.name == 'nt':
             copy_outcome = subprocess.call(['copy', real_file, save_path], shell=True)
         else:
-            copy_outcome = subprocess.call(['cp', real_file, save_path], shell=True)
+            copy_outcome = subprocess.call(['cp', real_file, save_path])
 
         if copy_outcome != 0:
             raise IOError(f'Copying file from {real_file} to {save_path} did not work.')
