@@ -7,6 +7,8 @@ from imageio.core import NeedDownloadError
 from imageio import plugins
 from telegram import Bot, Update, Message
 
+from . import CustomNamedTemporaryFile
+
 try:
     from moviepy.video.io.VideoFileClip import VideoFileClip
 except NeedDownloadError as error:
@@ -99,10 +101,11 @@ def sticker_download(bot: Bot, message: Message):
     """
     sticker_image = bot.getFile(message.sticker.file_id)
 
-    with NamedTemporaryFile(suffix='.png') as image_file:
+    with CustomNamedTemporaryFile(suffix='.png') as image_file:
         sticker_image.download(out=image_file)
-        pil_image = Image.open(image_file).convert("RGBA")
-        pil_image.save(image_file, 'png')
+        image_file.close()
+        pil_image = Image.open(image_file.name).convert("RGBA")
+        pil_image.save(image_file.name, 'png')
 
         yield image_file.name
 

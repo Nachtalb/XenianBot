@@ -5,6 +5,7 @@ Changelog
 ------------------
 
 - Fix error when saving a ``CustomNamedTemporaryFile`` file.
+- Fix not being able to save sticker as image in sticker search
 
 
 2.0.4 (2018-11-26)
