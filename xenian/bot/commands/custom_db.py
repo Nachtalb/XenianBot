@@ -22,7 +22,7 @@ class CustomDB(BaseCommand):
             {
                 'command': self.pre_toggle_mode,
                 'description': 'Start database save mode and send your objects',
-                'command_name': 'save_mode',
+                'command_name': 'db_save_mode',
                 'args': ['tag'],
                 'options': {
                     'filters': ~ Filters.group,
@@ -39,7 +39,7 @@ class CustomDB(BaseCommand):
             {
                 'title': 'Save object',
                 'command': self.save_command,
-                'command_name': 'save',
+                'command_name': 'db_save',
                 'description': 'Reply to save an object to a custom database',
                 'args': ['tag'],
                 'options': {
