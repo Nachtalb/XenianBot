@@ -1,5 +1,5 @@
 from telegram import Audio, Bot, Chat, Document, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, PhotoSize, \
-    Sticker, Update, Video
+    Sticker, TelegramError, Update, Video, Voice
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, run_async
 
 from xenian.bot import mongodb_database
@@ -346,13 +346,16 @@ class CustomDB(BaseCommand):
             if not reply_method:
                 message_obj.reply_text('An error occurred please contact an admin /error')
                 return
-
-            if item_type == 'text':
-                reply_method(item['text'])
-            elif item_type == 'sticker':
-                reply_method(item['file_id'])
-            elif item_type in ['document', 'photo', 'video', 'voice', 'audio']:
-                reply_method(item['file_id'], caption=item['text'])
+            try:
+                if item_type == 'text':
+                    reply_method(item['text'])
+                elif item_type == 'sticker':
+                    reply_method(item['file_id'])
+                elif item_type in ['document', 'photo', 'video', 'voice', 'audio']:
+                    reply_method(item['file_id'], caption=item['text'])
+            except TelegramError:
+                message_obj.reply_text(f'Something went wrong for the item `{item["_id"]}`, please contact an admin '
+                                       f'/error', parse_mode=ParseMode.MARKDOWN)
         message_obj.reply_text(f'{"#" * 20}\nAll content sent')
 
     def save_command(self, bot: Bot, update: Update, args: list = None):
@@ -454,16 +457,18 @@ class CustomDB(BaseCommand):
                          else getattr(update.message, 'caption')),
                 'file_id': telegram_object.file_id,
             }
-            if isinstance(telegram_object, Document):
-                message['type'] = 'document'
-            elif isinstance(telegram_object, Video):
+            if isinstance(telegram_object, Video):
                 message['type'] = 'video'
             elif isinstance(telegram_object, PhotoSize):
                 message['type'] = 'photo'
             elif isinstance(telegram_object, Sticker):
                 message['type'] = 'sticker'
+            elif isinstance(telegram_object, Voice):
+                message['type'] = 'voice'
             elif isinstance(telegram_object, Audio):
                 message['type'] = 'audio'
+            elif isinstance(telegram_object, Document):
+                message['type'] = 'document'
 
         if not message:
             update.message.reply_text('There was an error please contact an admin via /error or retry your action.')

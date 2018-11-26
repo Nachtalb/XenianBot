@@ -116,8 +116,9 @@ class BaseCommand:
                 continue
 
             new_command = real_command.copy()
+            new_command['options']['command'] = alias_command['command_name']
             for key, value in alias_command.items():
-                if key in ['title', 'description', 'hidden', 'group']:
+                if key in ['title', 'description', 'hidden', 'group', 'command_name']:
                     new_command[key] = value
 
             updated_commands.append(new_command)

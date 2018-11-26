@@ -3,6 +3,7 @@ import io
 import os
 from tempfile import NamedTemporaryFile
 from tempfile import _TemporaryFileWrapper
+from types import MethodType
 
 __all__ = ['save_file', 'CustomNamedTemporaryFile']
 
@@ -59,7 +60,7 @@ def CustomNamedTemporaryFile(delete=True, *args, **kwargs) -> _TemporaryFileWrap
                 os.unlink(file.name)
 
     file.__del__ = delete_close
-    file.save = save_file
+    file.save = MethodType(save_file, file)
 
     try:
         yield file
