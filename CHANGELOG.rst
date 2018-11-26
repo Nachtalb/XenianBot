@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.0.4 (unreleased)
+2.0.4 (2018-11-26)
 ------------------
 
 - Fix file permissions for copied files under unix systems
