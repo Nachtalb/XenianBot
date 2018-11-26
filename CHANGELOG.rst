@@ -4,13 +4,13 @@ Changelog
 2.0.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+-  Fix ``/commands raw`` command not working
 
 
 2.0.1 (2018-11-26)
 ------------------
 
-- Fix paths in settings template
+-  Fix paths in settings template
 
 
 2.0.0 (2018-11-26)
