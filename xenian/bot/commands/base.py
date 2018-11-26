@@ -1,3 +1,4 @@
+from telegram.ext import CallbackQueryHandler
 from telegram.ext import CommandHandler, Filters, MessageHandler
 
 __all__ = ['BaseCommand']
@@ -76,8 +77,10 @@ class BaseCommand:
             if isinstance(command.get('alias', None), str):
                 alias_commands.append(command)
                 continue
-            if command['command'].__name__ == '<lambda>' and not command.get('command_name'):
-                raise ValueError('If "command_wrapper" is used a "command_name" has to be defined!')
+            if command['command'].__name__ == '<lambda>' and (not command.get('command_name') and
+                                                              not command.get('handler') == CallbackQueryHandler):
+                raise ValueError('If "command_wrapper" is used a "command_name" has to be defined or the handler must '
+                                 'be an CallbackQueryHandeler!')
 
             command = {
                 'title': command.get('title', None) or command['command'].__name__.capitalize().replace('_', ' '),

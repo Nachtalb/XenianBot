@@ -89,6 +89,33 @@ class CustomDB(BaseCommand):
                 }
             },
             {
+                'title': 'List DB Content',
+                'command': self.command_wrapper(self.show_tag_chooser, 'ask_content_type'),
+                'command_name': 'db_list',
+                'description': 'List the content of a DB',
+                'options': {
+                    'filters': filters.user_group_admin_if_group,
+                }
+            },
+            {
+                'title': 'List DB Content',
+                'command': self.command_wrapper(self.ask_content_type, 'real_db_list'),
+                'handler': CallbackQueryHandler,
+                'description': 'Now that we know the db, ask for a content type to be listed.',
+                'options': {
+                    'pattern': '^ask_content_type',
+                }
+            },
+            {
+                'title': 'List DB Content',
+                'command': self.real_db_list,
+                'handler': CallbackQueryHandler,
+                'hidden': True,
+                'options': {
+                    'pattern': '^real_db_list',
+                }
+            },
+            {
                 'title': 'Show available tags as keyboard buttons',
                 'command': self.show_tag_chooser,
                 'handler': CallbackQueryHandler,
@@ -212,27 +239,10 @@ class CustomDB(BaseCommand):
                 method is not called by the bot itself
             message (:obj:`str`, optional): Message to send to the user
         """
-        callback_query = getattr(update, 'callback_query', None)
-        if not callback_query and not method:
-            return ValueError('Wither callback_query or method must be set')
+        callback_query, message = self.callbackquery_handler(update, method, message)
+        if callback_query is None:
+            return
 
-        if callback_query:
-            if not self.is_group_admin_if_group(update):
-                return
-            args = callback_query.data.split(' ')
-            args = list(filter(lambda string: string.strip() if string.strip() else None, args))
-
-            if args[1] == 'cancel':
-                update.callback_query.message.delete()
-                return
-
-            if callback_query:
-                method = args[1] if len(args) > 1 else ''
-                if not method:
-                    update.message.reply_text('Something went wrong, try again or contact an admin /error')
-
-            if len(args) > 2:
-                message = ' '.join(args[2:])
         message = message or 'Choose a tag:'
 
         db_items = self.telegram_object_collection.find({'chat_id': update.message.chat_id})
@@ -253,6 +263,97 @@ class CustomDB(BaseCommand):
             callback_query.message.edit(message, reply_markup=buttons)
         else:
             update.message.reply_text(message, reply_markup=buttons)
+
+    @run_async
+    def ask_content_type(self, bot: Bot, update: Update, method: str = None, message: str = None):
+        """Show available tags in inline-keyboard-buttons
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            method (:obj:`str`, optional): Method to call when clicked (callback query method), is obligatory if you
+                method is not called by the bot itself
+            message (:obj:`str`, optional): Message to send to the user
+        """
+        callback_query, message = self.callbackquery_handler(update, method, message)
+        if callback_query is None:
+            return
+
+        message = message or 'What do you want to see:'
+
+        tag = callback_query.data.split(' ')[1] if callback_query else self.get_current_tag(update) or 'user'
+        data = self.get_db_content_summary(update, tag)
+
+        del data['tag']
+        total = data['total']
+        del data['total']
+
+        data_list = list(data.items())
+        data_list.append(('all', total))
+
+        button_list = [data_list[i:i + 3] for i in range(0, len(data_list), 3)]
+        button_list = [
+            [
+                InlineKeyboardButton(f'{type_tuple[0].capitalize()} [{type_tuple[1]}]',
+                                     callback_data=f'{method} {tag}:{type_tuple[0]}')
+                for type_tuple in group
+            ]
+            for group in button_list
+        ]
+
+        button_list.append([InlineKeyboardButton('Cancel', callback_data='ask_content_type cancel')])
+
+        buttons = InlineKeyboardMarkup(button_list)
+        if callback_query:
+            callback_query.message.edit_text(message, reply_markup=buttons)
+        else:
+            update.message.reply_text(message, reply_markup=buttons)
+
+    def real_db_list(self, bot: Bot, update: Update, method: str = None, message: str = None):
+        """List all items in db for
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            method (:obj:`str`, optional): Method to call when clicked (callback query method), is obligatory if you
+                method is not called by the bot itself
+            message (:obj:`str`, optional): Message to send to the user
+        """
+        callback_query, message = self.callbackquery_handler(update, method, message)
+        if callback_query is None:
+            return
+
+        message_obj = callback_query.message
+
+        tag, type_ = callback_query.data.split(' ')[1].split(':')
+
+        query = {
+            'chat_id': update.effective_chat.id,
+            'tag': tag
+        }
+        if type_ != 'all':
+            query['type'] = type_
+        db_items = list(self.telegram_object_collection.find(query))
+
+        if not db_items:
+            message_obj.edit_text(f'No entries for {tag}:{type_}')
+            return
+
+        message_obj.delete()
+        for item in db_items:
+            item_type = item['type']
+            reply_method = getattr(message_obj, f'reply_{item_type}', None)
+            if not reply_method:
+                message_obj.reply_text('An error occurred please contact an admin /error')
+                return
+
+            if item_type == 'text':
+                reply_method(item['text'])
+            elif item_type == 'sticker':
+                reply_method(item['file_id'])
+            elif item_type in ['document', 'photo', 'video', 'voice', 'audio']:
+                reply_method(item['file_id'], caption=item['text'])
+        message_obj.reply_text(f'{"#" * 20}\nAll content sent')
 
     def save_command(self, bot: Bot, update: Update, args: list = None):
         """Save image in reply
@@ -385,6 +486,21 @@ class CustomDB(BaseCommand):
         """
 
         tag = update.callback_query.data.split(' ')[1]
+        data = self.get_db_content_summary(update, tag)
+
+        update.callback_query.message.edit_text(text=render_template('db_info.html.mako', info=data),
+                                                parse_mode=ParseMode.HTML)
+
+    def get_db_content_summary(self, update, tag):
+        """Get a summary with available number of available items in db by tag
+
+        Args:
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            tag (:obj:`str`): DB name
+
+        Returns:
+            :obj:`dict`: Dict with number of item of ech content type + tag name + total number of items
+        """
         db_items = self.telegram_object_collection.find({'chat_id': update.effective_chat.id, 'tag': tag})
         data = {
             'tag': tag,
@@ -400,9 +516,7 @@ class CustomDB(BaseCommand):
         for item in db_items:
             data[item['type']] += 1
             data['total'] += 1
-
-        update.callback_query.message.edit_text(text=render_template('db_info.html.mako', info=data),
-                                                parse_mode=ParseMode.HTML)
+        return data
 
     def real_delete(self, bot: Bot, update: Update):
         """Actually delete a databases
@@ -431,6 +545,46 @@ class CustomDB(BaseCommand):
             update.callback_query.message.edit_text('%s deleted!' % tag.title())
         else:
             update.callback_query.message.edit_text('Something went wrong, try again or contact admin via /error.')
+
+    def callbackquery_handler(self, update, method, message):
+        """Handle callbackqueries to a point where we can actually use them
+
+        Args:
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            method (:obj:`str`, optional): Method to call when clicked (callback query method), is obligatory if you
+                method is not called by the bot itself
+            message (:obj:`str`, optional): Message to send to the user
+        Returns:
+            :obj:`tuple`: The first item will either be :obj:`False` if the request was not a callbackquery but still is
+                valid or a :obj:`telegram.callbackquery.CallbackQuery` if the request was a callbackquery.
+                The second item is either a :obj:`str`.
+                Both values are :obj:`None` if something went wrong or the whole operation should be cancelled.
+        Raises:
+            :obj:`ValueError`: If no ``method`` and no ``callbackquery`` was set.
+        """
+        callback_query = getattr(update, 'callback_query', False) or False
+        message = ''
+        if not callback_query and not method:
+            raise ValueError('Wither callback_query or method must be set')
+
+        if callback_query:
+            if not self.is_group_admin_if_group(update):
+                return None, None
+            args = callback_query.data.split(' ')
+            args = list(filter(lambda string: string.strip() if string.strip() else None, args))
+
+            if args[1] == 'cancel':
+                update.callback_query.message.delete()
+                return None, None
+
+            if callback_query:
+                method = args[1] if len(args) > 1 else ''
+                if not method:
+                    update.message.reply_text('Something went wrong, try again or contact an admin /error')
+                    return None, None
+            if len(args) > 2:
+                message = ' '.join(args[2:])
+        return callback_query, message
 
 
 image_db = CustomDB()
