@@ -31,14 +31,21 @@ Base Group
 -  ``/contribute <text>`` - Send the supporters and admins a request of any kind
 -  ``/error <text>`` - If you have found an error please use this command.
 
+Custom
+^^^^^^
+
+-  ``/db_save_mode <tag>`` - Start database save mode and send your objects
+-  ``/db_save <tag>`` - Reply to save an object to a custom database
+-  ``/db_info`` - Show created databases
+-  ``/db_delete`` - Delete selected database
+-  ``/db_list`` - List the content of a DB
+
 Anime
 ^^^^^
 
 -  ``/random`` - Send random anime GIF
--  ``/danbooru_search <tag_1> <tag_2> <page=PAGE_NUM> <limit=LIMIT>`` - Search on danbooru by max 2 tags separated by
-   comma. You can define which page (default 0) and the limit (default 5, max 100)
--  ``/danbooru_latest <page=PAGE_NUM> <limit=LIMIT>`` - Get latest uploads from danbooru you can use the options page
-   (default 0) and limit (default 5, max 100)
+-  ``/danbooru_search <tag_1> <tag_2> <page=page_num> <limit=limit>`` - Search on danbooru by max 2 tags separated by comma. You can define which page (default 0) and the limit (default 5, max 100)
+-  ``/danbooru_latest <page=page_num> <limit=limit>`` - Get latest uploads from danbooru you can use the options page (default 0) and limit (default 5, max 100)
 
 Misc
 ^^^^
@@ -48,16 +55,13 @@ Misc
 -  ``/decide`` - Yes or No
 -  ``/maths`` - Show all available math functions
 -  ``/calc <equation>`` - Solve an equation you send me, all math functions can be seen with /maths
--  ``/tty <text> <-l LANG>`` - Convert text the given text or the message replied to, to text. Use ``-l`` to define a
-   language, like de, en or ru
--  ``/translate <text> <-lf LANG> <-lt LANG>`` - Translate a reply or a given text from ``-lf`` (default: detect)
-   language to ``-lt`` (default: en) language
+-  ``/tts <text> <-l LANG>`` - Convert text the given text or the message replied to, to text. Use `-l` to define a language, like de, en or ru
+-  ``/translate <text> <-lf LANG> <-lt LANG>`` - Translate a reply or a given text from `-lf` (default: detect) language to `-lt` (default: en) language
 
 Download
 ^^^^^^^^
 
--  ``/download_mode`` - If on download stickers and gifs sent to the bot of off reverse search is reactivated. Does not
-   work in groups
+-  ``/download_mode`` - If on download stickers and gifs sent to the bot of off reverse search is reactivated. Does not work in groups
 -  ``/download`` - Reply to media for download
 
 Image
@@ -65,8 +69,7 @@ Image
 
 -  ``/search`` - Reply to media for reverse search
 -  ``/itt <-l LANG>`` - Extract text from images
--  ``/itt_translate <text> <-lf LANG> <-lt LANG>`` - Extract text from images and translate it. ``-lf`` (default:
-   detect, /itt_lang) language on image, to ``-lt`` (default: en, normal language codes) language.
+-  ``/itt_translate <text> <-lf LANG> <-lt LANG>`` - Extract text from images and translate it. `-lf` (default: detect, /itt_lang) language on image, to `-lt` (default: en, normal language codes) language.
 -  ``/itt_lang`` - Available languages for Image to Text
 
 Group Management
@@ -74,47 +77,36 @@ Group Management
 
 -  ``/ban`` - Ban a user. Reply to one of his messages with this command (Group Only)
 -  ``/warn`` - Warn a user, after 3 warnings he get banned. Reply to one of his messages with this command (Group Only)
--  ``/kick <time>`` - Kick a user for 10 min or give a specific amount of time (in min) between 30sec (0.5 min) and 366
-   days (527040 min). Reply to one of his messages with this command (Group Only)
+-  ``/kick <time>`` - Kick a user for 10 min or give a specific amount of time (in min) between 30sec (0.5 min) and 366 days (527040 min). Reply to one of his messages with this command (Group Only)
 -  ``/delete`` - Delete a message from a user and warn them. Reply to one of his messages with this command (Group Only)
 -  ``/unwarn`` - Remove all warnings from a User. Reply to one of his messages with this command (Group Only)
 -  ``/rules`` - Show rules for this group (Group Only)
 -  ``/rules_define <text>`` - Define rules for this group (Group Only)
 -  ``/rules_remove`` - Remove rules for this group (Group Only)
 
+
 Indirect Commands:
 ~~~~~~~~~~~~~~~~~~
 
-.. _base-group-1:
+Custom
+^^^^^^
 
-Base Group
-^^^^^^^^^^
-
--  Video from URL - Turn on /download_mode and send links to videos like a youtube video
-
-.. _download-1:
-
+-  **Save object** - Send objects while /save_mode is turned of to save them into your defined db
 Download
 ^^^^^^^^
 
--  Download Stickers - Turn on /download_mode and send stickers
--  Download Gifs - Turn on /download_mode and send videos and gifs
-
-.. _image-1:
-
+-  **Download Stickers** - Turn on /download_mode and send stickers
+-  **Download Gifs** - Turn on /download_mode and send videos and gifs
+-  **Video from URL** - Turn on /download_mode and send links to videos like a youtube video
 Image
 ^^^^^
 
--  Reverse Gif / Video Search - Turn off /download_mode and send a video or a gif to search for it online.
--  Reverse Sticker Search - Turn off /download_mode and send an image to search for it online.
--  Reverse Sticker Search - Turn off /download_mode and send a sticker to search for it online.
-
-.. _misc-1:
-
+-  **Auto Search** - Turn off /download_mode and send some kind of media file.
 Misc
 ^^^^
 
--  Calculator - Solve equations you send me, to get a full list of supported math functions use /maths (PRIVATE CHAT ONLY)
+-  **Calculator** - Solve equations you send me, to get a full list of supported math functions use /maths (PRIVATE CHAT ONLY)
+
 
 Contributions
 -------------
