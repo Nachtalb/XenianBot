@@ -96,6 +96,14 @@ class ReverseImageSearch(BaseCommand):
 
         image_url = iqdb_search.upload_image(media_file, image_name + image_extension, remove_after=3600)
 
+        if os.path.isfile(image_url):
+            reply = 'This bot is not configured for this functionality, contact an admin for more information /support.'
+            if message:
+                message.edit_text(reply, reply_to_message_id=update.message.message_id)
+            else:
+                update.message.reply_text(reply, reply_to_message_id=update.message.message_id)
+            return
+
         iqdb_url, google_url, tineye_url, bing_url, yandex_url = (
             iqdb_search.get_search_link_by_url(image_url), google_search.get_search_link_by_url(image_url),
             tineye_search.get_search_link_by_url(image_url), bing_search.get_search_link_by_url(image_url),
