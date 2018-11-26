@@ -1,7 +1,7 @@
 from setuptools import find_packages
 from setuptools import setup
 
-version = '2.0.5'
+version = '2.0.6.dev0'
 
 
 setup(name='XenianBot',
