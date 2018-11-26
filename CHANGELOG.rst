@@ -8,6 +8,7 @@ Changelog
 - Fix not being able to save sticker as image in sticker search
 - Tell user that RIS is not working if the file path is not an url instead of just telling nothing
 - Fix not working alias function
+- Bump ``gTTS-token`` version to fix TTS
 
 
 2.0.4 (2018-11-26)
