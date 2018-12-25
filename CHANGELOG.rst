@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.1.1 (unreleased)
+2.2.0 (2018-12-26)
 ------------------
 
 - Clear zip download queue with ``/zip_clear``
