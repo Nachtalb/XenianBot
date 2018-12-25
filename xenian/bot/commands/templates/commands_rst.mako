@@ -36,6 +36,7 @@ Indirect Commands:\n
     % for command in command_list:
         -\ \ **${command['title']}** - ${command['description']}\n
     % endfor
+    \n
 % endfor
 
 

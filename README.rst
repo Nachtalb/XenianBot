@@ -94,16 +94,19 @@ Custom
 ^^^^^^
 
 -  **Save object** - Send objects while /save_mode is turned of to save them into your defined db
+
 Download
 ^^^^^^^^
 
 -  **Download Stickers** - Turn on /download_mode and send stickers
 -  **Download Gifs** - Turn on /download_mode and send videos and gifs
 -  **Video from URL** - Turn on /download_mode and send links to videos like a youtube video
+
 Image
 ^^^^^
 
 -  **Auto Search** - Turn off /download_mode and send some kind of media file.
+
 Misc
 ^^^^
 
