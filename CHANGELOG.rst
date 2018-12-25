@@ -5,6 +5,7 @@ Changelog
 ------------------
 
 - Added an alias command ``/help`` for ``/commands``
+- Fixed usage alias commands overriding real commands
 
 
 2.0.5 (2018-11-26)
