@@ -45,6 +45,12 @@ class Download(BaseCommand):
                 'options': {'filters': ~ Filters.group}
             },
             {
+                'title': 'Clear ZIP download queue',
+                'description': 'Clear ZIP download queue',
+                'command': self.zip_clear,
+                'options': {'filters': ~ Filters.group}
+            },
+            {
                 'title': 'Download Stickers',
                 'description': 'Turn on /download_mode and send stickers',
                 'handler': MessageHandler,
@@ -88,10 +94,23 @@ class Download(BaseCommand):
         """
         mode_on = download_mode_filter.toggle_mode(update.message.from_user.id, zip_mode=True)
         if mode_on:
-            update.message.reply_text('Download Zip Mode on')
+            in_queue = len(self.ram_db.get(update.message.from_user.id, []))
+            append = (f'\nThere are still `{in_queue}` Items in the Download queue. Use /zip\_clear to clear the queue.'
+                if in_queue else '')
+            update.message.reply_text(f'Download Zip Mode on{append}', parse_mode=ParseMode.MARKDOWN)
         else:
             self.download_zip(bot, update, update.message.from_user.id)
             update.message.reply_text('Download Mode off')
+
+    def zip_clear(self, bot: Bot, update: Update):
+        """Clear ZIP download queue
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        self.ram_db[update.message.from_user.id] = []
+        update.message.reply_text('ZIP download queue was cleared.', reply_to_message_id=update.message.message_id)
 
     def add_to_zip(self, update, user_id, item):
         update.message.reply_text('Item was added', reply_to_message_id=update.message.message_id)
