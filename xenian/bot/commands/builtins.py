@@ -87,11 +87,12 @@ class Builtins(BaseCommand):
         if 'raw' in args:
             reply = render_template('commands_raw.html.mako', direct_commands=direct_commands)
         elif 'rst' in args:
-            reply = render_template('commands_rst.mako',
-                                    direct_commands=direct_commands,
-                                    indirect_commands=indirect_commands)
-            print(reply)
-            update.message.reply_text(reply)
+            reply_direct = render_template('commands_rst_direct.mako', direct_commands=direct_commands)
+            reply_indirect = render_template('commands_rst_indirect.mako', indirect_commands=indirect_commands)
+            print(reply_direct)
+            print(reply_indirect)
+            update.message.reply_text(reply_direct)
+            update.message.reply_text(reply_indirect)
             return
         else:
             reply = render_template('commands.html.mako',
