@@ -4,7 +4,7 @@ Changelog
 2.0.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Added an alias command ``/help`` for ``/commands``
 
 
 2.0.5 (2018-11-26)

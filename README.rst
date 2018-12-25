@@ -30,6 +30,7 @@ Base Group
 -  ``/support`` - Contact bot maintainer for support of any kind
 -  ``/contribute <text>`` - Send the supporters and admins a request of any kind
 -  ``/error <text>`` - If you have found an error please use this command.
+-  ``/help`` - Show all available commands
 
 Custom
 ^^^^^^
