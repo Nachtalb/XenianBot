@@ -1,20 +1,22 @@
 import os
 import re
 import shutil
-from tempfile import TemporaryDirectory
+from PIL import Image
+from io import BufferedWriter
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from uuid import uuid4
 
 import youtube_dl
 from moviepy.video.io.VideoFileClip import VideoFileClip
-from telegram import Bot, ChatAction, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, ParseMode, Update
+from telegram import Bot, ChatAction, Document, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, ParseMode, \
+    Sticker, Update, Video
 from telegram.error import BadRequest, NetworkError, TimedOut
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, run_async
 from youtube_dl import DownloadError
 
 from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
-from xenian.bot.utils import CustomNamedTemporaryFile
-from xenian.bot.utils import TelegramProgressBar
+from xenian.bot.utils import CustomNamedTemporaryFile, TelegramProgressBar, save_file
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 
@@ -23,6 +25,7 @@ __all__ = ['download', 'video_downloader']
 
 class Download(BaseCommand):
     group = 'Download'
+    ram_db = {}
 
     def __init__(self):
         self.commands = [
@@ -32,6 +35,13 @@ class Download(BaseCommand):
                                'Does not work in groups',
                 'command_name': 'download_mode',
                 'command': self.toggle_download_mode,
+                'options': {'filters': ~ Filters.group}
+            },
+            {
+                'title': 'Toggle Zip Download Mode on / off',
+                'description': 'If zip mode is on collect all downloads and zip them upon disabling zip mode',
+                'command_name': 'zip_mode',
+                'command': self.toggle_zip_mode,
                 'options': {'filters': ~ Filters.group}
             },
             {
@@ -69,6 +79,100 @@ class Download(BaseCommand):
         else:
             update.message.reply_text('Download Mode off')
 
+    def toggle_zip_mode(self, bot: Bot, update: Update):
+        """Toggle Zip Mode
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        mode_on = download_mode_filter.toggle_mode(update.message.from_user.id, zip_mode=True)
+        if mode_on:
+            update.message.reply_text('Download Zip Mode on')
+        else:
+            self.download_zip(bot, update, update.message.from_user.id)
+            update.message.reply_text('Download Mode off')
+
+    def add_to_zip(self, update, user_id, item):
+        update.message.reply_text('Item was added', reply_to_message_id=update.message.message_id)
+        self.ram_db.setdefault(user_id, [])
+        self.ram_db[user_id].append(item)
+
+    @run_async
+    def download_zip(self, bot, update, user_id):
+        """Send Zip with all given files to user
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            user_id (:obj:`int`): Id of a user
+        """
+        message = update.message
+        user_files = self.ram_db.get(user_id)
+        if not user_files:
+            update.message.reply_text('No files sent for download')
+            return
+
+        with TemporaryDirectory() as temp_folder:
+            zip_content_path = os.path.join(temp_folder, 'zip_content')
+            os.mkdir(zip_content_path)
+
+            progress_bar = TelegramProgressBar(
+                bot=bot,
+                chat_id=update.message.chat_id,
+                full_amount=len(user_files),
+                pre_message='Downloading files\n{current} / {total}',
+                se_message='Downloading GIFs may take a while.'
+            )
+            progress_bar.start()
+
+            for index, file in enumerate(user_files):
+                temp_file = None
+                if isinstance(file, Sticker):
+                    temp_file = NamedTemporaryFile(delete=False, dir=zip_content_path, prefix='xenian-', suffix='.png')
+                    self.download_stickers_to_file(bot, file, temp_file)
+
+                elif isinstance(file, Document) or isinstance(file, Video):
+                    temp_file = NamedTemporaryFile(delete=False, dir=zip_content_path, prefix='xenian-', suffix='.gif')
+                    _, orig_path, compressed_path = self.download_video_to_file(bot, file, temp_file, temp_file.name)
+
+                if temp_file:
+                    temp_file.close()
+                progress_bar.update(new_amount=index + 1)
+
+            zip_path = os.path.join(temp_folder, os.path.basename(f'downloads_{user_id}'))
+            os.chmod(zip_content_path, 0o40755)
+            created_zip = shutil.make_archive(zip_path, format='zip', root_dir=zip_content_path, base_dir='.')
+
+            if os.path.getsize(created_zip) > 52428800:
+                message.reply_text('File is too big, sorry!', reply_to_message_id=message.message_id)
+            else:
+                with open(created_zip, mode='br') as zip_file:
+                    message.reply_document(zip_file, filename=os.path.basename(created_zip), timeout=50,
+                                           reply_to_message_id=message.message_id)
+
+    def download_stickers_to_file(self, bot: Bot, sticker: Sticker, file_object: BufferedWriter):
+        """Download Sticker as images to file_object
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            sticker (:obj:`telegram.sticker.Sticker`): A Sticker object
+            file_object (:obj:`io.BufferedWriter`): File like object
+        """
+        sticker = bot.get_file(sticker.file_id)
+        sticker.download(out=file_object)
+
+        if getattr(file_object, 'save', None):
+            file_object.save()
+        else:
+            save_file(file_object)
+
+        image = Image.open(file_object.name)
+        image.save(file_object, format='png')
+
+        return file_object
+
+    @run_async
     def download_stickers(self, bot: Bot, update: Update):
         """Download Sticker as images
 
@@ -76,12 +180,44 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        sticker = update.message.sticker or update.message.reply_to_message.sticker
-        sticker = bot.get_file(sticker.file_id)
-        with CustomNamedTemporaryFile() as image:
-            sticker.download(out=image)
-            image.save()
+        orig_sticker = update.message.sticker or update.message.reply_to_message.sticker
+
+        user_id = update.message.from_user.id
+        if download_mode_filter.is_zip_mode_on(user_id):
+            self.add_to_zip(update, user_id, orig_sticker)
+            return
+
+        with CustomNamedTemporaryFile(suffix='.png', prefix='xenian-') as image:
+            self.download_stickers_to_file(bot, orig_sticker, image)
+            image.seek(0)
             bot.send_photo(update.message.chat_id, photo=image)
+
+    def download_video_to_file(self, bot: Bot, document: Document, file_object: BufferedWriter, file_object_path: str):
+        """Download Sticker as images to file_object
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            document (:obj:`telegram.document.Document`): A Telegram API Document object
+            file_object (:obj:`io.BufferedWriter`): Actual existing file object
+            file_object_path (:obj:`str`): The path to the file given in file_object
+        """
+        video = bot.getFile(document.file_id)
+
+        with CustomNamedTemporaryFile() as video_file:
+            video.download(out=video_file)
+            video_file.close()
+            video_clip = VideoFileClip(video_file.name, audio=False)
+
+            video_clip.write_gif(file_object_path)
+            video_clip.close()
+
+            dirname = os.path.dirname(file_object_path)
+            file_name = os.path.splitext(file_object_path)[0]
+            compressed_gif_path = os.path.join(dirname, file_name + '-min.gif')
+
+            os.system('gifsicle -O3 --lossy=50 -o {dst} {src}'.format(dst=compressed_gif_path, src=file_object_path))
+            compressed_gif_path = compressed_gif_path if os.path.isfile(compressed_gif_path) else ''
+            return file_object, file_object_path, compressed_gif_path
 
     @run_async
     def download_gif(self, bot: Bot, update: Update):
@@ -96,57 +232,56 @@ class Download(BaseCommand):
 
         document = (update.message.document or update.message.video or update.message.reply_to_message.document or
                     update.message.reply_to_message.video)
-        video = bot.getFile(document.file_id)
 
-        with CustomNamedTemporaryFile() as video_file:
-            video.download(out=video_file)
-            video_file.close()
-            video_clip = VideoFileClip(video_file.name, audio=False)
+        user_id = update.message.from_user.id
+        if download_mode_filter.is_zip_mode_on(user_id):
+            self.add_to_zip(update, user_id, document)
+            return
 
-            with CustomNamedTemporaryFile(suffix='.gif') as gif_file:
-                video_clip.write_gif(gif_file.name)
-                video_clip.close()
+        with CustomNamedTemporaryFile(suffix='.gif') as video_file:
+            _, orig_path, compressed_path = self.download_video_to_file(bot, document, video_file, video_file.name)
 
-                dirname = os.path.dirname(gif_file.name)
-                file_name = os.path.splitext(gif_file.name)[0]
-                compressed_gif_path = os.path.join(dirname, file_name + '-min.gif')
+            uploader.connect()
+            upload_path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
 
-                os.system('gifsicle -O3 --lossy=50 -o {dst} {src}'.format(dst=compressed_gif_path, src=gif_file.name))
-                if os.path.isfile(compressed_gif_path):
-                    path = compressed_gif_path
-                else:
-                    path = gif_file.name
+            upload_orig_file_name = 'xenian-{}.gif'.format(str(uuid4())[:8])
+            uploader.upload(orig_path, upload_orig_file_name)
 
-                upload_file_name = 'xenian-{}.gif'.format(str(uuid4())[:8])
+            orig_host_path = upload_path + '/' + upload_orig_file_name
 
-                uploader.connect()
-                uploader.upload(path, upload_file_name)
+            compressed_host_path = None
+            if os.path.isfile(compressed_path):
+                upload_compressed_file_name = 'xenian-{}-min.gif'.format(str(uuid4())[:8])
+                uploader.upload(compressed_path, upload_compressed_file_name)
+                compressed_host_path = upload_path + '/' + upload_compressed_file_name
 
-                path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
-                host_path = path + '/' + upload_file_name
+            # If the host path a local path we can't send it as an URL, so we send the gif just as a ZIP file.
+            if os.path.isfile(orig_host_path):
+                with TemporaryDirectory() as temp_folder:
+                    zip_content_path = os.path.join(temp_folder, 'zip_content')
+                    os.mkdir(zip_content_path)
+                    uploader.upload(orig_host_path, zip_content_path)
+                    if compressed_host_path:
+                        uploader.upload(compressed_host_path, zip_content_path)
 
-                # If the host path a local path we can't send it as an URL, so we send the gif just as a ZIP file.
-                if os.path.isfile(host_path):
-                    with TemporaryDirectory() as temp_folder:
-                        zip_content_path = os.path.join(temp_folder, 'zip_content')
-                        os.mkdir(zip_content_path)
-                        uploader.upload(host_path, zip_content_path)
-
-                        zip_path = os.path.join(temp_folder, os.path.basename(host_path))
-                        created_zip = shutil.make_archive(zip_path, format='zip', root_dir=zip_content_path, base_dir='.')
-                        if os.path.getsize(created_zip) > 52428800:
-                            message.reply_text('File is too big, sorry!', reply_to_message_id=message.message_id)
-                        else:
-                            with open(created_zip, mode='br') as zip_file:
-                                message.reply_document(zip_file, filename=os.path.basename(created_zip),
-                                                       reply_to_message_id=message.message_id)
-                    uploader.close()
-                    return
+                    zip_path = os.path.join(temp_folder, os.path.basename(orig_host_path))
+                    os.chmod(zip_content_path, 0o40755)
+                    created_zip = shutil.make_archive(zip_path, format='zip', root_dir=zip_content_path, base_dir='.')
+                    if os.path.getsize(created_zip) > 52428800:
+                        message.reply_text('File is too big, sorry!', reply_to_message_id=message.message_id)
+                    else:
+                        with open(created_zip, mode='br') as zip_file:
+                            message.reply_document(zip_file, filename=os.path.basename(created_zip),
+                                                   reply_to_message_id=message.message_id)
                 uploader.close()
+                return
+            uploader.close()
 
-                reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Download GIF", url=host_path), ], ])
-                message.reply_photo(host_path, 'Instant GIF Download', reply_markup=reply_markup,
-                                    reply_to_message_id=message.message_id)
+            downloadable_file = compressed_host_path or orig_host_path
+
+            reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Download GIF", url=downloadable_file), ], ])
+            message.reply_photo(downloadable_file, 'Instant GIF Download', reply_markup=reply_markup,
+                                reply_to_message_id=message.message_id)
 
     @run_async
     def download(self, bot: Bot, update: Update):
