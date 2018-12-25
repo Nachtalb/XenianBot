@@ -5,6 +5,7 @@ Changelog
 ------------------
 
 - Clear zip download queue with ``/zip_clear``
+- Prevent too long message error on /commands rst
 
 
 2.1.0 (2018-12-25)
