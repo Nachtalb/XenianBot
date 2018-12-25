@@ -63,6 +63,7 @@ Download
 ^^^^^^^^
 
 -  ``/download_mode`` - If on download stickers and gifs sent to the bot of off reverse search is reactivated. Does not work in groups
+-  ``/zip_mode`` - If zip mode is on collect all downloads and zip them upon disabling zip mode
 -  ``/download`` - Reply to media for download
 
 Image

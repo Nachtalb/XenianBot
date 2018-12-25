@@ -13,8 +13,7 @@ from youtube_dl import DownloadError
 
 from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
-from xenian.bot.utils import CustomNamedTemporaryFile
-from xenian.bot.utils import TelegramProgressBar
+from xenian.bot.utils import CustomNamedTemporaryFile, TelegramProgressBar
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 
@@ -32,6 +31,13 @@ class Download(BaseCommand):
                                'Does not work in groups',
                 'command_name': 'download_mode',
                 'command': self.toggle_download_mode,
+                'options': {'filters': ~ Filters.group}
+            },
+            {
+                'title': 'Toggle Zip Download Mode on / off',
+                'description': 'If zip mode is on collect all downloads and zip them upon disabling zip mode',
+                'command_name': 'zip_mode',
+                'command': self.toggle_zip_mode,
                 'options': {'filters': ~ Filters.group}
             },
             {
@@ -66,6 +72,19 @@ class Download(BaseCommand):
         mode_on = download_mode_filter.toggle_mode(update.message.from_user.id)
         if mode_on:
             update.message.reply_text('Download Mode on')
+        else:
+            update.message.reply_text('Download Mode off')
+
+    def toggle_zip_mode(self, bot: Bot, update: Update):
+        """Toggle Zip Mode
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+        """
+        mode_on = download_mode_filter.toggle_mode(update.message.from_user.id, zip_mode=True)
+        if mode_on:
+            update.message.reply_text('Download Zip Mode on')
         else:
             update.message.reply_text('Download Mode off')
 

@@ -6,6 +6,7 @@ Changelog
 
 - Added an alias command ``/help`` for ``/commands``
 - Fixed usage alias commands overriding real commands
+- Add ``/zip_mode`` command which lets the user download items into a zip file
 
 
 2.0.5 (2018-11-26)
