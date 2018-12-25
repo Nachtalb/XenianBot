@@ -20,6 +20,7 @@ class Builtins(BaseCommand):
         self.commands = [
             {'command': self.start, 'description': 'Initialize the bot'},
             {'command': self.commands, 'description': 'Show all available commands', 'options': {'pass_args': True}},
+            {'command_name': 'help', 'alias': 'commands'},
             {'command': self.support, 'description': 'Contact bot maintainer for support of any kind'},
             {'command': self.register, 'description': 'Register the chat_id for admins and supporters', 'hidden': True},
             {

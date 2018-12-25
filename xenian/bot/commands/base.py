@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from telegram.ext import CallbackQueryHandler
 from telegram.ext import CommandHandler, Filters, MessageHandler
 
@@ -115,7 +117,7 @@ class BaseCommand:
             if not real_command:
                 continue
 
-            new_command = real_command.copy()
+            new_command = deepcopy(real_command)
             new_command['options']['command'] = alias_command['command_name']
             for key, value in alias_command.items():
                 if key in ['title', 'description', 'hidden', 'group', 'command_name']:
