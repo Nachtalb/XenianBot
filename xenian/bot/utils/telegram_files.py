@@ -115,9 +115,11 @@ def sticker_download(bot: Bot, message: Message, dir: str = None, as_file_object
 
     with CustomNamedTemporaryFile(suffix='.png', dir=dir) as image_file:
         sticker_image.download(out=image_file)
-        image_file.close()
+        image_file.save()
+
         pil_image = Image.open(image_file.name).convert("RGBA")
-        pil_image.save(image_file.name, 'png')
+        pil_image.save(image_file, 'png')
+        image_file.seek(0)
 
         if as_file_object:
             yield image_file
