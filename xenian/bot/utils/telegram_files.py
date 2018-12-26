@@ -43,13 +43,13 @@ def video_to_gif_download(bot: Bot, message: Message):
 
 
 @contextmanager
-def video_to_gif(video_path: str, dir: str = None, get_file_object: bool = False):
+def video_to_gif(video_path: str, dir: str = None, as_file_object: bool = False):
     """Convert a video to a gif
 
     Args:
         video_path (:obj:`str`): The videos path
         dir (:obj:`str`, optional): Path to where the file should be downloaded
-        get_file_object (:obj:`bool`, optional): Get file object instead of path to file
+        as_file_object (:obj:`bool`, optional): Get file object instead of path to file
 
     Returns:
         :obj:`str`: Path to gif file
@@ -66,21 +66,21 @@ def video_to_gif(video_path: str, dir: str = None, get_file_object: bool = False
         os.system('gifsicle -O3 --lossy=50 -o {dst} {src}'.format(dst=compressed_gif_path, src=gif_file.name))
 
         compressed_exists = os.path.isfile(compressed_gif_path)
-        if get_file_object:
+        if as_file_object:
             yield open(compressed_gif_path, 'wr') if compressed_exists else gif_file
         else:
             yield compressed_gif_path if compressed_exists else gif_file.name
 
 
 @contextmanager
-def video_download(bot: Bot, message: Message, dir: str = None, get_file_object: bool = False):
+def video_download(bot: Bot, message: Message, dir: str = None, as_file_object: bool = False):
     """Download and convert a video to a gif
 
     Args:
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         message (:obj:`telegram.message.Message`): Telegram Api Message Object
         dir (:obj:`str`, optional): Path to where the file should be downloaded
-        get_file_object (:obj:`bool`, optional): Get file object instead of path to file
+        as_file_object (:obj:`bool`, optional): Get file object instead of path to file
 
     Returns:
         :obj:`str`: Path to gif file
@@ -91,14 +91,14 @@ def video_download(bot: Bot, message: Message, dir: str = None, get_file_object:
     with NamedTemporaryFile(suffix='.mp4', dir=dir) as video_file:
         video.download(video_file.name)
 
-        if get_file_object:
+        if as_file_object:
             yield video_file
         else:
             yield video_file.name
 
 
 @contextmanager
-def sticker_download(bot: Bot, message: Message, dir: str = None, get_file_object: bool = False):
+def sticker_download(bot: Bot, message: Message, dir: str = None, as_file_object: bool = False):
     """Download a sticker
 
 
@@ -106,7 +106,7 @@ def sticker_download(bot: Bot, message: Message, dir: str = None, get_file_objec
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         message (:obj:`telegram.message.Message`): Telegram Api Message Object
         dir (:obj:`str`, optional): Path to where the file should be downloaded
-        get_file_object (:obj:`bool`, optional): Get file object instead of path to file
+        as_file_object (:obj:`bool`, optional): Get file object instead of path to file
 
     Returns:
         :obj:`str`: Path to image file
@@ -119,14 +119,14 @@ def sticker_download(bot: Bot, message: Message, dir: str = None, get_file_objec
         pil_image = Image.open(image_file.name).convert("RGBA")
         pil_image.save(image_file.name, 'png')
 
-        if get_file_object:
+        if as_file_object:
             yield image_file
         else:
             yield image_file.name
 
 
 @contextmanager
-def image_download(bot: Bot, message: Message, dir: str = None, get_file_object: bool = False):
+def image_download(bot: Bot, message: Message, dir: str = None, as_file_object: bool = False):
     """Download an image
 
 
@@ -134,7 +134,7 @@ def image_download(bot: Bot, message: Message, dir: str = None, get_file_object:
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         message (:obj:`telegram.message.Message`): Telegram Api Message Object
         dir (:obj:`str`, optional): Path to where the file should be downloaded
-        get_file_object (:obj:`bool`, optional): Get file object instead of path to file
+        as_file_object (:obj:`bool`, optional): Get file object instead of path to file
 
     Returns:
         :obj:`str`: Path to image file
@@ -143,7 +143,7 @@ def image_download(bot: Bot, message: Message, dir: str = None, get_file_object:
     with NamedTemporaryFile(suffix='.png', dir=dir) as image_file:
         photo.download(out=image_file)
 
-        if get_file_object:
+        if as_file_object:
             yield image_file
         else:
             yield image_file.name
