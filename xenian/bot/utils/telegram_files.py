@@ -22,7 +22,7 @@ __all__ = ['image_download', 'sticker_download', 'video_download', 'video_to_gif
 
 
 @contextmanager
-def video_to_gif_download(bot: Bot, message: Message):
+def video_to_gif_download(bot: Bot, message: Message, as_file_object: bool = False, **kwargs):
     """Download and convert a video to a gif
 
     Videos chosen in this order:
@@ -34,12 +34,15 @@ def video_to_gif_download(bot: Bot, message: Message):
     Args:
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         message (:obj:`telegram.message.Message`): Telegram Api Message Object
+        as_file_object (:obj:`bool`, optional): Get file object instead of path to file
+        kwargs: Further arguments for the Temoraryfile: eg. prefix='foobar-' or dir='/foo/bar'
+
     Returns:
         :obj:`str`: Path to gif file
     """
     with video_download(bot, message) as video_path:
-        with video_to_gif(video_path) as gif_path:
-            yield gif_path
+        with video_to_gif(video_path, as_file_object, **kwargs) as gif_item:
+            yield gif_item
 
 
 @contextmanager
