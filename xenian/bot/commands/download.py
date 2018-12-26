@@ -82,6 +82,7 @@ class Download(BaseCommand):
         else:
             update.message.reply_text('Download Mode off')
 
+    @run_async
     def toggle_zip_mode(self, bot: Bot, update: Update):
         """Toggle Zip Mode
 
