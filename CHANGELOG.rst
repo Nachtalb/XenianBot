@@ -4,7 +4,8 @@ Changelog
 2.2.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Refactor of download module to use download methods from utils
+- Slightly improve ``/restart`` by logging more
 
 
 2.2.0 (2018-12-26)
