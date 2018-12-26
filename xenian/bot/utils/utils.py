@@ -1,15 +1,14 @@
-from contextlib import contextmanager
 import io
 import os
-from tempfile import NamedTemporaryFile
-from tempfile import _TemporaryFileWrapper
+from contextlib import contextmanager
+from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 from types import MethodType
 
 __all__ = ['save_file', 'CustomNamedTemporaryFile']
 
 
 @contextmanager
-def CustomNamedTemporaryFile(delete=True, *args, **kwargs) -> _TemporaryFileWrapper:
+def CustomNamedTemporaryFile(delete=True, close=None, *args, **kwargs) -> _TemporaryFileWrapper:
     """A custom ``tempfile.NamedTemporaryFile`` to enable the following points
 
     - Save without closing the file
@@ -46,6 +45,8 @@ def CustomNamedTemporaryFile(delete=True, *args, **kwargs) -> _TemporaryFileWrap
             >>> # False
 
     Args:
+        close (:obj:`bool`): If delete is set to false still close the file (no effect if delete is not set to false)
+        Args are defiend in `tempfile.NamedTemporaryFile`
         Args are defiend in `tempfile.NamedTemporaryFile`
     Returns:
         :obj:`tempfile._TemporaryFileWrapper`:
@@ -58,6 +59,9 @@ def CustomNamedTemporaryFile(delete=True, *args, **kwargs) -> _TemporaryFileWrap
                 file.close()
             if os.path.isfile(file.name):
                 os.unlink(file.name)
+        elif close is True:
+            if not file.closed:
+                file.close()
 
     file.__del__ = delete_close
     file.save = MethodType(save_file, file)
