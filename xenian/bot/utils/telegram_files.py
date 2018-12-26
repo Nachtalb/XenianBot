@@ -56,7 +56,7 @@ def video_to_gif(video_path: str, as_file_object: bool = False, **kwargs):
     """
     video_clip = VideoFileClip(video_path, audio=False)
 
-    with NamedTemporaryFile(suffix='.gif', **kwargs) as gif_file:
+    with CustomNamedTemporaryFile(suffix='.gif', **kwargs) as gif_file:
         video_clip.write_gif(gif_file.name)
 
         dirname = os.path.dirname(gif_file.name)
