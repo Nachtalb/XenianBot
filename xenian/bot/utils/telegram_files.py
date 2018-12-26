@@ -43,17 +43,19 @@ def video_to_gif_download(bot: Bot, message: Message):
 
 
 @contextmanager
-def video_to_gif(video_path: str):
+def video_to_gif(video_path: str, dir: str = None):
     """Convert a video to a gif
 
     Args:
         video_path (:obj:`str`): The videos path
+        dir (:obj:`str`, optional): Path to where the file should be downloaded
+
     Returns:
         :obj:`str`: Path to gif file
     """
     video_clip = VideoFileClip(video_path, audio=False)
 
-    with NamedTemporaryFile(suffix='.gif') as gif_file:
+    with NamedTemporaryFile(suffix='.gif', dir=dir) as gif_file:
         video_clip.write_gif(gif_file.name)
 
         dirname = os.path.dirname(gif_file.name)
@@ -68,12 +70,13 @@ def video_to_gif(video_path: str):
 
 
 @contextmanager
-def video_download(bot: Bot, message: Message):
+def video_download(bot: Bot, message: Message, dir: str = None):
     """Download and convert a video to a gif
 
     Args:
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         message (:obj:`telegram.message.Message`): Telegram Api Message Object
+        dir (:obj:`str`, optional): Path to where the file should be downloaded
 
     Returns:
         :obj:`str`: Path to gif file
@@ -81,27 +84,28 @@ def video_download(bot: Bot, message: Message):
     document = message.document or message.video
     video = bot.getFile(document.file_id)
 
-    with NamedTemporaryFile(suffix='.mp4') as video_file:
+    with NamedTemporaryFile(suffix='.mp4', dir=dir) as video_file:
         video.download(video_file.name)
 
         yield video_file.name
 
 
 @contextmanager
-def sticker_download(bot: Bot, message: Message):
+def sticker_download(bot: Bot, message: Message, dir: str = None):
     """Download a sticker
 
 
     Args:
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         message (:obj:`telegram.message.Message`): Telegram Api Message Object
+        dir (:obj:`str`, optional): Path to where the file should be downloaded
 
     Returns:
         :obj:`str`: Path to image file
     """
     sticker_image = bot.getFile(message.sticker.file_id)
 
-    with CustomNamedTemporaryFile(suffix='.png') as image_file:
+    with CustomNamedTemporaryFile(suffix='.png', dir=dir) as image_file:
         sticker_image.download(out=image_file)
         image_file.close()
         pil_image = Image.open(image_file.name).convert("RGBA")
@@ -111,19 +115,20 @@ def sticker_download(bot: Bot, message: Message):
 
 
 @contextmanager
-def image_download(bot: Bot, message: Message):
+def image_download(bot: Bot, message: Message, dir: str = None):
     """Download an image
 
 
     Args:
         bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
         message (:obj:`telegram.message.Message`): Telegram Api Message Object
+        dir (:obj:`str`, optional): Path to where the file should be downloaded
 
     Returns:
         :obj:`str`: Path to image file
     """
     photo = bot.getFile(message.photo[-1].file_id)
-    with NamedTemporaryFile(suffix='.png') as image_file:
+    with NamedTemporaryFile(suffix='.png', dir=dir) as image_file:
         photo.download(out=image_file)
         yield image_file.name
 
