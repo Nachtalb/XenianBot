@@ -1,12 +1,15 @@
+import os
 import re
 from collections import OrderedDict
 
 from pybooru import Danbooru as PyDanbooru
+from requests_html import HTMLSession
 from telegram import Bot, ChatAction, InputMediaPhoto, Update
 from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
-from xenian.bot.settings import DANBOORU_API_TOKEN
+from xenian.bot.settings import DANBOORU_API_TOKEN, DANBOORU_LOGIN_PASSWORD, DANBOORU_LOGIN_USERNAME
+from xenian.bot.utils import download_file_from_url_and_upload
 from . import BaseCommand
 
 __all__ = ['danbooru']
@@ -36,6 +39,25 @@ class Danbooru(BaseCommand):
                 'args': ['page=PAGE_NUM', 'limit=LIMIT']
             }
         ]
+
+        self.logged_in_session = None
+        if DANBOORU_LOGIN_USERNAME and DANBOORU_LOGIN_PASSWORD:
+            self.logged_in_session = HTMLSession()
+            login_page = self.logged_in_session.get('https://danbooru.donmai.us/session/new')
+            form = login_page.html.find('.simple_form')[0]
+
+            login_data = {
+                'name': DANBOORU_LOGIN_USERNAME,
+                'password': DANBOORU_LOGIN_PASSWORD,
+                'remember': '1',
+            }
+            for input in form.find('input'):
+                value = input.attrs.get('value', None)
+                name = input.attrs.get('name', None)
+                if name:
+                    login_data.setdefault(name, value)
+
+            self.logged_in_session.post('https://danbooru.donmai.us/session', login_data)
 
         super(Danbooru, self).__init__()
 
@@ -162,14 +184,26 @@ class Danbooru(BaseCommand):
         errors = 0
         media_list = []
         for post in posts:
-            image_url = post.get('large_file_url', post.get('source', None))
+            image_url = post.get('large_file_url', None)
+            post_url = '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])
+            if not image_url:
+                if self.logged_in_session:
+                    response = self.logged_in_session.get(post_url)
+                    img_tag = response.html.find('#image-container > img')
 
-            if not image_url or not image_url.startswith('http'):
+                    if not img_tag:
+                        errors += 1
+                        continue
+                    img_tag = img_tag[0]
+                    image_url = download_file_from_url_and_upload(img_tag.attrs['src'])
+                else:
+                    image_url = post.get('source', None)
+
+            if not image_url:
                 errors += 1
                 continue
 
-            media_list.append(InputMediaPhoto(
-                image_url, '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])))
+            media_list.append(InputMediaPhoto(image_url, post_url))
 
         while media_list:
             bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
@@ -194,8 +228,12 @@ class Danbooru(BaseCommand):
                     del media_list[0]
             else:
                 try:
+                    file = media_list[0].media
+                    if os.path.isfile(file):
+                        file = open(file, mode='rb')
+
                     update.message.reply_photo(
-                        photo=media_list[0].media,
+                        photo=file,
                         caption=media_list[0].caption,
                         disable_notification=True
                     )
