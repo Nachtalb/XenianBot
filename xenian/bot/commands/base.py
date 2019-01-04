@@ -1,7 +1,10 @@
+import logging
 from copy import deepcopy
 
-from telegram.ext import CallbackQueryHandler
-from telegram.ext import CommandHandler, Filters, MessageHandler
+from telegram import Bot, Update
+from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler
+
+from xenian.bot.settings import LOG_LEVEL
 
 __all__ = ['BaseCommand']
 
@@ -20,7 +23,7 @@ class BaseCommand:
 
     Examples:
         >>> from telegram.ext import Filters
-        >>> from xenian.bot import BaseCommand
+        >>> from xenian.bot.commands.base import BaseCommand
         >>>
         >>> class MyCommands(BaseCommand):
         >>>     def __init__(self):
@@ -149,3 +152,16 @@ class BaseCommand:
 
     def command_wrapper(self, method: callable, *args, **kwargs):
         return lambda bot, update, *args2, **kwargs2: method(bot, update, *args2, *args, **kwargs2, **kwargs)
+
+    def not_implemented(self, bot: Bot, update: Update, *args, **kwargs):
+        """
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            *args (:obj:`list`, optional): Unused other arguments but preserved for compatibility
+            **kwargs (:obj:`dict`, optional): Unused keyword arguments but preserved for compatibility
+        """
+        if LOG_LEVEL <= logging.DEBUG:
+            update.message.reply_text('This command was not implemented by the admin.',
+                                      reply_to_message_id=update.message.message_id)
