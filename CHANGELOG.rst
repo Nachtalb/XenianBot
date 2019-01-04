@@ -7,6 +7,7 @@ Changelog
 - Define and use an api key for Danbooru with the ``DANBOORU_API_TOKEN`` variable
 - Increase Danbooru image limit from 5 to 20
 - Notify user about successful restart with ``/restart``
+- Call not implemented when yandex translate is run without api key
 
 
 2.2.0 (2018-12-26)
