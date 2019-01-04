@@ -182,7 +182,6 @@ class Danbooru(BaseCommand):
             return
 
         errors = 0
-        media_list = []
         for post in posts:
             image_url = post.get('large_file_url', None)
             post_url = '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])
@@ -203,43 +202,21 @@ class Danbooru(BaseCommand):
                 errors += 1
                 continue
 
-            media_list.append(InputMediaPhoto(image_url, post_url))
-
-        while media_list:
             bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
-            if len(media_list) > 1:
-                try:
-                    bot.send_media_group(
-                        chat_id=update.message.chat_id,
-                        media=media_list[:10],
-                        reply_to_message_id=update.message.message_id,
-                        disable_notification=True
-                    )
-                    del media_list[:10]
-                except (BadRequest, TimedOut):
-                    try:
-                        update.message.reply_photo(
-                            photo=media_list[0].media,
-                            caption=media_list[0].caption,
-                            disable_notification=True
-                        )
-                    except (BadRequest, TimedOut):
-                        errors += 1
-                    del media_list[0]
-            else:
-                try:
-                    file = media_list[0].media
-                    if os.path.isfile(file):
-                        file = open(file, mode='rb')
+            try:
+                file = None
+                if os.path.isfile(image_url):
+                    file = open(image_url, mode='rb')
 
-                    update.message.reply_photo(
-                        photo=file,
-                        caption=media_list[0].caption,
-                        disable_notification=True
-                    )
-                except (BadRequest, TimedOut):
-                    errors += 1
-                del media_list[0]
+                update.message.reply_photo(
+                    photo=file or image_url,
+                    caption=post_url,
+                    disable_notification=True
+                )
+            except (BadRequest, TimedOut):
+                errors += 1
+                continue
+
         reply = ''
         if update.message.chat.type not in ['group', 'supergroup']:
             reply = 'Images has been sent'
