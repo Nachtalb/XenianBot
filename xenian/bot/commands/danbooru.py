@@ -63,7 +63,10 @@ class Danbooru(BaseCommand):
             'limit': limit or 10
         }
 
-        terms = text.split(',')
+        if ',' in text:
+            terms = text.split(',')
+        else:
+            terms = text.split(' ')
         terms = self.filter_terms(terms)
         query['tags'] = ' '.join(terms[:2])
 
