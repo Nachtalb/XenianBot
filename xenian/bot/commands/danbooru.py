@@ -159,8 +159,8 @@ class Danbooru(BaseCommand):
         errors = 0
         media_list = []
         for post in posts:
-            image_url = post.get('large_file_url', None)
-            image_url = client.site_url + image_url if image_url else post['source']
+            image_url = post.get('large_file_url', post.get('source', None))
+
             if not image_url or not image_url.startswith('http'):
                 errors += 1
                 continue

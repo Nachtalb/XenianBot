@@ -8,6 +8,7 @@ Changelog
 - Increase Danbooru image limit from 5 to 20
 - Notify user about successful restart with ``/restart``
 - Call not implemented when yandex translate is run without api key
+- Fix corrupt danbooru post image url
 
 
 2.2.0 (2018-12-26)
