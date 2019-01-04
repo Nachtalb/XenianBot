@@ -6,6 +6,7 @@ from telegram import Bot, ChatAction, InputMediaPhoto, Update
 from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
+from xenian.bot.settings import DANBOORU_API_TOKEN
 from . import BaseCommand
 
 __all__ = ['danbooru']
@@ -159,7 +160,7 @@ class Danbooru(BaseCommand):
         if query.get('limit', 0) > 100:
             query['limit'] = 100
 
-        client = PyDanbooru('danbooru')
+        client = PyDanbooru('danbooru', api_key=DANBOORU_API_TOKEN)
         posts = client.post_list(**query)
 
         if not posts:

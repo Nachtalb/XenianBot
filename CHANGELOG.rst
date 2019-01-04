@@ -4,7 +4,7 @@ Changelog
 2.2.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Define and use an api key for Danbooru with the ``DANBOORU_API_TOKEN`` variable
 
 
 2.2.0 (2018-12-26)

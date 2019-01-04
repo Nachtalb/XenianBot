@@ -5,6 +5,7 @@ BASE_DIR = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file
 
 TELEGRAM_API_TOKEN = ''
 YANDEX_API_TOKEN = ''
+DANBOORU_API_TOKEN = ''
 
 ADMINS = ['@SOME_TELEGRAM_USERS', ]  # Users which can do admin tasks like /restart
 SUPPORTER = ['@SOME_TELEGRAM_USERS', ]  # Users which to contact fo support
