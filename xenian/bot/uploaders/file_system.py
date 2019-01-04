@@ -3,7 +3,7 @@ import subprocess
 import warnings
 
 import xenian.bot
-from xenian.bot.utils import CustomNamedTemporaryFile
+from xenian.bot.utils.temp_file import CustomNamedTemporaryFile
 from .base import UploaderBase
 
 
