@@ -50,11 +50,6 @@ class Danbooru(BaseCommand):
         """
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
-        query = {
-            'limit': 5,
-            'page': 0
-        }
-
         text = ' '.join(args)
         if not text:
             update.message.reply_text('You have to give me at least one tag.')
@@ -63,10 +58,10 @@ class Danbooru(BaseCommand):
         text, page = self.extract_option_from_string('page', text, int)
         text, limit = self.extract_option_from_string('limit', text, int)
 
-        if page:
-            query['page'] = page
-        if limit:
-            query['limit'] = limit
+        query = {
+            'page': page or 0,
+            'limit': limit or 10
+        }
 
         terms = text.split(',')
         terms = self.filter_terms(terms)
@@ -88,20 +83,14 @@ class Danbooru(BaseCommand):
         """
         bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
 
-        query = {
-            'limit': 5,
-            'page': 0
-        }
-
         text = ' '.join(args)
         text, page = self.extract_option_from_string('page', text, int)
         text, limit = self.extract_option_from_string('limit', text, int)
 
-        if page:
-            query['page'] = page
-        if limit:
-            query['limit'] = limit
-
+        query = {
+            'page': page or 0,
+            'limit': limit or 10
+        }
         self.post_list_send_media_group(bot, update, query)
 
     def filter_terms(self, terms: list) -> list:

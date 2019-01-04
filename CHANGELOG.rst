@@ -5,6 +5,7 @@ Changelog
 ------------------
 
 - Define and use an api key for Danbooru with the ``DANBOORU_API_TOKEN`` variable
+- Increase Danbooru image limit from 5 to 20
 
 
 2.2.0 (2018-12-26)
