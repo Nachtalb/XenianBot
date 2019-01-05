@@ -43,7 +43,12 @@ class Danbooru(BaseCommand):
             }
         ]
 
-        self.client = PyDanbooru('danbooru', api_key=DANBOORU_API_TOKEN)
+        if DANBOORU_API_TOKEN:
+            if not DANBOORU_LOGIN_USERNAME:
+                raise ValueError('When Danbooru API kay is set, username must also be.')
+            self.client = PyDanbooru('danbooru', username=DANBOORU_LOGIN_USERNAME, api_key=DANBOORU_API_TOKEN)
+        else:
+            self.client = PyDanbooru('danbooru')
 
         self.logged_in_session = None
         if DANBOORU_LOGIN_USERNAME and DANBOORU_LOGIN_PASSWORD:
