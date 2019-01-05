@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from pybooru import Danbooru as PyDanbooru
 from requests_html import HTMLSession
-from telegram import Bot, ChatAction, InputMediaPhoto, Update
+from telegram import Bot, ChatAction, Update
 from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
@@ -209,7 +209,8 @@ class Danbooru(BaseCommand):
                 sent_photo = update.message.reply_photo(
                     photo=file or image_url,
                     caption=post_url,
-                    disable_notification=True
+                    disable_notification=True,
+                    reply_to_message_id=update.message.message_id,
                 )
 
                 if file:
