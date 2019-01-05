@@ -4,11 +4,42 @@ import os
 BASE_DIR = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../'))
 
 TELEGRAM_API_TOKEN = ''
-DANBOORU_API_TOKEN = ''
 
-# If given gold or platinum restricted images are sent anyways (if given account has gold or platinum membership)
-DANBOORU_LOGIN_USERNAME = ''
-DANBOORU_LOGIN_PASSWORD = ''
+ANIME_SERVICES = [
+    {
+        'name': 'danbooru',
+        'type': 'danbooru',
+        'url': 'https://danbooru.donmai.us',
+        'api': None,
+        'username': None,
+        'password': None,
+    },
+    {
+        'name': 'safebooru',
+        'type': 'danbooru',
+        'url': 'https://safebooru.donmai.us',
+        'api': None,
+        'username': None,
+        'password': None,
+    },
+    {
+        'name': 'konachan',
+        'type': 'moebooru',
+        'url': None,
+        'hashed_string': None,
+        'username': None,
+        'password': None,
+    },
+    {
+        'name': 'yandere',
+        'type': 'moebooru',
+        'url': None,
+        'hashed_string': None,
+        'username': None,
+        'password': None,
+    }
+]
+
 
 ADMINS = ['@SOME_TELEGRAM_USERS', ]  # Users which can do admin tasks like /restart
 SUPPORTER = ['@SOME_TELEGRAM_USERS', ]  # Users which to contact fo support

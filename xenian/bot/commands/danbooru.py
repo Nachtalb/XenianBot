@@ -1,28 +1,29 @@
 import os
 import re
 from collections import OrderedDict
+from copy import deepcopy
+from typing import Callable
 
 import requests
-from pybooru import Danbooru as PyDanbooru
+from pybooru import Danbooru as PyDanbooru, Moebooru as PyMoebooru
+from pybooru.resources import SITE_LIST
 from requests.exceptions import MissingSchema
 from requests_html import HTMLSession
-from telegram import Bot, ChatAction, Update, InputMediaPhoto, InputFile
+from telegram import Bot, ChatAction, InputFile, InputMediaPhoto, Update
 from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
 from xenian.bot import mongodb_database
-from xenian.bot.settings import DANBOORU_API_TOKEN, DANBOORU_LOGIN_PASSWORD, DANBOORU_LOGIN_USERNAME
-from xenian.bot.utils import download_file_from_url_and_upload, TelegramProgressBar
+from xenian.bot.settings import ANIME_SERVICES
+from xenian.bot.utils import TelegramProgressBar, download_file_from_url_and_upload
 from . import BaseCommand
 
 __all__ = ['danbooru']
 
+SITE_LIST['safebooru'] = {'url': 'https://safebooru.donmai.us'}
 
-class Danbooru(BaseCommand):
-    """The class for all danbooru related commands
-    """
-    group = 'Anime'
 
+class DanbooruService:
     FREE_LEVEL = 20
     GOLD_LEVEL = 30
     PLATINUM_LEVEL = 31
@@ -31,7 +32,7 @@ class Danbooru(BaseCommand):
     MODERATOR = 40
     ADMIN = 50
 
-    level_restrictions = {
+    LEVEL_RESTRICTIONS = {
         'tag_limit': {
             FREE_LEVEL: 2,
             GOLD_LEVEL: 6,
@@ -52,39 +53,48 @@ class Danbooru(BaseCommand):
         }
     }
 
-    def __init__(self):
-        self.commands = [
-            {
-                'title': 'Danobooru',
-                'description': 'Search on danbooru',
-                'command': self.search,
-                'command_name': 'danbooru',
-                'options': {'pass_args': True},
-                'args': ['tag1', 'tag2...', 'page=PAGE_NUM', 'limit=LIMIT', 'group=SIZE']
-            }
-        ]
+    type = 'danbooru'
 
-        if DANBOORU_API_TOKEN:
-            if not DANBOORU_LOGIN_USERNAME:
-                raise ValueError('When Danbooru API kay is set, username must also be.')
-            self.client = PyDanbooru('danbooru', username=DANBOORU_LOGIN_USERNAME, api_key=DANBOORU_API_TOKEN)
+    def __init__(self, name: str, url: str, api: str = None, username: str = None, password: str = None) -> None:
+        self.name = name
+        self.url = url.lstrip('/') if url is not None else None
+        self.api = api
+        self.username = username
+        self.password = password
+
+        self.client = None
+        self.session = None
+        self.user_level = None
+        self.tag_limit = None
+        self.censored_tags = None
+
+        self.init_client()
+        self.init_session()
+
+    def init_client(self):
+        if self.api:
+            if not self.username:
+                raise ValueError('Danbooru API Services need a Username when API key is given.')
+            self.client = PyDanbooru(site_name=self.name, site_url=self.url, api_key=self.api, username=self.username)
         else:
-            self.client = PyDanbooru('danbooru')
+            self.client = PyDanbooru(site_name=self.name, site_url=self.url)
 
-        self.user_level = 20
-        if DANBOORU_LOGIN_USERNAME:
-            user = self.client.user_list(name_matches=self.client.username)
-            self.user_level = user[0]['level']
+        self.user_level = self.get_user_level()
+        self.tag_limit = self.LEVEL_RESTRICTIONS['tag_limit'][self.user_level]
+        self.censored_tags = self.LEVEL_RESTRICTIONS['censored_tags'][self.user_level]
 
-        self.logged_in_session = None
-        if DANBOORU_LOGIN_USERNAME and DANBOORU_LOGIN_PASSWORD:
-            self.logged_in_session = HTMLSession()
-            login_page = self.logged_in_session.get('https://danbooru.donmai.us/session/new')
+        if not self.url:
+            self.url = self.client.site_url.lstrip('/')
+
+    def init_session(self):
+        if self.username and self.password and self.url:
+            self.session = HTMLSession()
+            login_page = self.session.get(f'{self.url.lstrip("/")}/session/new')
             form = login_page.html.find('.simple_form')[0]
 
             login_data = {
-                'name': DANBOORU_LOGIN_USERNAME,
-                'password': DANBOORU_LOGIN_PASSWORD,
+                'name': self.username,
+                'password': self.password,
                 'remember': '1',
             }
             for input in form.find('input'):
@@ -93,26 +103,115 @@ class Danbooru(BaseCommand):
                 if name:
                     login_data.setdefault(name, value)
 
-            self.logged_in_session.post('https://danbooru.donmai.us/session', login_data)
+            self.session.post(f'{self.url.lstrip("/")}/session', login_data)
 
+    def get_user_level(self):
+        user_level = 20
+        if self.username:
+            user = self.client.user_list(name_matches=self.client.username)
+            user_level = user[0]['level']
+        return user_level
+
+
+class MoebooruService:
+    type = 'moebooru'
+
+    def __init__(self, name: str, url: str, username: str = None, password: str = None,
+                 hashed_string: str = None) -> None:
+        self.name = name
+        self.url = url.lstrip('/') if url is not None else None
+        self.username = username
+        self.password = password
+        self.hashed_string = hashed_string
+
+        self.client = None
+        self.init_client()
+
+    def init_client(self):
+        if self.username and self.password:
+            self.client = PyMoebooru(site_name=self.name, site_url=self.url, hash_string=self.hashed_string,
+                                     username=self.username, password=self.password)
+            return
+
+        self.client = PyDanbooru(site_name=self.name, site_url=self.url)
+        if not self.url:
+            self.url = self.client.site_url.lstrip('/')
+
+
+class Danbooru(BaseCommand):
+    """The class for all danbooru related commands
+    """
+    group = 'Anime'
+
+    def __init__(self):
         self.files = mongodb_database.files
+
+        self.services = {}
+        self.init_services()
 
         super(Danbooru, self).__init__()
 
+    def init_services(self):
+        """Initialize services
+        """
+        for service in ANIME_SERVICES:
+            name = service['name']
+            service_information = deepcopy(service)
+            del service_information['type']
+            if service['type'] == 'danbooru':
+                self.services[name] = DanbooruService(**service_information)
+            if service['type'] == 'moebooru':
+                self.services[name] = MoebooruService(**service_information)
+
+            self.commands.append({
+                'title': name.capitalize(),
+                'description': f'Search on {name}',
+                'command': self.search_wrapper(name),
+                'command_name': name,
+                'options': {'pass_args': True},
+                'args': ['tag1', 'tag2...', 'page=PAGE_NUM', 'limit=LIMIT', 'group=SIZE']
+            })
+
+    def search_wrapper(self, service_name: str) -> Callable:
+        """Wrapper to set the service for the search command
+
+        Args:
+            service_name (:obj:`str`): Name for the service
+
+        Returns:
+            (:obj:`Callable`): Search method for the telegram command
+
+        Raises:
+            (:class:`NotImplementedError`): Search function for given service does not exist
+        """
+        service = self.services[service_name]
+
+        method_name = f'{service.type}_search'
+        method = getattr(self, method_name, None)
+
+        if not method:
+            raise NotImplementedError(f'Search function ({method_name}) for service {service_name} does not exist.')
+
+        def search(*args, **kwargs):
+            method(service=service, *args, **kwargs)
+
+        return search
+
+    def moebooru_search(self, bot: Bot, update: Update, service: DanbooruService, args: list = None):
+        pass
+
     @run_async
-    def search(self, bot: Bot, update: Update, args: list = None):
-        """Search on danbooru by tags command
+    def danbooru_search(self, bot: Bot, update: Update, service: DanbooruService, args: list = None):
+        """Search on Danbooru API Sites
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            service (:obj:`DanbooruService`): Initialized :obj:`DanbooruService` for the various api calls
             args (:obj:`list`, optional): List of search terms and options
         """
         message = update.message
         text = ' '.join(args)
-        if not text:
-            update.message.reply_text('You have to give me at least one tag.')
-            return
 
         text, page = self.extract_option_from_string('page', text, int)
         text, limit = self.extract_option_from_string('limit', text, int)
@@ -133,16 +232,16 @@ class Danbooru(BaseCommand):
             terms = text.split(' ')
         terms = self.filter_terms(terms)
 
-        tag_limit = self.level_restrictions['tag_limit'][self.user_level]
-        if len([term for term in terms if ':' not in term]) > tag_limit:  # Do not count qualifiers like "order:score"
-            message.reply_text(f'Only {tag_limit} tags can be used.', reply_to_message_id=message.message_id)
+        if len([term for term in terms if ':' not in term]) > service.tag_limit:  # Do not count qualifiers like "order:score"
+            message.reply_text(f'Only {service.tag_limit} tags can be used.', reply_to_message_id=message.message_id)
             return
-        if self.level_restrictions['censored_tags'][self.user_level]:
+
+        if service.censored_tags:
             message.reply_text('Some tags may be censored', reply_to_message_id=message.message_id)
 
         query['tags'] = ' '.join(terms)
 
-        self.post_list_send_media_group(bot, update, query, group_size=group_size)
+        self.danbooru_post_list_send_media_group(bot, update, service, query, group_size=group_size)
 
     def filter_terms(self, terms: list) -> list:
         """Ensure terms for the danbooru tag search are valid
@@ -221,8 +320,8 @@ class Danbooru(BaseCommand):
                           upsert=True)
         return downloaded_image_location
 
-    def post_list_send_media_group(self, bot: Bot, update: Update, query: dict, group_size: bool = False):
-        """Perform :method:`pybooru.api_danbooru.DanbooruApi_Mixin#post_list` search and send found images to user as media group
+    def danbooru_post_list_send_media_group(self, bot: Bot, update: Update, service: DanbooruService, query: dict, group_size: bool = False):
+        """Send Danbooru API Service queried images to user
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
@@ -236,7 +335,7 @@ class Danbooru(BaseCommand):
         if query.get('limit', 0) > 100:
             query['limit'] = 100
 
-        posts = self.client.post_list(**query)
+        posts = service.client.post_list(**query)
 
         if not posts:
             message.reply_text('Nothing found on page {page}'.format(**query))
@@ -254,15 +353,15 @@ class Danbooru(BaseCommand):
         error = False
         for index, post in progress_bar.enumerate(posts):
             image_url = post.get('large_file_url', None)
-            post_url = '{domain}/posts/{post_id}'.format(domain=self.client.site_url, post_id=post['id'])
+            post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
             post_id = post['id']
             caption = f'@XenianBot - {post_url}'
 
             image_url = self.get_image(post_id, image_url) or image_url
 
             if not image_url:
-                if self.logged_in_session or group_size:
-                    response = self.logged_in_session.get(post_url)
+                if service.session or group_size:
+                    response = service.session.get(post_url)
                     img_tag = response.html.find('#image-container > img')
 
                     if not img_tag:
