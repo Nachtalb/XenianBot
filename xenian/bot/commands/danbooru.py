@@ -260,18 +260,20 @@ class Danbooru(BaseCommand):
                 https://pybooru.readthedocs.io/en/stable/api_danbooru.html#pybooru.api_danbooru.DanbooruApi_Mixin.post_list
             group_size (:obj:`bool`): If the found items shall be grouped to a media group
         """
+        message = update.message
+
         if query.get('limit', 0) > 100:
             query['limit'] = 100
 
         posts = self.client.post_list(**query)
 
         if not posts:
-            update.message.reply_text('Nothing found on page {page}'.format(**query))
+            message.reply_text('Nothing found on page {page}'.format(**query))
             return
 
         progress_bar = TelegramProgressBar(
             bot=bot,
-            chat_id=update.message.chat_id,
+            chat_id=message.chat_id,
             pre_message=('Sending' if not group_size else 'Gathering') + ' files\n{current} / {total}',
             se_message='This could take some time.'
         )
@@ -314,7 +316,7 @@ class Danbooru(BaseCommand):
                 groups[current_group_index].append(InputMediaPhoto(image_url, caption))
                 continue
 
-            bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
+            bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.UPLOAD_PHOTO)
             try:
                 file = None
                 if os.path.isfile(image_url):
@@ -322,17 +324,17 @@ class Danbooru(BaseCommand):
 
                 sent_media = None
                 if image_url.endswith(('.png', '.jpg')):
-                    sent_media = update.message.reply_photo(
+                    sent_media = message.reply_photo(
                         photo=file or image_url,
                         caption=caption,
                         disable_notification=True,
-                        reply_to_message_id=update.message.message_id,
+                        reply_to_message_id=message.message_id,
                     )
 
                 if file:
                     file.seek(0)
 
-                update.message.chat.send_document(
+                message.chat.send_document(
                     document=file or image_url,
                     disable_notification=True,
                     caption=caption,
@@ -349,14 +351,14 @@ class Danbooru(BaseCommand):
                         item.media = InputFile(file_, attach=True)
 
             bot.send_media_group(
-                chat_id=update.message.chat_id,
+                chat_id=message.chat_id,
                 media=items,
-                reply_to_message_id=update.message.message_id,
+                reply_to_message_id=message.message_id,
                 disable_notification=True
             )
 
         reply = ''
-        if update.message.chat.type not in ['group', 'supergroup']:
+        if message.chat.type not in ['group', 'supergroup']:
             reply = 'Images has been sent'
 
         if error:
@@ -364,7 +366,7 @@ class Danbooru(BaseCommand):
                      'publicly available or because the filetype is not supported (zip, webm etc. when sending as a ' \
                      'group).'
         if reply:
-            update.message.reply_text(reply.strip())
+            message.reply_text(reply.strip())
 
 
 danbooru = Danbooru()
