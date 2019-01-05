@@ -90,9 +90,6 @@ class Danbooru(BaseCommand):
         terms = self.filter_terms(terms)
         query['tags'] = ' '.join(terms[:2])
 
-        if len(terms) > 2:
-            update.message.reply_text('Only 2 tags per search supported, searching for {}'.format(query['tags']))
-
         self.post_list_send_media_group(bot, update, query)
 
     @run_async
