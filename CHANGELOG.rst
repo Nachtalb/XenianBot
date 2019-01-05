@@ -9,6 +9,9 @@ Changelog
 - Notify user about successful restart with ``/restart``
 - Call not implemented when yandex translate is run without api key
 - Fix corrupt danbooru post image url
+- Send full file too together with the danbooru photos
+- Send danbooru images faster by not trying to send them as a group
+- Send danbooru images only available to premium members as long a premium account is given in the settings
 
 
 2.2.0 (2018-12-26)
