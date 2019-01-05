@@ -182,11 +182,11 @@ class Danbooru(BaseCommand):
         Returns:
                 :obj:`list`: List with the given strings validated
         """
-        non_alphanum = re.compile('[^\w_ +]+')
-        terms = map(lambda term: non_alphanum.sub('', term), terms)
+        black_list = re.compile('[^\w_\- +~*:]+')
+        terms = map(lambda term: black_list.sub('', term), terms)
         terms = map(lambda term: term.strip(), terms)
         terms = map(lambda term: term.replace(' ', '_'), terms)
-        terms = filter(lambda term: not non_alphanum.match(term) and bool(term), terms)
+        terms = filter(lambda term: not black_list.match(term) and bool(term), terms)
         return list(OrderedDict.fromkeys(terms))
 
     def extract_option_from_string(self, name: str, text: str, type_: str or int = None) -> tuple:
