@@ -5,6 +5,7 @@ Changelog
 ------------------
 
 - Show progressbar of items being sent by danbooru search / latest
+- Add @XenianBot to danbooru search / latest results
 
 
 2.3.0 (2019-01-05)

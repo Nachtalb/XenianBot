@@ -212,7 +212,7 @@ class Danbooru(BaseCommand):
 
                 sent_photo = update.message.reply_photo(
                     photo=file or image_url,
-                    caption=post_url,
+                    caption=f'@XenianBot - {post_url}',
                     disable_notification=True,
                     reply_to_message_id=update.message.message_id,
                 )
