@@ -1,44 +1,43 @@
+from googletrans import Translator
+from googletrans.constants import LANGUAGES
+from googletrans.models import Translated
 from telegram import Bot, Update
 from telegram.ext import run_async
 from telegram.parsemode import ParseMode
-from yandex_translate import YandexTranslate
 
-from xenian.bot.settings import YANDEX_API_TOKEN
 from xenian.bot.utils import get_option_from_string
 from .base import BaseCommand
 
-__all__ = ['yandex']
+__all__ = ['translate']
 
 
-class Yandex(BaseCommand):
-    """A set of yandex api commands
+class Translate(BaseCommand):
+    """A set of translate functions
 
     Attributes:
-        translator (:obj:`YandexTranslate`): Translator object
+        translator (:obj:`googletrans.Translator`): Translator object
     """
 
     group = 'Misc'
-    translator = None
 
     def __init__(self):
         self.commands = [
             {
-                'command': self.translate if YANDEX_API_TOKEN else self.not_implemented,
-                'title': 'Translation by Yandex',
+                'command': self.translate,
+                'title': 'Translate',
                 'description': 'Translate a reply or a given text from `-lf` (default: detect) language to `-lt` '
                                '(default: en) language',
                 'args': ['text', '-lf LANG', '-lt LANG']
             },
         ]
 
-        if YANDEX_API_TOKEN:
-            self.translator = YandexTranslate(YANDEX_API_TOKEN)
+        self.translator = Translator()
 
-        super(Yandex, self).__init__()
+        super(Translate, self).__init__()
 
     @run_async
     def translate(self, bot: Bot, update: Update):
-        """User can use /error to let all supporter / admin know about a bug or something else which has gone wrong
+        """Translate the given text
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
@@ -60,14 +59,14 @@ class Yandex(BaseCommand):
         if secondary_text:
             translate_from, new_text = get_option_from_string('lf', secondary_text)
             if translate_from:
-                if translate_from not in self.translator.langs:
+                if translate_from not in LANGUAGES:
                     update.message.reply_text('Given language (`{}`) is not available'.format(translate_from))
                     return
                 secondary_text = new_text
 
             translate_to, new_text = get_option_from_string('lt', secondary_text)
             if translate_to:
-                if translate_to not in self.translator.langs:
+                if translate_to not in LANGUAGES:
                     update.message.reply_text('Given language (`{}`) is not available'.format(translate_to))
                     return
                 secondary_text = new_text
@@ -83,13 +82,13 @@ class Yandex(BaseCommand):
 
         translated = self.translate_text(primary_text, translate_from, translate_to)
 
-        reply = '*TRANSLATION*: `{direction}`\n\n{translate_text}\n\n- Powered by Yandex.Translate'.format(
-            direction=translated['lang'],
-            translate_text=translated['text'][0]
+        reply = '*TRANSLATION*: `{direction}`\n\n{translate_text}'.format(
+            direction=f'{translated.src} -> {translated.dest}',
+            translate_text=translated.text,
         )
         update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
-    def translate_text(self, text: str, lang_from: str = None, lang_to: str = None) -> dict:
+    def translate_text(self, text: str, lang_from: str = None, lang_to: str = None) -> Translated:
         """Translate text from one lang to another
 
         Args:
@@ -98,7 +97,7 @@ class Yandex(BaseCommand):
             lang_to (:obj:`str`): Language to translate to
 
         Returns:
-            :obj:`dict`: Translated text
+            :obj:`googletrans.models.Translated`: Translated text
         """
         direction = 'en'
         if lang_from and not lang_to:
@@ -111,4 +110,4 @@ class Yandex(BaseCommand):
         return self.translator.translate(text, direction)
 
 
-yandex = Yandex()
+translate = Translate()
