@@ -23,15 +23,16 @@ class Yandex(BaseCommand):
     def __init__(self):
         self.commands = [
             {
-                'command': self.translate,
+                'command': self.translate if YANDEX_API_TOKEN else self.not_implemented,
                 'title': 'Translation by Yandex',
                 'description': 'Translate a reply or a given text from `-lf` (default: detect) language to `-lt` '
                                '(default: en) language',
-                'args': ['text','-lf LANG','-lt LANG']
+                'args': ['text', '-lf LANG', '-lt LANG']
             },
         ]
 
-        self.translator = YandexTranslate(YANDEX_API_TOKEN)
+        if YANDEX_API_TOKEN:
+            self.translator = YandexTranslate(YANDEX_API_TOKEN)
 
         super(Yandex, self).__init__()
 
