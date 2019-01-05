@@ -100,7 +100,7 @@ class Danbooru(BaseCommand):
         else:
             terms = text.split(' ')
         terms = self.filter_terms(terms)
-        query['tags'] = ' '.join(terms[:2])
+        query['tags'] = ' '.join(terms)
 
         self.post_list_send_media_group(bot, update, query, group_size=group_size)
 
@@ -134,7 +134,7 @@ class Danbooru(BaseCommand):
         Returns:
                 :obj:`list`: List with the given strings validated
         """
-        non_alphanum = re.compile('[^\w_ ]+')
+        non_alphanum = re.compile('[^\w_ +]+')
         terms = map(lambda term: non_alphanum.sub('', term), terms)
         terms = map(lambda term: term.strip(), terms)
         terms = map(lambda term: term.replace(' ', '_'), terms)
