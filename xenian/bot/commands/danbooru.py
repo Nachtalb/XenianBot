@@ -9,7 +9,7 @@ from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
 from xenian.bot.settings import DANBOORU_API_TOKEN, DANBOORU_LOGIN_PASSWORD, DANBOORU_LOGIN_USERNAME
-from xenian.bot.utils import download_file_from_url_and_upload
+from xenian.bot.utils import download_file_from_url_and_upload, TelegramProgressBar
 from . import BaseCommand
 
 __all__ = ['danbooru']
@@ -176,8 +176,15 @@ class Danbooru(BaseCommand):
             update.message.reply_text('Nothing found on page {page}'.format(**query))
             return
 
+        progress_bar = TelegramProgressBar(
+            bot=bot,
+            chat_id=update.message.chat_id,
+            pre_message='Sending files\n{current} / {total}',
+            se_message='This could take some time.'
+        )
+
         error = False
-        for post in posts:
+        for post in progress_bar(posts):
             image_url = post.get('large_file_url', None)
             post_url = '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])
             if not image_url:

@@ -4,7 +4,7 @@ Changelog
 2.3.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Show progressbar of items being sent by danbooru search / latest
 
 
 2.3.0 (2019-01-05)
