@@ -142,7 +142,7 @@ class Danbooru(BaseCommand):
         terms = self.filter_terms(terms)
 
         tag_limit = self.level_restrictions['tag_limit'][self.user_level]
-        if len(terms) > tag_limit:
+        if len([term for term in terms if ':' not in term]) > tag_limit:  # Do not count qualifiers like "order:score"
             message.reply_text(f'Only {tag_limit} tags can be used.', reply_to_message_id=message.message_id)
             return
         if self.level_restrictions['censored_tags'][self.user_level]:
