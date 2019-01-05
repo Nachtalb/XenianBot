@@ -206,10 +206,18 @@ class Danbooru(BaseCommand):
                 if os.path.isfile(image_url):
                     file = open(image_url, mode='rb')
 
-                update.message.reply_photo(
+                sent_photo = update.message.reply_photo(
                     photo=file or image_url,
                     caption=post_url,
                     disable_notification=True
+                )
+
+                if file:
+                    file.seek(0)
+                sent_photo.reply_document(
+                    document=file or image_url,
+                    disable_notification=True,
+                    reply_to_message_id=sent_photo.message_id,
                 )
             except (BadRequest, TimedOut):
                 errors += 1
