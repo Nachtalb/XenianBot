@@ -45,8 +45,7 @@ Anime
 ^^^^^
 
 -  ``/random`` - Send random anime GIF
--  ``/danbooru_search <tag_1> <tag_2> <page=page_num> <limit=limit>`` - Search on danbooru by max 2 tags separated by comma. You can define which page (default 0) and the limit (default 5, max 100)
--  ``/danbooru_latest <page=page_num> <limit=limit>`` - Get latest uploads from danbooru you can use the options page (default 0) and limit (default 5, max 100)
+-  ``/danbooru <tag1> <tag2...> <page=page_num> <limit=limit> <group=size>`` - Search on danbooru
 
 Misc
 ^^^^

@@ -55,20 +55,12 @@ class Danbooru(BaseCommand):
     def __init__(self):
         self.commands = [
             {
-                'title': 'Danobooru Search',
-                'description': 'Search on danbooru by max 2 tags separated by comma. You can define which page '
-                               '(default 0) and the limit (default 5, max 100)',
-                'command': self.danbooru_search,
+                'title': 'Danobooru',
+                'description': 'Search on danbooru',
+                'command': self.search,
+                'command_name': 'danbooru',
                 'options': {'pass_args': True},
-                'args': ['tag_1', 'tag_2', 'page=PAGE_NUM', 'limit=LIMIT']
-            },
-            {
-                'title': 'Danbooru Latest',
-                'description': 'Get latest uploads from danbooru you can use the options page (default 0), limit '
-                               '(default 10, max 100) and group (default 0)',
-                'command': self.danbooru_latest,
-                'options': {'pass_args': True},
-                'args': ['page=PAGE_NUM', 'limit=LIMIT, group=SIZE']
+                'args': ['tag1', 'tag2...', 'page=PAGE_NUM', 'limit=LIMIT', 'group=SIZE']
             }
         ]
 
@@ -108,7 +100,7 @@ class Danbooru(BaseCommand):
         super(Danbooru, self).__init__()
 
     @run_async
-    def danbooru_search(self, bot: Bot, update: Update, args: list = None):
+    def search(self, bot: Bot, update: Update, args: list = None):
         """Search on danbooru by tags command
 
         Args:
@@ -151,27 +143,6 @@ class Danbooru(BaseCommand):
         query['tags'] = ' '.join(terms)
 
         self.post_list_send_media_group(bot, update, query, group_size=group_size)
-
-    @run_async
-    def danbooru_latest(self, bot: Bot, update: Update, args: list = None):
-        """Danbooru show latest posts command
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            args (:obj:`list`, optional): Various options see description
-        """
-        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-
-        text = ' '.join(args)
-        text, page = self.extract_option_from_string('page', text, int)
-        text, limit = self.extract_option_from_string('limit', text, int)
-
-        query = {
-            'page': page or 0,
-            'limit': limit or 10
-        }
-        self.post_list_send_media_group(bot, update, query)
 
     def filter_terms(self, terms: list) -> list:
         """Ensure terms for the danbooru tag search are valid
