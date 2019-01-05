@@ -4,7 +4,13 @@ Changelog
 2.3.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Show progressbar of items being sent by danbooru search / latest
+- Add @XenianBot to danbooru search / latest results
+- Remember where danbooru files where downloaded too
+- Be able to group the search result again with group=SIZE
+- Add danbooru API limit warning
+- Allow tag options and qualifiers like ``-some_tag``, ``*some`` & ``order:score``
+- Handle different filtypes correctly
 
 
 2.3.0 (2019-01-05)
