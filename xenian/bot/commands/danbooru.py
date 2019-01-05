@@ -179,7 +179,7 @@ class Danbooru(BaseCommand):
             update.message.reply_text('Nothing found on page {page}'.format(**query))
             return
 
-        errors = 0
+        error = False
         for post in posts:
             image_url = post.get('large_file_url', None)
             post_url = '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])
@@ -189,7 +189,7 @@ class Danbooru(BaseCommand):
                     img_tag = response.html.find('#image-container > img')
 
                     if not img_tag:
-                        errors += 1
+                        error = True
                         continue
                     img_tag = img_tag[0]
                     image_url = download_file_from_url_and_upload(img_tag.attrs['src'])
@@ -197,7 +197,7 @@ class Danbooru(BaseCommand):
                     image_url = post.get('source', None)
 
             if not image_url:
-                errors += 1
+                error = True
                 continue
 
             bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
@@ -220,20 +220,18 @@ class Danbooru(BaseCommand):
                     reply_to_message_id=sent_photo.message_id,
                 )
             except (BadRequest, TimedOut):
-                errors += 1
+                error = True
                 continue
 
         reply = ''
         if update.message.chat.type not in ['group', 'supergroup']:
             reply = 'Images has been sent'
-            if errors:
-                reply += ', but '
 
-        if errors:
-            reply += ('{} of the request {} are not publicly available'.format(errors, query['limit']))
-
+        if error:
+            reply += '\nNot all found images could be sent. Most of the times this is because an image is not ' \
+                     'publicly available.'
         if reply:
-            update.message.reply_text(reply)
+            update.message.reply_text(reply.strip())
 
 
 danbooru = Danbooru()
