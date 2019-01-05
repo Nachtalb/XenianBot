@@ -7,6 +7,7 @@ Changelog
 - Show progressbar of items being sent by danbooru search / latest
 - Add @XenianBot to danbooru search / latest results
 - Remember where danbooru files where downloaded too
+- Be able to group the search result again with group=SIZE
 
 
 2.3.0 (2019-01-05)

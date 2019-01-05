@@ -6,7 +6,7 @@ import requests
 from pybooru import Danbooru as PyDanbooru
 from requests.exceptions import MissingSchema
 from requests_html import HTMLSession
-from telegram import Bot, ChatAction, Update
+from telegram import Bot, ChatAction, Update, InputMediaPhoto, InputFile
 from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
@@ -35,11 +35,11 @@ class Danbooru(BaseCommand):
             },
             {
                 'title': 'Danbooru Latest',
-                'description': 'Get latest uploads from danbooru you can use the options page (default 0) and limit '
-                               '(default 5, max 100)',
+                'description': 'Get latest uploads from danbooru you can use the options page (default 0), limit '
+                               '(default 10, max 100) and group (default 0)',
                 'command': self.danbooru_latest,
                 'options': {'pass_args': True},
-                'args': ['page=PAGE_NUM', 'limit=LIMIT']
+                'args': ['page=PAGE_NUM', 'limit=LIMIT, group=SIZE']
             }
         ]
 
@@ -82,6 +82,11 @@ class Danbooru(BaseCommand):
 
         text, page = self.extract_option_from_string('page', text, int)
         text, limit = self.extract_option_from_string('limit', text, int)
+        text, group_size = self.extract_option_from_string('group', text, int)
+
+        if group_size and group_size > 10:
+            update.message.reply_text('Max group size is 10', reply_to_message_id=update.message.message_id)
+            return
 
         query = {
             'page': page or 0,
@@ -95,7 +100,7 @@ class Danbooru(BaseCommand):
         terms = self.filter_terms(terms)
         query['tags'] = ' '.join(terms[:2])
 
-        self.post_list_send_media_group(bot, update, query)
+        self.post_list_send_media_group(bot, update, query, group_size=group_size)
 
     @run_async
     def danbooru_latest(self, bot: Bot, update: Update, args: list = None):
@@ -203,6 +208,7 @@ class Danbooru(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             query (:obj:`dict`): Query with keywords for post_list see:
                 https://pybooru.readthedocs.io/en/stable/api_danbooru.html#pybooru.api_danbooru.DanbooruApi_Mixin.post_list
+            group_size (:obj:`bool`): If the found items shall be grouped to a media group
         """
         if query.get('limit', 0) > 100:
             query['limit'] = 100
@@ -217,12 +223,14 @@ class Danbooru(BaseCommand):
         progress_bar = TelegramProgressBar(
             bot=bot,
             chat_id=update.message.chat_id,
-            pre_message='Sending files\n{current} / {total}',
+            pre_message=('Sending' if not group_size else 'Gathering') + ' files\n{current} / {total}',
             se_message='This could take some time.'
         )
 
+        groups = {}
+        current_group_index = 0
         error = False
-        for post in progress_bar(posts):
+        for index, post in progress_bar.enumerate(posts):
             image_url = post.get('large_file_url', None)
             post_url = '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])
             post_id = post['id']
@@ -231,7 +239,7 @@ class Danbooru(BaseCommand):
             image_url = self.get_image(post_id, image_url) or image_url
 
             if not image_url:
-                if self.logged_in_session:
+                if self.logged_in_session or group_size:
                     response = self.logged_in_session.get(post_url)
                     img_tag = response.html.find('#image-container > img')
 
@@ -247,6 +255,13 @@ class Danbooru(BaseCommand):
                 error = True
                 continue
 
+            if group_size:
+                if index % group_size == 0:
+                    current_group_index += 1
+                groups.setdefault(current_group_index, [])
+                groups[current_group_index].append(InputMediaPhoto(image_url, caption))
+                continue
+
             bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.UPLOAD_PHOTO)
             try:
                 file = None
@@ -255,7 +270,7 @@ class Danbooru(BaseCommand):
 
                 sent_photo = update.message.reply_photo(
                     photo=file or image_url,
-                    caption=f'@XenianBot - {post_url}',
+                    caption=caption,
                     disable_notification=True,
                     reply_to_message_id=update.message.message_id,
                 )
@@ -270,6 +285,18 @@ class Danbooru(BaseCommand):
             except (BadRequest, TimedOut):
                 error = True
                 continue
+
+        for group_index, items in groups.items():
+            for item in items:
+                with open(item.media, 'rb') as file_:
+                    item.media = InputFile(file_, attach=True)
+
+            bot.send_media_group(
+                chat_id=update.message.chat_id,
+                media=items,
+                reply_to_message_id=update.message.message_id,
+                disable_notification=True
+            )
 
         reply = ''
         if update.message.chat.type not in ['group', 'supergroup']:
