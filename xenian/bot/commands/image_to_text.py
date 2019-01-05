@@ -8,7 +8,7 @@ from telegram.ext import run_async
 
 from xenian.bot.settings import IMAGE_TO_TEXT_LANG
 from xenian.bot.utils import get_option_from_string
-from . import yandex
+from . import translate
 from .base import BaseCommand
 
 __all__ = ['image_to_text']
@@ -122,7 +122,7 @@ class ImageToText(BaseCommand):
                                           'See all languages with /itt_lang.')
 
         if text:
-            translated = yandex.translate_text(text, lang_to=lang_to)
+            translated = translate.translate_text(text, lang_to=lang_to)
             reply = ('*Found Text:*\n{text}\n\n*Translation:* `{direction}` \n\n{translated}\n\n- Powered by '
                      'Yandex.Translate').format(
                 text=text,

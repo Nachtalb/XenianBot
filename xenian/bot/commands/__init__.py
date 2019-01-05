@@ -12,5 +12,5 @@ from .decide import *
 from .calculator import *
 from .group_management import *
 from .google import *
-from .yandex import *
+from .translate import *
 from .image_to_text import *

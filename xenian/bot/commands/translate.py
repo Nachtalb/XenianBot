@@ -7,10 +7,10 @@ from xenian.bot.settings import YANDEX_API_TOKEN
 from xenian.bot.utils import get_option_from_string
 from .base import BaseCommand
 
-__all__ = ['yandex']
+__all__ = ['translate']
 
 
-class Yandex(BaseCommand):
+class Translate(BaseCommand):
     """A set of yandex api commands
 
     Attributes:
@@ -34,7 +34,7 @@ class Yandex(BaseCommand):
         if YANDEX_API_TOKEN:
             self.translator = YandexTranslate(YANDEX_API_TOKEN)
 
-        super(Yandex, self).__init__()
+        super(Translate, self).__init__()
 
     @run_async
     def translate(self, bot: Bot, update: Update):
@@ -111,4 +111,4 @@ class Yandex(BaseCommand):
         return self.translator.translate(text, direction)
 
 
-yandex = Yandex()
+translate = Translate()
