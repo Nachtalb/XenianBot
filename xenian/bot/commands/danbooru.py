@@ -23,6 +23,35 @@ class Danbooru(BaseCommand):
     """
     group = 'Anime'
 
+    FREE_LEVEL = 20
+    GOLD_LEVEL = 30
+    PLATINUM_LEVEL = 31
+    BUILDER = 32
+    JANITOR = 35
+    MODERATOR = 40
+    ADMIN = 50
+
+    level_restrictions = {
+        'tag_limit': {
+            FREE_LEVEL: 2,
+            GOLD_LEVEL: 6,
+            PLATINUM_LEVEL: 12,
+            BUILDER: 32,
+            JANITOR: 35,
+            MODERATOR: 40,
+            ADMIN: 50,
+        },
+        'censored_tags': {
+            FREE_LEVEL: True,
+            GOLD_LEVEL: False,
+            PLATINUM_LEVEL: False,
+            BUILDER: False,
+            JANITOR: False,
+            MODERATOR: False,
+            ADMIN: False,
+        }
+    }
+
     def __init__(self):
         self.commands = [
             {
@@ -49,6 +78,11 @@ class Danbooru(BaseCommand):
             self.client = PyDanbooru('danbooru', username=DANBOORU_LOGIN_USERNAME, api_key=DANBOORU_API_TOKEN)
         else:
             self.client = PyDanbooru('danbooru')
+
+        self.user_level = 20
+        if DANBOORU_LOGIN_USERNAME:
+            user = self.client.user_list(name_matches=self.client.username)
+            self.user_level = user[0]['level']
 
         self.logged_in_session = None
         if DANBOORU_LOGIN_USERNAME and DANBOORU_LOGIN_PASSWORD:
@@ -82,6 +116,7 @@ class Danbooru(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             args (:obj:`list`, optional): List of search terms and options
         """
+        message = update.message
         text = ' '.join(args)
         if not text:
             update.message.reply_text('You have to give me at least one tag.')
@@ -92,7 +127,7 @@ class Danbooru(BaseCommand):
         text, group_size = self.extract_option_from_string('group', text, int)
 
         if group_size and group_size > 10:
-            update.message.reply_text('Max group size is 10', reply_to_message_id=update.message.message_id)
+            message.reply_text('Max group size is 10', reply_to_message_id=message.message_id)
             return
 
         query = {
@@ -105,6 +140,14 @@ class Danbooru(BaseCommand):
         else:
             terms = text.split(' ')
         terms = self.filter_terms(terms)
+
+        tag_limit = self.level_restrictions['tag_limit'][self.user_level]
+        if len(terms) > tag_limit:
+            message.reply_text(f'Only {tag_limit} tags can be used.', reply_to_message_id=message.message_id)
+            return
+        if self.level_restrictions['censored_tags'][self.user_level]:
+            message.reply_text('Some tags may be censored', reply_to_message_id=message.message_id)
+
         query['tags'] = ' '.join(terms)
 
         self.post_list_send_media_group(bot, update, query, group_size=group_size)

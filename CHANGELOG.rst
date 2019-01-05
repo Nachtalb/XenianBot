@@ -8,6 +8,7 @@ Changelog
 - Add @XenianBot to danbooru search / latest results
 - Remember where danbooru files where downloaded too
 - Be able to group the search result again with group=SIZE
+- Add danbooru API limit warning
 
 
 2.3.0 (2019-01-05)
