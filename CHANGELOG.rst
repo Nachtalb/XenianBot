@@ -10,6 +10,7 @@ Changelog
 - Be able to group the search result again with group=SIZE
 - Add danbooru API limit warning
 - Allow tag options and qualifiers like ``-some_tag``, ``*some`` & ``order:score``
+- Handle different filtypes correctly
 
 
 2.3.0 (2019-01-05)

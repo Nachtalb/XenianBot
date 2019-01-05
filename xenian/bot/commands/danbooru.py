@@ -305,6 +305,9 @@ class Danbooru(BaseCommand):
                 continue
 
             if group_size:
+                if image_url.endswith(('.webm', '.gif', '.mp4', '.swf', '.zip')):
+                    error = True
+                    continue
                 if index % group_size == 0:
                     current_group_index += 1
                 groups.setdefault(current_group_index, [])
@@ -317,19 +320,23 @@ class Danbooru(BaseCommand):
                 if os.path.isfile(image_url):
                     file = open(image_url, mode='rb')
 
-                sent_photo = update.message.reply_photo(
-                    photo=file or image_url,
-                    caption=caption,
-                    disable_notification=True,
-                    reply_to_message_id=update.message.message_id,
-                )
+                sent_media = None
+                if image_url.endswith(('.png', '.jpg')):
+                    sent_media = update.message.reply_photo(
+                        photo=file or image_url,
+                        caption=caption,
+                        disable_notification=True,
+                        reply_to_message_id=update.message.message_id,
+                    )
 
                 if file:
                     file.seek(0)
-                sent_photo.reply_document(
+
+                update.message.chat.send_document(
                     document=file or image_url,
                     disable_notification=True,
-                    reply_to_message_id=sent_photo.message_id,
+                    caption=caption,
+                    reply_to_message_id=sent_media.message_id if sent_media else None,
                 )
             except (BadRequest, TimedOut):
                 error = True
@@ -353,7 +360,8 @@ class Danbooru(BaseCommand):
 
         if error:
             reply += '\nNot all found images could be sent. Most of the times this is because an image is not ' \
-                     'publicly available.'
+                     'publicly available or because the filetype is not supported (zip, webm etc. when sending as a ' \
+                     'group).'
         if reply:
             update.message.reply_text(reply.strip())
 
