@@ -2,12 +2,15 @@ import os
 import re
 from collections import OrderedDict
 
+import requests
 from pybooru import Danbooru as PyDanbooru
+from requests.exceptions import MissingSchema
 from requests_html import HTMLSession
 from telegram import Bot, ChatAction, Update
 from telegram.error import BadRequest, TimedOut
 from telegram.ext import run_async
 
+from xenian.bot import mongodb_database
 from xenian.bot.settings import DANBOORU_API_TOKEN, DANBOORU_LOGIN_PASSWORD, DANBOORU_LOGIN_USERNAME
 from xenian.bot.utils import download_file_from_url_and_upload, TelegramProgressBar
 from . import BaseCommand
@@ -58,6 +61,8 @@ class Danbooru(BaseCommand):
                     login_data.setdefault(name, value)
 
             self.logged_in_session.post('https://danbooru.donmai.us/session', login_data)
+
+        self.files = mongodb_database.files
 
         super(Danbooru, self).__init__()
 
@@ -157,7 +162,40 @@ class Danbooru(BaseCommand):
 
         return text, out
 
-    def post_list_send_media_group(self, bot: Bot, update: Update, query: dict):
+    def get_image(self, post_id: int, image_url: str = None):
+        """Save image to file and save in db
+
+        Args:
+            post_id (:obj:`int`): Post od as identification
+            image_url (:obj:`str`, optional): Url to image which should be saved
+
+        Returns:
+           ( :obj:`str`): Location of saved file
+        """
+        db_entry = self.files.find_one({'file_id': post_id})
+        if db_entry:
+            location = db_entry['location']
+            if os.path.isfile(location):
+                return location
+
+            try:
+                response = requests.head(location)
+                if response.status_code == 200:
+                    return location
+            except MissingSchema:
+                # This gets raised when a "location" is a local file but does not exist anymore
+                pass
+
+        if not image_url:
+            return
+
+        downloaded_image_location = download_file_from_url_and_upload(image_url)
+        self.files.update({'file_id': post_id},
+                          {'file_id': post_id, 'location': downloaded_image_location},
+                          upsert=True)
+        return downloaded_image_location
+
+    def post_list_send_media_group(self, bot: Bot, update: Update, query: dict, group_size: bool = False):
         """Perform :method:`pybooru.api_danbooru.DanbooruApi_Mixin#post_list` search and send found images to user as media group
 
         Args:
@@ -187,6 +225,11 @@ class Danbooru(BaseCommand):
         for post in progress_bar(posts):
             image_url = post.get('large_file_url', None)
             post_url = '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])
+            post_id = post['id']
+            caption = f'@XenianBot - {post_url}'
+
+            image_url = self.get_image(post_id, image_url) or image_url
+
             if not image_url:
                 if self.logged_in_session:
                     response = self.logged_in_session.get(post_url)
@@ -196,7 +239,7 @@ class Danbooru(BaseCommand):
                         error = True
                         continue
                     img_tag = img_tag[0]
-                    image_url = download_file_from_url_and_upload(img_tag.attrs['src'])
+                    image_url = self.get_image(post_id, img_tag.attrs['src'])
                 else:
                     image_url = post.get('source', None)
 
