@@ -344,8 +344,9 @@ class Danbooru(BaseCommand):
 
         for group_index, items in groups.items():
             for item in items:
-                with open(item.media, 'rb') as file_:
-                    item.media = InputFile(file_, attach=True)
+                if os.path.isfile(item.media):
+                    with open(item.media, 'rb') as file_:
+                        item.media = InputFile(file_, attach=True)
 
             bot.send_media_group(
                 chat_id=update.message.chat_id,
