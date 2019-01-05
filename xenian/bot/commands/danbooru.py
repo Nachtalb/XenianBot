@@ -43,6 +43,8 @@ class Danbooru(BaseCommand):
             }
         ]
 
+        self.client = PyDanbooru('danbooru', api_key=DANBOORU_API_TOKEN)
+
         self.logged_in_session = None
         if DANBOORU_LOGIN_USERNAME and DANBOORU_LOGIN_PASSWORD:
             self.logged_in_session = HTMLSession()
@@ -213,8 +215,7 @@ class Danbooru(BaseCommand):
         if query.get('limit', 0) > 100:
             query['limit'] = 100
 
-        client = PyDanbooru('danbooru', api_key=DANBOORU_API_TOKEN)
-        posts = client.post_list(**query)
+        posts = self.client.post_list(**query)
 
         if not posts:
             update.message.reply_text('Nothing found on page {page}'.format(**query))
@@ -232,7 +233,7 @@ class Danbooru(BaseCommand):
         error = False
         for index, post in progress_bar.enumerate(posts):
             image_url = post.get('large_file_url', None)
-            post_url = '{domain}/posts/{post_id}'.format(domain=client.site_url, post_id=post['id'])
+            post_url = '{domain}/posts/{post_id}'.format(domain=self.client.site_url, post_id=post['id'])
             post_id = post['id']
             caption = f'@XenianBot - {post_url}'
 
