@@ -70,8 +70,6 @@ class Danbooru(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             args (:obj:`list`, optional): List of search terms and options
         """
-        bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-
         text = ' '.join(args)
         if not text:
             update.message.reply_text('You have to give me at least one tag.')
