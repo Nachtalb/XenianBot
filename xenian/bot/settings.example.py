@@ -4,7 +4,6 @@ import os
 BASE_DIR = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../'))
 
 TELEGRAM_API_TOKEN = ''
-YANDEX_API_TOKEN = ''
 DANBOORU_API_TOKEN = ''
 
 # If given gold or platinum restricted images are sent anyways (if given account has gold or platinum membership)

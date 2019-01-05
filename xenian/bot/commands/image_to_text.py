@@ -123,11 +123,10 @@ class ImageToText(BaseCommand):
 
         if text:
             translated = translate.translate_text(text, lang_to=lang_to)
-            reply = ('*Found Text:*\n{text}\n\n*Translation:* `{direction}` \n\n{translated}\n\n- Powered by '
-                     'Yandex.Translate').format(
-                text=text,
-                direction=translated['lang'],
-                translated=translated['text'][0]
+            reply = '*Found Text:*\n{text}\n\n*Translation:* `{direction}` \n\n{translated}'.format(
+                text=translated.orign,
+                direction=f'{translated.src} -> {translated.dest}',
+                translated=translated.text
             )
         else:
             reply = 'No text was found. Make sure that the text is not rotated and good readable.'

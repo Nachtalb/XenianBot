@@ -4,7 +4,7 @@ Changelog
 2.4.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Replace Yandex- with Google-Translate
 
 
 2.4.0 (2019-01-05)
