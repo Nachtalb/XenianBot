@@ -425,7 +425,7 @@ class AnimeDatabases(BaseCommand):
     @run_async
     @retry_command
     @MessageQueue.message_queue_exc_handler('queue')
-    def danbooru_send_group(self, bot: Bot, update: Update, group: Iterable[InputMediaPhoto], queue: MessageQueue):
+    def send_group(self, bot: Bot, update: Update, group: Iterable[InputMediaPhoto], queue: MessageQueue):
         for item in group:
             if os.path.isfile(item.media):
                 with open(item.media, 'rb') as file_:
@@ -444,7 +444,7 @@ class AnimeDatabases(BaseCommand):
     @run_async
     @MessageQueue.message_queue_exc_handler('queue')
     @retry_command
-    def danbooru_send_image(self, update: Update, image: InputMediaPhoto, queue: MessageQueue):
+    def send_image(self, update: Update, image: InputMediaPhoto, queue: MessageQueue):
         file = None
         message = update.message
         if os.path.isfile(image.media):
@@ -526,16 +526,16 @@ class AnimeDatabases(BaseCommand):
                     message_queue.report(SendError(code=SendError.WRONG_FILE_TYPE, post=post, post_url=post_url))
                     continue
                 if index and index % group_size == 0:
-                    self.danbooru_send_group(group=group, bot=bot, update=update, queue=message_queue)
+                    self.send_group(group=group, bot=bot, update=update, queue=message_queue)
                     group = []
                 group.append(image)
                 continue
 
             bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.UPLOAD_PHOTO)
-            self.danbooru_send_image(update=update, image=image, queue=message_queue)
+            self.send_image(update=update, image=image, queue=message_queue)
 
         if group:
-            self.danbooru_send_group(group=group, bot=bot, update=update, queue=message_queue)
+            self.send_group(group=group, bot=bot, update=update, queue=message_queue)
 
     # Moebooru API commands
 
