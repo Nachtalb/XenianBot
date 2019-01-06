@@ -18,7 +18,7 @@ from xenian.bot.settings import ANIME_SERVICES
 from xenian.bot.utils import TelegramProgressBar, download_file_from_url_and_upload
 from . import BaseCommand
 
-__all__ = ['danbooru']
+__all__ = ['animedatabases']
 
 SITE_LIST['safebooru'] = {'url': 'https://safebooru.donmai.us'}
 
@@ -138,7 +138,7 @@ class MoebooruService:
             self.url = self.client.site_url.lstrip('/')
 
 
-class Danbooru(BaseCommand):
+class AnimeDatabases(BaseCommand):
     """The class for all danbooru related commands
     """
     group = 'Anime'
@@ -149,7 +149,7 @@ class Danbooru(BaseCommand):
         self.services = {}
         self.init_services()
 
-        super(Danbooru, self).__init__()
+        super(AnimeDatabases, self).__init__()
 
     def init_services(self):
         """Initialize services
@@ -439,4 +439,4 @@ class Danbooru(BaseCommand):
             message.reply_text(reply.strip())
 
 
-danbooru = Danbooru()
+animedatabases = AnimeDatabases()
