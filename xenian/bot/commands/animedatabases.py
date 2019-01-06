@@ -34,6 +34,7 @@ class BaseService:
         self.username = username
         self.password = password
 
+        self.count_qualifiers_as_tag = False
         self.client = None
         self.session = None
         self.tag_limit = None
@@ -135,6 +136,7 @@ class MoebooruService(BaseService):
         super(MoebooruService, self).__init__(name=name, url=url, username=username, password=password)
         self.tag_limit = 6
         self.hashed_string = hashed_string
+        self.count_qualifiers_as_tag = True
 
         self.init_client()
 
@@ -284,7 +286,7 @@ class AnimeDatabases(BaseCommand):
         method = getattr(self, method_name, None)
 
         if not method:
-            raise NotImplementedError(f'Search function ({method_name}) for service {service_name} does not exist.')
+            method = self.search
 
         def search(*args, **kwargs):
             method(service=service, *args, **kwargs)
@@ -368,16 +370,14 @@ class AnimeDatabases(BaseCommand):
                           upsert=True)
         return downloaded_image_location
 
-    # Danbooru API commands
-
     @run_async
-    def danbooru_search(self, bot: Bot, update: Update, service: DanbooruService, args: list = None):
-        """Search on Danbooru API Sites
+    def search(self, bot: Bot, update: Update, service: BaseService, args: list = None):
+        """Generic search based on :class:`BaseService`
 
         Args:
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            service (:obj:`DanbooruService`): Initialized :obj:`DanbooruService` for the various api calls
+            service (:obj:`BaseService`): Initialized :obj:`BaseService` for the various api calls
             args (:obj:`list`, optional): List of search terms and options
         """
         message = update.message
@@ -391,28 +391,36 @@ class AnimeDatabases(BaseCommand):
             message.reply_text('Max group size is 10', reply_to_message_id=message.message_id)
             return
 
-        query = {
-            'page': page or 0,
-            'limit': limit or 10
-        }
-
         if ',' in text:
             terms = text.split(',')
         else:
             terms = text.split(' ')
         terms = self.filter_terms(terms)
 
-        if len([term for term in terms if
-                ':' not in term]) > service.tag_limit:  # Do not count qualifiers like "order:score"
+        actual_tags = [term for term in terms if ':' not in term]  # Qualifiers like "order:score" are not tags
+        if service.count_qualifiers_as_tag:
+            actual_tags = terms
+
+        if service.tag_limit and len(actual_tags) > service.tag_limit:
             message.reply_text(f'Only {service.tag_limit} tags can be used.', reply_to_message_id=message.message_id)
             return
 
         if service.censored_tags:
             message.reply_text('Some tags may be censored', reply_to_message_id=message.message_id)
 
-        query['tags'] = ' '.join(terms)
+        query = {
+            'page': page or 0,
+            'limit': limit if limit and limit <= 100 else 10,
+            'tags': ' '.join(terms),
+        }
 
-        self.danbooru_post_list_send_media_group(bot, update, service, query, group_size=group_size)
+        method_name = f'{service.type}_real_search'
+        method = getattr(self, method_name, None)
+
+        if not method:
+            raise NotImplementedError(f'Search function ({method_name}) for service {service.name} does not exist.')
+
+        method(bot=bot, update=update, service=service, query=query, group_size=group_size)
 
     @run_async
     @retry_command
@@ -462,8 +470,10 @@ class AnimeDatabases(BaseCommand):
         )
         queue.report()
 
-    def danbooru_post_list_send_media_group(self, bot: Bot, update: Update, service: DanbooruService, query: dict,
-                                            group_size: bool = False):
+    # Danbooru API commands
+
+    def danbooru_real_search(self, bot: Bot, update: Update, service: DanbooruService, query: dict,
+                             group_size: bool = False):
         """Send Danbooru API Service queried images to user
 
         Args:
@@ -474,10 +484,6 @@ class AnimeDatabases(BaseCommand):
             group_size (:obj:`bool`): If the found items shall be grouped to a media group
         """
         message = update.message
-
-        if query.get('limit', 0) > 100:
-            query['limit'] = 100
-
         posts = service.client.post_list(**query)
 
         if not posts:
