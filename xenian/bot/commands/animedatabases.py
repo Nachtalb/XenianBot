@@ -24,7 +24,29 @@ __all__ = ['animedatabases']
 SITE_LIST['safebooru'] = {'url': 'https://safebooru.donmai.us'}
 
 
-class DanbooruService:
+class BaseService:
+    type = 'base'
+
+    def __init__(self, name: str, url: str, api: str = None, username: str = None, password: str = None):
+        self.name = name
+        self.url = url.lstrip('/') if url is not None else None
+        self.api = api
+        self.username = username
+        self.password = password
+
+        self.client = None
+        self.session = None
+        self.tag_limit = None
+        self.censored_tags = None
+
+    def init_client(self):
+        raise NotImplemented
+
+    def init_session(self):
+        raise NotImplemented
+
+
+class DanbooruService(BaseService):
     FREE_LEVEL = 20
     GOLD_LEVEL = 30
     PLATINUM_LEVEL = 31
@@ -57,17 +79,8 @@ class DanbooruService:
     type = 'danbooru'
 
     def __init__(self, name: str, url: str, api: str = None, username: str = None, password: str = None) -> None:
-        self.name = name
-        self.url = url.lstrip('/') if url is not None else None
-        self.api = api
-        self.username = username
-        self.password = password
-
-        self.client = None
-        self.session = None
+        super(DanbooruService, self).__init__(name=name, url=url, api=api, username=username, password=password)
         self.user_level = None
-        self.tag_limit = None
-        self.censored_tags = None
 
         self.init_client()
         self.init_session()
@@ -114,18 +127,15 @@ class DanbooruService:
         return user_level
 
 
-class MoebooruService:
+class MoebooruService(BaseService):
     type = 'moebooru'
 
     def __init__(self, name: str, url: str, username: str = None, password: str = None,
                  hashed_string: str = None) -> None:
-        self.name = name
-        self.url = url.lstrip('/') if url is not None else None
-        self.username = username
-        self.password = password
+        super(MoebooruService, self).__init__(name=name, url=url, username=username, password=password)
+        self.tag_limit = 6
         self.hashed_string = hashed_string
 
-        self.client = None
         self.init_client()
 
     def init_client(self):
@@ -152,6 +162,8 @@ class SendError:
 
 
 class MessageQueue:
+    tag_limit = 6
+
     def __init__(self, total: int, message: Message, group_size: int = None):
         self.total = total
         self.message = message
