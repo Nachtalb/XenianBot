@@ -144,10 +144,11 @@ class SendError:
     WRONG_FILE_TYPE = 10
     UNDEFINED_ERROR = 20
 
-    def __init__(self, code: int, post: dict = None, image: InputMediaPhoto = None):
+    def __init__(self, code: int, post: dict = None, image: InputMediaPhoto = None, post_url: str = None):
         self.code = code
         self.post = post
         self.image = image
+        self.post_url = post_url
 
 
 class MessageQueue:
@@ -168,21 +169,29 @@ class MessageQueue:
             self.finished()
 
     def finished(self):
-        reply = []
+        lines = []
         if self.message.chat.type not in ['group', 'supergroup']:
-            reply.append('Images has been sent')
+            lines.append('Images has been sent')
 
         if self.errors:
             error_codes = set(error.code for error in self.errors)
             if SendError.IMAGE_NOT_FOUND in error_codes:
-                reply.append('Some files could not be retrieved')
-            if SendError.WRONG_FILE_TYPE in error_codes and self.group_size > 1:
-                reply.append('Videos were skipped because they cannot be sent via a group.')
-            if SendError.UNDEFINED_ERROR in error_codes:
-                reply.append('Some files could not be sent')
+                lines.append('Some files could not be retrieved')
+                for error in filter(lambda e: e.code == SendError.IMAGE_NOT_FOUND and e.post_url, self.errors):
+                    lines.append(f'- {error.post_url}')
 
-        if reply:
-            self.message.reply_text('\n'.join(reply), reply_to_message_id=self.message.message_id)
+            if SendError.WRONG_FILE_TYPE in error_codes and self.group_size > 1:
+                lines.append('Videos were skipped because they cannot be sent via a group.')
+                for error in filter(lambda e: e.code == SendError.WRONG_FILE_TYPE and e.post_url, self.errors):
+                    lines.append(f'- {error.post_url}')
+
+            if SendError.UNDEFINED_ERROR in error_codes:
+                lines.append('Some files could not be sent')
+
+        if lines:
+            self.message.reply_text('\n'.join(lines),
+                                    reply_to_message_id=self.message.message_id,
+                                    disable_web_page_preview=True)
 
     @staticmethod
     def message_queue_exc_handler(argument_name: str):
@@ -491,12 +500,12 @@ class AnimeDatabases(BaseCommand):
                         image_url = self.get_image(post_id, img_tag.attrs['src'])
 
             if not image_url:
-                message_queue.report(SendError(code=SendError.IMAGE_NOT_FOUND, post=post))
+                message_queue.report(SendError(code=SendError.IMAGE_NOT_FOUND, post=post, post_url=post_url))
                 continue
             image = InputMediaPhoto(image_url, caption)
             if group_size:
                 if image_url.endswith(('.webm', '.gif', '.mp4', '.swf', '.zip')):
-                    message_queue.report(SendError(code=SendError.WRONG_FILE_TYPE, post=post))
+                    message_queue.report(SendError(code=SendError.WRONG_FILE_TYPE, post=post, post_url=post_url))
                     continue
                 if index and index % group_size == 0:
                     self.danbooru_send_group(group=group, bot=bot, update=update, queue=message_queue)

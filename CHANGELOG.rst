@@ -10,7 +10,7 @@ Changelog
 - Add more danbooru like services. Instead of just danbooru we get safebooru, yandere and konachan too
 - Rename Danbooru class to AnimeDtabases because it fits better
 - Send images from danbooru search async to getting the images to increase speed and with the users feedbackloop
-
+- If possible send url of danbooru entry if the file could not be sent
 
 2.4.0 (2019-01-05)
 ------------------
