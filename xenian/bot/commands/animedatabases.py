@@ -197,52 +197,6 @@ class AnimeDatabases(BaseCommand):
 
         return search
 
-    def moebooru_search(self, bot: Bot, update: Update, service: DanbooruService, args: list = None):
-        pass
-
-    @run_async
-    def danbooru_search(self, bot: Bot, update: Update, service: DanbooruService, args: list = None):
-        """Search on Danbooru API Sites
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-            service (:obj:`DanbooruService`): Initialized :obj:`DanbooruService` for the various api calls
-            args (:obj:`list`, optional): List of search terms and options
-        """
-        message = update.message
-        text = ' '.join(args)
-
-        text, page = self.extract_option_from_string('page', text, int)
-        text, limit = self.extract_option_from_string('limit', text, int)
-        text, group_size = self.extract_option_from_string('group', text, int)
-
-        if group_size and group_size > 10:
-            message.reply_text('Max group size is 10', reply_to_message_id=message.message_id)
-            return
-
-        query = {
-            'page': page or 0,
-            'limit': limit or 10
-        }
-
-        if ',' in text:
-            terms = text.split(',')
-        else:
-            terms = text.split(' ')
-        terms = self.filter_terms(terms)
-
-        if len([term for term in terms if ':' not in term]) > service.tag_limit:  # Do not count qualifiers like "order:score"
-            message.reply_text(f'Only {service.tag_limit} tags can be used.', reply_to_message_id=message.message_id)
-            return
-
-        if service.censored_tags:
-            message.reply_text('Some tags may be censored', reply_to_message_id=message.message_id)
-
-        query['tags'] = ' '.join(terms)
-
-        self.danbooru_post_list_send_media_group(bot, update, service, query, group_size=group_size)
-
     def filter_terms(self, terms: list) -> list:
         """Ensure terms for the danbooru tag search are valid
 
@@ -319,6 +273,51 @@ class AnimeDatabases(BaseCommand):
                           {'file_id': post_id, 'location': downloaded_image_location},
                           upsert=True)
         return downloaded_image_location
+
+    # Danbooru API commands
+
+    @run_async
+    def danbooru_search(self, bot: Bot, update: Update, service: DanbooruService, args: list = None):
+        """Search on Danbooru API Sites
+
+        Args:
+            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
+            update (:obj:`telegram.update.Update`): Telegram Api Update Object
+            service (:obj:`DanbooruService`): Initialized :obj:`DanbooruService` for the various api calls
+            args (:obj:`list`, optional): List of search terms and options
+        """
+        message = update.message
+        text = ' '.join(args)
+
+        text, page = self.extract_option_from_string('page', text, int)
+        text, limit = self.extract_option_from_string('limit', text, int)
+        text, group_size = self.extract_option_from_string('group', text, int)
+
+        if group_size and group_size > 10:
+            message.reply_text('Max group size is 10', reply_to_message_id=message.message_id)
+            return
+
+        query = {
+            'page': page or 0,
+            'limit': limit or 10
+        }
+
+        if ',' in text:
+            terms = text.split(',')
+        else:
+            terms = text.split(' ')
+        terms = self.filter_terms(terms)
+
+        if len([term for term in terms if ':' not in term]) > service.tag_limit:  # Do not count qualifiers like "order:score"
+            message.reply_text(f'Only {service.tag_limit} tags can be used.', reply_to_message_id=message.message_id)
+            return
+
+        if service.censored_tags:
+            message.reply_text('Some tags may be censored', reply_to_message_id=message.message_id)
+
+        query['tags'] = ' '.join(terms)
+
+        self.danbooru_post_list_send_media_group(bot, update, service, query, group_size=group_size)
 
     def danbooru_post_list_send_media_group(self, bot: Bot, update: Update, service: DanbooruService, query: dict, group_size: bool = False):
         """Send Danbooru API Service queried images to user
@@ -439,6 +438,11 @@ class AnimeDatabases(BaseCommand):
                      'group).'
         if reply:
             message.reply_text(reply.strip())
+
+    # Moebooru API commands
+
+    def moebooru_search(self, bot: Bot, update: Update, service: DanbooruService, args: list = None):
+        pass
 
 
 animedatabases = AnimeDatabases()
