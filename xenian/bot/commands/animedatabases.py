@@ -420,12 +420,14 @@ class AnimeDatabases(BaseCommand):
                     with open(item.media, 'rb') as file_:
                         item.media = InputFile(file_, attach=True)
 
-            bot.send_media_group(
-                chat_id=message.chat_id,
-                media=items,
-                reply_to_message_id=message.message_id,
-                disable_notification=True
-            )
+            @self.retry_command(existing_update=update)
+            def send_images_as_group():
+                bot.send_media_group(
+                    chat_id=message.chat_id,
+                    media=items,
+                    reply_to_message_id=message.message_id,
+                    disable_notification=True
+                )
 
         reply = ''
         if message.chat.type not in ['group', 'supergroup']:

@@ -1,7 +1,9 @@
 import logging
 from copy import deepcopy
+from typing import Callable
 
 from telegram import Bot, Update
+from telegram.error import TimedOut
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler
 
 from xenian.bot.settings import LOG_LEVEL
@@ -165,3 +167,44 @@ class BaseCommand:
         if LOG_LEVEL <= logging.DEBUG:
             update.message.reply_text('This command was not implemented by the admin.',
                                       reply_to_message_id=update.message.message_id)
+
+    def retry_command(self, retries: int = None, *args, notify_user=True, existing_update: Update = None,
+                      **kwargs) -> Callable:
+        """Decorater to retry a command if it raises :class:`telegram.error.TimedOut`
+
+        Args:
+            retries (:obj:`int`): How many times the command should be retried
+            notify_user (:obj:`bool`): Try to notify user if TimedOut is still raised after given amount of retires
+            existing_update (:obj:`telegram.update.Update`): Telegram Api Update Object if the decorated function is
+                not a command
+
+        Raises:
+            (:class:`telegram.error.TimedOut`): If TimedOut is still raised after given amount of retires
+
+        Returns:
+            (:object:`Callable`): Wrapper function
+        """
+
+        def wrapper(func, *args, **kwargs):
+            error = None
+            for try_ in range(retries):
+                print(f'Try {try_}')
+                try:
+                    func(*args, **kwargs)
+                    break
+                except TimedOut as e:
+                    error = e
+            else:
+                if notify_user and existing_update or (len(args) > 1 and getattr(args[1], 'message', None)):
+                    update = existing_update or args[1]
+                    update.message.reply_text(text='Command failed at some point after multiple retries. '
+                                                   'Try again later or contact an admin /support.',
+                                              reply_to_message_id=update.message.message_id)
+                if error:
+                    raise error
+
+        if isinstance(retries, Callable):
+            wrapper(func=retries, *args, **kwargs)
+        retries = retries or 3
+
+        return wrapper
