@@ -134,7 +134,7 @@ class MoebooruService:
                                      username=self.username, password=self.password)
             return
 
-        self.client = PyDanbooru(site_name=self.name, site_url=self.url)
+        self.client = PyMoebooru(site_name=self.name, site_url=self.url)
         if not self.url:
             self.url = self.client.site_url.lstrip('/')
 
