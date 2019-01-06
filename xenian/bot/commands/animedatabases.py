@@ -539,8 +539,44 @@ class AnimeDatabases(BaseCommand):
 
     # Moebooru API commands
 
-    def moebooru_search(self, bot: Bot, update: Update, service: DanbooruService, args: list = None):
-        pass
+    def moebooru_real_search(self, bot: Bot, update: Update, service: MoebooruService, query: dict,
+                             group_size: bool = False):
+        message = update.message
+        posts = service.client.post_list(**query)
+
+        if not posts:
+            message.reply_text('Nothing found on page {page}'.format(**query))
+            return
+
+        progress_bar = TelegramProgressBar(
+            bot=bot,
+            chat_id=message.chat_id,
+            pre_message=('Sending' if not group_size else 'Gathering') + ' files\n{current} / {total}',
+            se_message='This could take some time.'
+        )
+
+        message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
+
+        group = []
+        for index, post in progress_bar.enumerate(posts):
+            post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
+
+            image = InputMediaPhoto(post['file_url'], f'@XenianBot - {post_url}')
+
+            if group_size:
+                if image.media.endswith(('.webm', '.gif', '.mp4', '.swf', '.zip')):
+                    message_queue.report(SendError(code=SendError.WRONG_FILE_TYPE, post=post, post_url=post_url))
+                    continue
+                if index and index % group_size == 0:
+                    self.send_group(group=group, bot=bot, update=update, queue=message_queue)
+                    group = []
+                group.append(image)
+                continue
+            else:
+                self.send_image(update=update, image=image, queue=message_queue)
+
+        if group:
+            self.send_group(group=group, bot=bot, update=update, queue=message_queue)
 
 
 animedatabases = AnimeDatabases()
