@@ -2,20 +2,21 @@ import os
 import re
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, Iterable
 
 import requests
 from pybooru import Danbooru as PyDanbooru, Moebooru as PyMoebooru
 from pybooru.resources import SITE_LIST
 from requests.exceptions import MissingSchema
 from requests_html import HTMLSession
-from telegram import Bot, ChatAction, InputFile, InputMediaPhoto, Update
-from telegram.error import BadRequest, TimedOut
+from telegram import Bot, ChatAction, InputFile, InputMediaPhoto, Message, Update
+from telegram.error import BadRequest, NetworkError, TimedOut
 from telegram.ext import run_async
 
 from xenian.bot import mongodb_database
 from xenian.bot.settings import ANIME_SERVICES
 from xenian.bot.utils import TelegramProgressBar, download_file_from_url_and_upload
+from xenian.bot.utils.telegram import retry_command
 from . import BaseCommand
 
 __all__ = ['animedatabases']
@@ -136,6 +137,78 @@ class MoebooruService:
         self.client = PyDanbooru(site_name=self.name, site_url=self.url)
         if not self.url:
             self.url = self.client.site_url.lstrip('/')
+
+
+class SendError:
+    IMAGE_NOT_FOUND = 0
+    WRONG_FILE_TYPE = 10
+    UNDEFINED_ERROR = 20
+
+    def __init__(self, code: int, post: dict = None, image: InputMediaPhoto = None):
+        self.code = code
+        self.post = post
+        self.image = image
+
+
+class MessageQueue:
+    def __init__(self, total: int, message: Message, group_size: int = None):
+        self.total = total
+        self.message = message
+        self.group_size = group_size or 1
+
+        self.sent = 0
+        self.errors = []
+
+    def report(self, error: SendError = None):
+        if error:
+            self.errors.append(error)
+
+        self.sent += 1
+        if self.sent == self.total:
+            self.finished()
+
+    def finished(self):
+        reply = []
+        if self.message.chat.type not in ['group', 'supergroup']:
+            reply.append('Images has been sent')
+
+        if self.errors:
+            error_codes = set(error.code for error in self.errors)
+            if SendError.IMAGE_NOT_FOUND in error_codes:
+                reply.append('Some files could not be retrieved')
+            if SendError.WRONG_FILE_TYPE in error_codes and self.group_size > 1:
+                reply.append('Videos were skipped because they cannot be sent via a group.')
+            if SendError.UNDEFINED_ERROR in error_codes:
+                reply.append('Some files could not be sent')
+
+        if reply:
+            self.message.reply_text('\n'.join(reply), reply_to_message_id=self.message.message_id)
+
+    @staticmethod
+    def message_queue_exc_handler(argument_name: str):
+        def wrapper(func, *args, **kwargs):
+            def inner_wrapper(*args, **kwargs):
+                queue = kwargs.get(argument_name)
+                if not queue:
+                    queues = [arg for arg in args if isinstance(arg, MessageQueue)]
+                    if len(queues) > 1:
+                        raise AttributeError('Got more than one MessageQueue\'s')
+                    elif queues:
+                        queue = queues[0]
+                if not queue:
+                    raise AttributeError('No MessageQueue found')
+                try:
+                    return func(*args, **kwargs)
+                except (BadRequest, TimedOut, NetworkError) as e:
+                    if isinstance(e, NetworkError) and 'The write operation timed out' not in e.message:
+                        raise e
+
+                    for item in range(queue.group_size):
+                        queue.report(SendError(code=SendError.UNDEFINED_ERROR))
+
+            return inner_wrapper
+
+        return wrapper
 
 
 class AnimeDatabases(BaseCommand):
@@ -308,7 +381,8 @@ class AnimeDatabases(BaseCommand):
             terms = text.split(' ')
         terms = self.filter_terms(terms)
 
-        if len([term for term in terms if ':' not in term]) > service.tag_limit:  # Do not count qualifiers like "order:score"
+        if len([term for term in terms if
+                ':' not in term]) > service.tag_limit:  # Do not count qualifiers like "order:score"
             message.reply_text(f'Only {service.tag_limit} tags can be used.', reply_to_message_id=message.message_id)
             return
 
@@ -319,7 +393,56 @@ class AnimeDatabases(BaseCommand):
 
         self.danbooru_post_list_send_media_group(bot, update, service, query, group_size=group_size)
 
-    def danbooru_post_list_send_media_group(self, bot: Bot, update: Update, service: DanbooruService, query: dict, group_size: bool = False):
+    @run_async
+    @retry_command
+    @MessageQueue.message_queue_exc_handler('queue')
+    def danbooru_send_group(self, bot: Bot, update: Update, group: Iterable[InputMediaPhoto], queue: MessageQueue):
+        for item in group:
+            if os.path.isfile(item.media):
+                with open(item.media, 'rb') as file_:
+                    item.media = InputFile(file_, attach=True)
+
+        message = update.message
+        bot.send_media_group(
+            chat_id=message.chat_id,
+            media=group,
+            reply_to_message_id=message.message_id,
+            disable_notification=True
+        )
+        for image in group:
+            queue.report()
+
+    @run_async
+    @MessageQueue.message_queue_exc_handler('queue')
+    @retry_command
+    def danbooru_send_image(self, update: Update, image: InputMediaPhoto, queue: MessageQueue):
+        file = None
+        message = update.message
+        if os.path.isfile(image.media):
+            file = open(image.media, mode='rb')
+
+        sent_media = None
+        if image.media.endswith(('.png', '.jpg')):
+            sent_media = message.reply_photo(
+                photo=file or image.media,
+                caption=image.caption,
+                disable_notification=True,
+                reply_to_message_id=message.message_id,
+            )
+
+        if file:
+            file.seek(0)
+
+        message.chat.send_document(
+            document=file or image.media,
+            disable_notification=True,
+            caption=image.caption,
+            reply_to_message_id=sent_media.message_id if sent_media else None,
+        )
+        queue.report()
+
+    def danbooru_post_list_send_media_group(self, bot: Bot, update: Update, service: DanbooruService, query: dict,
+                                            group_size: bool = False):
         """Send Danbooru API Service queried images to user
 
         Args:
@@ -347,9 +470,9 @@ class AnimeDatabases(BaseCommand):
             se_message='This could take some time.'
         )
 
-        groups = {}
-        current_group_index = 0
-        error = False
+        message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
+
+        group = []
         for index, post in progress_bar.enumerate(posts):
             image_url = post.get('large_file_url', None)
             post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
@@ -363,81 +486,29 @@ class AnimeDatabases(BaseCommand):
                     response = service.session.get(post_url)
                     img_tag = response.html.find('#image-container > img')
 
-                    if not img_tag:
-                        error = True
-                        continue
-                    img_tag = img_tag[0]
-                    image_url = self.get_image(post_id, img_tag.attrs['src'])
-                else:
-                    image_url = post.get('source', None)
+                    if img_tag:
+                        img_tag = img_tag[0]
+                        image_url = self.get_image(post_id, img_tag.attrs['src'])
 
             if not image_url:
-                error = True
+                message_queue.report(SendError(code=SendError.IMAGE_NOT_FOUND, post=post))
                 continue
-
+            image = InputMediaPhoto(image_url, caption)
             if group_size:
                 if image_url.endswith(('.webm', '.gif', '.mp4', '.swf', '.zip')):
-                    error = True
+                    message_queue.report(SendError(code=SendError.WRONG_FILE_TYPE, post=post))
                     continue
-                if index % group_size == 0:
-                    current_group_index += 1
-                groups.setdefault(current_group_index, [])
-                groups[current_group_index].append(InputMediaPhoto(image_url, caption))
+                if index and index % group_size == 0:
+                    self.danbooru_send_group(group=group, bot=bot, update=update, queue=message_queue)
+                    group = []
+                group.append(image)
                 continue
 
             bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.UPLOAD_PHOTO)
-            try:
-                file = None
-                if os.path.isfile(image_url):
-                    file = open(image_url, mode='rb')
+            self.danbooru_send_image(update=update, image=image, queue=message_queue)
 
-                sent_media = None
-                if image_url.endswith(('.png', '.jpg')):
-                    sent_media = message.reply_photo(
-                        photo=file or image_url,
-                        caption=caption,
-                        disable_notification=True,
-                        reply_to_message_id=message.message_id,
-                    )
-
-                if file:
-                    file.seek(0)
-
-                message.chat.send_document(
-                    document=file or image_url,
-                    disable_notification=True,
-                    caption=caption,
-                    reply_to_message_id=sent_media.message_id if sent_media else None,
-                )
-            except (BadRequest, TimedOut):
-                error = True
-                continue
-
-        for group_index, items in groups.items():
-            for item in items:
-                if os.path.isfile(item.media):
-                    with open(item.media, 'rb') as file_:
-                        item.media = InputFile(file_, attach=True)
-
-            @self.retry_command(existing_update=update)
-            def send_images_as_group():
-                bot.send_media_group(
-                    chat_id=message.chat_id,
-                    media=items,
-                    reply_to_message_id=message.message_id,
-                    disable_notification=True
-                )
-
-        reply = ''
-        if message.chat.type not in ['group', 'supergroup']:
-            reply = 'Images has been sent'
-
-        if error:
-            reply += '\nNot all found images could be sent. Most of the times this is because an image is not ' \
-                     'publicly available or because the filetype is not supported (zip, webm etc. when sending as a ' \
-                     'group).'
-        if reply:
-            message.reply_text(reply.strip())
+        if group:
+            self.danbooru_send_group(group=group, bot=bot, update=update, queue=message_queue)
 
     # Moebooru API commands
 
