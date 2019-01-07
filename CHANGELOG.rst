@@ -7,7 +7,7 @@ Changelog
 - Fix not being able to group send images when the the image was a link instead of a local path
 - Replace Yandex- with Google-Translate
 - Remove ``/danbooru_latest`` and replace ``/danbooru_search`` with ``/danbooru``
-- Add more danbooru like services. Instead of just danbooru we get safebooru, yandere and konachan too
+- Add more danbooru like services. Instead of just danbooru we get safebooru and konachan too
 - Rename Danbooru class to AnimeDtabases because it fits better
 - Send images from danbooru search async to getting the images to increase speed and with the users feedbackloop
 - If possible send url of danbooru entry if the file could not be sent

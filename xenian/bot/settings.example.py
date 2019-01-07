@@ -29,14 +29,6 @@ ANIME_SERVICES = [
         'hashed_string': None,
         'username': None,
         'password': None,
-    },
-    {
-        'name': 'yandere',
-        'type': 'moebooru',
-        'url': None,
-        'hashed_string': None,
-        'username': None,
-        'password': None,
     }
 ]
 
