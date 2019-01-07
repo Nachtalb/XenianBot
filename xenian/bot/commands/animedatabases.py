@@ -423,8 +423,8 @@ class AnimeDatabases(BaseCommand):
         method(bot=bot, update=update, service=service, query=query, group_size=group_size)
 
     @run_async
-    @retry_command
     @MessageQueue.message_queue_exc_handler('queue')
+    @retry_command
     def send_group(self, bot: Bot, update: Update, group: Iterable[InputMediaPhoto], queue: MessageQueue):
         for item in group:
             if os.path.isfile(item.media):
