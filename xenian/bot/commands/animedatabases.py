@@ -2,14 +2,14 @@ import os
 import re
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Callable, Iterable
+from typing import Any, Callable, IO, Iterable
 
 import requests
 from pybooru import Danbooru as PyDanbooru, Moebooru as PyMoebooru
 from pybooru.resources import SITE_LIST
 from requests.exceptions import MissingSchema
 from requests_html import HTMLSession
-from telegram import Bot, ChatAction, InputFile, InputMediaPhoto, Message, Update
+from telegram import Bot, ChatAction, InputFile, InputMediaPhoto, Message, PhotoSize, Update
 from telegram.error import BadRequest, NetworkError, TimedOut
 from telegram.ext import run_async
 
@@ -22,6 +22,101 @@ from . import BaseCommand
 __all__ = ['animedatabases']
 
 SITE_LIST['safebooru'] = {'url': 'https://safebooru.donmai.us'}
+
+
+class Post:
+    class PostDictWrapper:
+        post = {}
+
+        def __getattribute__(self, item):
+            return self.post.get('')
+
+    def __init__(self, post: dict, media: str or IO or PhotoSize = None, caption: str = None, post_url: str = None):
+        self.post = post
+        self.post_url = post_url
+        self._telegram = InputMediaPhoto(media, caption)
+        self._file = None
+
+    def is_image(self, include_gif: bool = False) -> bool or None:
+        if self.file_extension is None:
+            return
+
+        image_extensions = ['jpg', 'jpeg', 'png']
+        if include_gif:
+            image_extensions.append('gif')
+        return self.file_extension in image_extensions
+
+    def is_video(self, include_gif: bool = True) -> bool or None:
+        if self.file_extension is None:
+            return
+
+        video_extensions = ['webm', 'mp4']
+        if include_gif:
+            video_extensions.append('gif')
+        return self.file_extension in video_extensions
+
+    @property
+    def file_extension(self):
+        media = self.media
+        if isinstance(media, PhotoSize):
+            if self._file is None:
+                self._file = media.get_file()
+            media = self._file.file_path
+
+        if isinstance(media, str):
+            split = os.path.splitext(self.media)
+            if len(split) != 2:
+                return
+            return split[1]
+        return
+
+    @property
+    def media(self) -> str or IO or PhotoSize:
+        return self.telegram.media
+
+    @media.setter
+    def media(self, value: str or IO or PhotoSize):
+        self.telegram.media = value
+
+    @property
+    def caption(self) -> str:
+        return self.telegram.caption
+
+    @caption.setter
+    def caption(self, value: str):
+        self.telegram.caption = value
+
+    @property
+    def telegram(self) -> InputMediaPhoto:
+        return self._telegram
+
+    @telegram.setter
+    def telegram(self, value: InputMediaPhoto or str or tuple or list):
+        actual_value = None
+        if isinstance(value, InputMediaPhoto):
+            actual_value = value
+        elif (isinstance(value, tuple) or isinstance(value, list)) and len(value) == 2:
+            actual_value = InputMediaPhoto(*value)
+        elif isinstance(value, str):
+            if self._telegram:
+                actual_value = self._telegram
+                actual_value.media = value
+            else:
+                actual_value = InputMediaPhoto(value)
+        if not actual_value:
+            raise ValueError('Value must either be a tuple/list, dict, InputMediaPhoto or str')
+
+        self._telegram = actual_value
+
+
+class PostError(Exception):
+    IMAGE_NOT_FOUND = 0
+    WRONG_FILE_TYPE = 10
+    UNDEFINED_ERROR = 20
+
+    def __init__(self, code: int, post: Post = None):
+        self.code = code
+        self.post = post
 
 
 class BaseService:
@@ -151,18 +246,6 @@ class MoebooruService(BaseService):
             self.url = self.client.site_url.lstrip('/')
 
 
-class SendError:
-    IMAGE_NOT_FOUND = 0
-    WRONG_FILE_TYPE = 10
-    UNDEFINED_ERROR = 20
-
-    def __init__(self, code: int, post: dict = None, image: InputMediaPhoto = None, post_url: str = None):
-        self.code = code
-        self.post = post
-        self.image = image
-        self.post_url = post_url
-
-
 class MessageQueue:
     tag_limit = 6
 
@@ -174,7 +257,7 @@ class MessageQueue:
         self.sent = 0
         self.errors = []
 
-    def report(self, error: SendError = None):
+    def report(self, error: PostError = None):
         if error:
             self.errors.append(error)
 
@@ -189,17 +272,17 @@ class MessageQueue:
 
         if self.errors:
             error_codes = set(error.code for error in self.errors)
-            if SendError.IMAGE_NOT_FOUND in error_codes:
+            if PostError.IMAGE_NOT_FOUND in error_codes:
                 lines.append('Some files could not be retrieved')
-                for error in filter(lambda e: e.code == SendError.IMAGE_NOT_FOUND and e.post_url, self.errors):
+                for error in filter(lambda e: e.code == PostError.IMAGE_NOT_FOUND and e.post_url, self.errors):
                     lines.append(f'- {error.post_url}')
 
-            if SendError.WRONG_FILE_TYPE in error_codes and self.group_size > 1:
+            if PostError.WRONG_FILE_TYPE in error_codes and self.group_size > 1:
                 lines.append('Videos were skipped because they cannot be sent via a group.')
-                for error in filter(lambda e: e.code == SendError.WRONG_FILE_TYPE and e.post_url, self.errors):
+                for error in filter(lambda e: e.code == PostError.WRONG_FILE_TYPE and e.post_url, self.errors):
                     lines.append(f'- {error.post_url}')
 
-            if SendError.UNDEFINED_ERROR in error_codes:
+            if PostError.UNDEFINED_ERROR in error_codes:
                 lines.append('Some files could not be sent')
 
         if lines:
@@ -227,7 +310,7 @@ class MessageQueue:
                         raise e
 
                     for item in range(queue.group_size):
-                        queue.report(SendError(code=SendError.UNDEFINED_ERROR))
+                        queue.report(PostError(code=PostError.UNDEFINED_ERROR))
 
             return inner_wrapper
 
@@ -472,6 +555,25 @@ class AnimeDatabases(BaseCommand):
 
     # Danbooru API commands
 
+    def danbooru_get_image(self, post: dict, service: DanbooruService) -> Post:
+        image_url = post.get('large_file_url', None)
+        post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
+
+        image_url = self.get_image(post['id'], image_url) or image_url
+
+        if not image_url and service.session:
+            response = service.session.get(post_url)
+            img_tag = response.html.find('#image-container > img')
+
+            if img_tag:
+                img_tag = img_tag[0]
+                image_url = self.get_image(post['id'], img_tag.attrs['src'])
+
+        if not image_url:
+            raise PostError(code=PostError.IMAGE_NOT_FOUND, post=Post(post=post, post_url=post_url))
+
+        return Post(post, media=image_url, caption=f'@XenianBot - {post_url}', post_url=post_url)
+
     def danbooru_real_search(self, bot: Bot, update: Update, service: DanbooruService, query: dict,
                              group_size: bool = False):
         """Send Danbooru API Service queried images to user
@@ -500,44 +602,34 @@ class AnimeDatabases(BaseCommand):
         message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
 
         group = []
-        for index, post in progress_bar.enumerate(posts):
-            image_url = post.get('large_file_url', None)
-            post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
-            post_id = post['id']
-            caption = f'@XenianBot - {post_url}'
-
-            image_url = self.get_image(post_id, image_url) or image_url
-
-            if not image_url:
-                if service.session or group_size:
-                    response = service.session.get(post_url)
-                    img_tag = response.html.find('#image-container > img')
-
-                    if img_tag:
-                        img_tag = img_tag[0]
-                        image_url = self.get_image(post_id, img_tag.attrs['src'])
-
-            if not image_url:
-                message_queue.report(SendError(code=SendError.IMAGE_NOT_FOUND, post=post, post_url=post_url))
+        for index, post_dict in progress_bar.enumerate(posts):
+            try:
+                post = self.danbooru_get_image(post=post_dict, service=service)
+            except PostError as error:
+                message_queue.report(error)
                 continue
-            image = InputMediaPhoto(image_url, caption)
+
             if group_size:
-                if image_url.endswith(('.webm', '.gif', '.mp4', '.swf', '.zip')):
-                    message_queue.report(SendError(code=SendError.WRONG_FILE_TYPE, post=post, post_url=post_url))
+                if not post.is_image():
+                    message_queue.report(PostError(code=PostError.WRONG_FILE_TYPE, post=post))
                     continue
                 if index and index % group_size == 0:
                     self.send_group(group=group, bot=bot, update=update, queue=message_queue)
                     group = []
-                group.append(image)
+                group.append(post.telegram)
                 continue
 
             bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.UPLOAD_PHOTO)
-            self.send_image(update=update, image=image, queue=message_queue)
+            self.send_image(update=update, image=post.telegram, queue=message_queue)
 
         if group:
             self.send_group(group=group, bot=bot, update=update, queue=message_queue)
 
     # Moebooru API commands
+
+    def moebooru_get_image(self, post: dict, service: MoebooruService) -> Post:
+        post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
+        return Post(post=post, media=post['file_url'], caption=f'@XenianBot - {post_url}', post_url=post_url)
 
     def moebooru_real_search(self, bot: Bot, update: Update, service: MoebooruService, query: dict,
                              group_size: bool = False):
@@ -558,22 +650,20 @@ class AnimeDatabases(BaseCommand):
         message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
 
         group = []
-        for index, post in progress_bar.enumerate(posts):
-            post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
-
-            image = InputMediaPhoto(post['file_url'], f'@XenianBot - {post_url}')
+        for index, post_dict in progress_bar.enumerate(posts):
+            post = self.moebooru_get_image(post=post_dict, service=service)
 
             if group_size:
-                if image.media.endswith(('.webm', '.gif', '.mp4', '.swf', '.zip')):
-                    message_queue.report(SendError(code=SendError.WRONG_FILE_TYPE, post=post, post_url=post_url))
+                if post.is_image():
+                    message_queue.report(PostError(code=PostError.WRONG_FILE_TYPE, post=post))
                     continue
                 if index and index % group_size == 0:
                     self.send_group(group=group, bot=bot, update=update, queue=message_queue)
                     group = []
-                group.append(image)
+                group.append(post.telegram)
                 continue
             else:
-                self.send_image(update=update, image=image, queue=message_queue)
+                self.send_image(update=update, image=post.telegram, queue=message_queue)
 
         if group:
             self.send_group(group=group, bot=bot, update=update, queue=message_queue)
