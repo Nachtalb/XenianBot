@@ -242,8 +242,5 @@ tmp/
 data/
 .idea/
 buildout.cfg
-
-#### InstagramBot
-followed.txt
-skipped.txt
-*.checkpoint
+src/
+.mr.developer.cfg
