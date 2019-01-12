@@ -1,5 +1,7 @@
+import json
 import os
 import re
+import zipfile
 from collections import OrderedDict
 from copy import deepcopy
 from typing import Any, Callable, IO, Iterable
@@ -15,7 +17,7 @@ from telegram.ext import run_async
 
 from xenian.bot import mongodb_database
 from xenian.bot.settings import ANIME_SERVICES
-from xenian.bot.utils import TelegramProgressBar, download_file_from_url_and_upload
+from xenian.bot.utils import CustomNamedTemporaryFile, TelegramProgressBar, download_file_from_url_and_upload
 from xenian.bot.utils.telegram import retry_command
 from . import BaseCommand
 
@@ -274,13 +276,13 @@ class MessageQueue:
             error_codes = set(error.code for error in self.errors)
             if PostError.IMAGE_NOT_FOUND in error_codes:
                 lines.append('Some files could not be retrieved')
-                for error in filter(lambda e: e.code == PostError.IMAGE_NOT_FOUND and e.post_url, self.errors):
-                    lines.append(f'- {error.post_url}')
+                for error in filter(lambda e: e.code == PostError.IMAGE_NOT_FOUND and e.post.post_url, self.errors):
+                    lines.append(f'- {error.post.post_url}')
 
             if PostError.WRONG_FILE_TYPE in error_codes and self.group_size > 1:
                 lines.append('Videos were skipped because they cannot be sent via a group.')
-                for error in filter(lambda e: e.code == PostError.WRONG_FILE_TYPE and e.post_url, self.errors):
-                    lines.append(f'- {error.post_url}')
+                for error in filter(lambda e: e.code == PostError.WRONG_FILE_TYPE and e.post.post_url, self.errors):
+                    lines.append(f'- {error.post.post_url}')
 
             if PostError.UNDEFINED_ERROR in error_codes:
                 lines.append('Some files could not be sent')
@@ -392,7 +394,7 @@ class AnimeDatabases(BaseCommand):
         terms = filter(lambda term: not black_list.match(term) and bool(term), terms)
         return list(OrderedDict.fromkeys(terms))
 
-    def extract_option_from_string(self, name: str, text: str, type_: str or int = None) -> tuple:
+    def extract_option_from_string(self, name: str, text: str, type_: str or int = None, default: Any = None) -> tuple:
         """Extract option from string
 
         Args:
@@ -403,6 +405,12 @@ class AnimeDatabases(BaseCommand):
         Returns
             :obj:`tuple`: First item the text without the option, the second the value of the option
         """
+        if type_ is bool:
+            if name in text:
+                text = text.replace(name, '', 1)
+                return text, not bool(default)
+            return text, bool(default)
+
         type_ = type_ or str
         options = {
             'name': name,
@@ -467,6 +475,7 @@ class AnimeDatabases(BaseCommand):
         text = ' '.join(args)
 
         text, page = self.extract_option_from_string('page', text, int)
+        text, zip_it = self.extract_option_from_string('zip', text, bool)
         text, limit = self.extract_option_from_string('limit', text, int)
         text, group_size = self.extract_option_from_string('group', text, int)
 
@@ -503,7 +512,7 @@ class AnimeDatabases(BaseCommand):
         if not method:
             raise NotImplementedError(f'Search function ({method_name}) for service {service.name} does not exist.')
 
-        method(bot=bot, update=update, service=service, query=query, group_size=group_size)
+        method(bot=bot, update=update, service=service, query=query, group_size=group_size, zip_it=zip_it)
 
     @run_async
     @MessageQueue.message_queue_exc_handler('queue')
@@ -553,6 +562,37 @@ class AnimeDatabases(BaseCommand):
         )
         queue.report()
 
+    @run_async
+    @retry_command
+    def send_zip(self, update: Update, posts=Iterable[Post]):
+        with CustomNamedTemporaryFile(prefix='xenian-', suffix='.zip') as zip_file:
+            zip = zipfile.ZipFile(zip_file.name, mode='w')
+
+            text_file_content = ''
+            for post in posts:
+                if os.path.isfile(post.media):
+                    filename = os.path.basename(str(post.post['id']) + os.path.splitext(post.media)[1])
+                    json_filename = filename + '.json'
+                    zip.write(post.media, filename)
+                    text_file_content += f'{filename} ({filename}.json) -> {post.post_url}\n'
+
+                    with CustomNamedTemporaryFile(mode='w') as json_file:
+                        json.dump(post.post, json_file, indent=4, sort_keys=True)
+                        json_file.close()
+                        zip.write(json_file.name, json_filename)
+
+            with CustomNamedTemporaryFile(mode='w') as text_file:
+                text_file.write(text_file_content)
+                text_file.close()
+                zip.write(text_file.name, 'Links.txt')
+
+            zip.close()
+
+            update.message.chat.send_document(
+                document=zip_file,
+                reply_to_message_id=update.message.message_id,
+            )
+
     # Danbooru API commands
 
     def danbooru_get_image(self, post: dict, service: DanbooruService) -> Post:
@@ -575,7 +615,7 @@ class AnimeDatabases(BaseCommand):
         return Post(post, media=image_url, caption=f'@XenianBot - {post_url}', post_url=post_url)
 
     def danbooru_real_search(self, bot: Bot, update: Update, service: DanbooruService, query: dict,
-                             group_size: bool = False):
+                             group_size: bool = False, zip_it: bool = False):
         """Send Danbooru API Service queried images to user
 
         Args:
@@ -595,18 +635,23 @@ class AnimeDatabases(BaseCommand):
         progress_bar = TelegramProgressBar(
             bot=bot,
             chat_id=message.chat_id,
-            pre_message=('Sending' if not group_size else 'Gathering') + ' files\n{current} / {total}',
+            pre_message=('Gathering' if group_size or zip_it else 'Sending') + ' files\n{current} / {total}',
             se_message='This could take some time.'
         )
 
         message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
 
+        parsed_posts = []
         group = []
         for index, post_dict in progress_bar.enumerate(posts):
             try:
                 post = self.danbooru_get_image(post=post_dict, service=service)
+                parsed_posts.append(post)
             except PostError as error:
                 message_queue.report(error)
+                continue
+
+            if zip_it:
                 continue
 
             if group_size:
@@ -622,17 +667,26 @@ class AnimeDatabases(BaseCommand):
             bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.UPLOAD_PHOTO)
             self.send_image(update=update, image=post.telegram, queue=message_queue)
 
+        if zip_it:
+            self.send_zip(update=update, posts=parsed_posts)
+            return
+
         if group:
             self.send_group(group=group, bot=bot, update=update, queue=message_queue)
 
     # Moebooru API commands
 
-    def moebooru_get_image(self, post: dict, service: MoebooruService) -> Post:
+    def moebooru_get_image(self, post: dict, service: MoebooruService, download: bool = False) -> Post:
         post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
-        return Post(post=post, media=post['file_url'], caption=f'@XenianBot - {post_url}', post_url=post_url)
+        image_path = post['file_url']
+
+        if download:
+            image_path = self.get_image(post['id'], post['file_url'])
+
+        return Post(post=post, media=image_path, caption=f'@XenianBot - {post_url}', post_url=post_url)
 
     def moebooru_real_search(self, bot: Bot, update: Update, service: MoebooruService, query: dict,
-                             group_size: bool = False):
+                             group_size: bool = False, zip_it: bool = False):
         message = update.message
         posts = service.client.post_list(**query)
 
@@ -643,15 +697,20 @@ class AnimeDatabases(BaseCommand):
         progress_bar = TelegramProgressBar(
             bot=bot,
             chat_id=message.chat_id,
-            pre_message=('Sending' if not group_size else 'Gathering') + ' files\n{current} / {total}',
+            pre_message=('Gathering' if group_size or zip_it else 'Sending') + ' files\n{current} / {total}',
             se_message='This could take some time.'
         )
 
         message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
 
         group = []
+        parsed_posts = []
         for index, post_dict in progress_bar.enumerate(posts):
-            post = self.moebooru_get_image(post=post_dict, service=service)
+            post = self.moebooru_get_image(post=post_dict, service=service, download=zip_it)
+            parsed_posts.append(post)
+
+            if zip_it:
+                continue
 
             if group_size:
                 if post.is_image():
@@ -664,6 +723,10 @@ class AnimeDatabases(BaseCommand):
                 continue
             else:
                 self.send_image(update=update, image=post.telegram, queue=message_queue)
+
+        if zip_it:
+            self.send_zip(update=update, posts=parsed_posts)
+            return
 
         if group:
             self.send_group(group=group, bot=bot, update=update, queue=message_queue)
