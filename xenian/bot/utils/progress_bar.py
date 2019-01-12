@@ -2,6 +2,7 @@ from typing import Sized
 
 from emoji import emojize
 from telegram import Bot, ParseMode
+from telegram.error import TimedOut
 
 __all__ = ['TelegramProgressBar']
 
@@ -191,7 +192,10 @@ class TelegramProgressBar:
         if self.last_message:
             if self.last_message.text == message:
                 return
-            self.last_message = self.bot.edit_message_text(message, self.chat_id, self.last_message.message_id)
+            try:
+                self.last_message = self.bot.edit_message_text(message, self.chat_id, self.last_message.message_id)
+            except TimedOut:
+                pass
             return
         self.last_message = self.bot.send_message(self.chat_id, message, parse_mode=ParseMode.MARKDOWN)
 
