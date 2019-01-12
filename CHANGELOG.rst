@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.4.1 (unreleased)
+2.5.0 (2019-01-12)
 ------------------
 
 - Fix not being able to group send images when the the image was a link instead of a local path
