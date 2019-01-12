@@ -36,6 +36,7 @@ setup(name='XenianBot',
           'mako',
           'htmlmin',
           'setuptools',
+          'mr.developer',
       ],
 
       entry_points={
