@@ -13,6 +13,7 @@ Changelog
 - If possible send url of danbooru entry if the file could not be sent
 - Add ``zip`` to any animedatabase search to get the flies in a zip file + all information about the files
 - Install mr.developer
+- Update dependency versions
 
 
 2.4.0 (2019-01-05)
