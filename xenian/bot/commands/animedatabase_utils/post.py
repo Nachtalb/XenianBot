@@ -47,7 +47,7 @@ class Post:
             split = os.path.splitext(self.media)
             if len(split) != 2:
                 return
-            return split[1]
+            return split[1].lstrip('.')
         return
 
     @property

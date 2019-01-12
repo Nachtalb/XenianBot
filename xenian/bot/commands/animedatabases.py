@@ -361,7 +361,7 @@ class AnimeDatabases(BaseCommand):
                 continue
 
             if group_size:
-                if not post.is_image():
+                if post.is_video():
                     message_queue.report(PostError(code=PostError.WRONG_FILE_TYPE, post=post))
                     continue
                 if index and index % group_size == 0:
@@ -419,7 +419,7 @@ class AnimeDatabases(BaseCommand):
                 continue
 
             if group_size:
-                if post.is_image():
+                if post.is_video():
                     message_queue.report(PostError(code=PostError.WRONG_FILE_TYPE, post=post))
                     continue
                 if index and index % group_size == 0:
