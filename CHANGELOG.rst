@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.5.1 (unreleased)
+2.5.1 (2019-01-12)
 ------------------
 
 - Fix animedatabase filetype detection was not working properly
