@@ -49,6 +49,7 @@ Anime
 -  ``/safebooru <tag1> <tag2...> <page=page_num> <limit=limit> <group=size>`` - Search on safebooru
 -  ``/konachan <tag1> <tag2...> <page=page_num> <limit=limit> <group=size>`` - Search on konachan
 -  ``/yandere <tag1> <tag2...> <page=page_num> <limit=limit> <group=size>`` - Search on yandere
+
 Misc
 ^^^^
 
