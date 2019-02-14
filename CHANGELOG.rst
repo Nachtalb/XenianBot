@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.5.2 (unreleased)
+2.5.2 (2019-02-15)
 ------------------
 
 - Send as group of 10 by default for anime dbs
