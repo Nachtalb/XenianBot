@@ -183,7 +183,8 @@ class AnimeDatabases(BaseCommand):
         text, page = self.extract_option_from_string('page', text, int)
         text, zip_it = self.extract_option_from_string('zip', text, bool)
         text, limit = self.extract_option_from_string('limit', text, int)
-        text, group_size = self.extract_option_from_string('group', text, int)
+        text, group_size = self.extract_option_from_string('group', text, int, default=10)
+        group_size = group_size or None
 
         if group_size and group_size > 10:
             message.reply_text('Max group size is 10', reply_to_message_id=message.message_id)
