@@ -10,6 +10,7 @@ Changelog
 - Print bot info on start
 - Remove obsolete prints
 - Fix turning of download mode
+- Fix crash when sending file to user when no url is defined
 
 
 2.5.1 (2019-01-12)
