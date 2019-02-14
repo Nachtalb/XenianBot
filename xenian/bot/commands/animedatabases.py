@@ -187,8 +187,8 @@ class AnimeDatabases(BaseCommand):
         group_size = group_size or None
 
         if group_size and group_size > 10:
-            message.reply_text('Max group size is 10', reply_to_message_id=message.message_id)
-            return
+            message.reply_text('Max group size is 10, use default (10)', reply_to_message_id=message.message_id)
+            group_size = 10
 
         if ',' in text:
             terms = text.split(',')
