@@ -115,7 +115,6 @@ def retry_command(retries: int = None, *args, notify_user=True, existing_update:
         error = None
         for try_ in range(retries):
             error = None
-            print(f'Try {try_}')
             try:
                 return func(*args, **kwargs)
             except (TimedOut, NetworkError) as e:
