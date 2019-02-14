@@ -523,7 +523,11 @@ class VideoDownloader(BaseCommand):
                 if file_size < 5e+7:
                     try:
                         bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
-                        bot.send_document(chat_id=chat_id, document=open(file_path, mode='rb'), filename=filename)
+
+                        bot.send_message(chat_id=chat_id, text='Depending on the filesize the upload could take some '
+                                                               'time')
+                        bot.send_document(chat_id=chat_id, document=open(file_path, mode='rb'), filename=filename,
+                                          timeout=60)
                         sent = True
                     except (NetworkError, TimedOut, BadRequest):
                         pass
