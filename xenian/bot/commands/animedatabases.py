@@ -107,6 +107,7 @@ class AnimeDatabases(BaseCommand):
             name (:obj:`str`): Name of the option
             text (:obj:`str`): Text itself
             type_ (:obj:`str` or :obj:`int`, optional): Type of option is it a string or an int, default is string
+            default (:obj:`any`, optional): Default value to return if `name` was not found in `text`
 
         Returns
             :obj:`tuple`: First item the text without the option, the second the value of the option
@@ -132,7 +133,7 @@ class AnimeDatabases(BaseCommand):
             if type_ == int:
                 out = int(re.findall('\d+', match[0])[0])
 
-        return text, out
+        return text, out if out is not None else default
 
     def get_image(self, post_id: int, image_url: str = None):
         """Save image to file and save in db
@@ -183,11 +184,12 @@ class AnimeDatabases(BaseCommand):
         text, page = self.extract_option_from_string('page', text, int)
         text, zip_it = self.extract_option_from_string('zip', text, bool)
         text, limit = self.extract_option_from_string('limit', text, int)
-        text, group_size = self.extract_option_from_string('group', text, int)
+        text, group_size = self.extract_option_from_string('group', text, int, default=10)
+        group_size = group_size or None
 
         if group_size and group_size > 10:
-            message.reply_text('Max group size is 10', reply_to_message_id=message.message_id)
-            return
+            message.reply_text('Max group size is 10, use default (10)', reply_to_message_id=message.message_id)
+            group_size = 10
 
         if ',' in text:
             terms = text.split(',')
