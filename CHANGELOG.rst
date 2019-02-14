@@ -4,7 +4,8 @@ Changelog
 2.5.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Send as group of 10 by default for anime dbs
+- Send groups of 10 if max group size of 10 is exceeded by the user in anime db
 
 
 2.5.1 (2019-01-12)
