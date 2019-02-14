@@ -9,6 +9,7 @@ Changelog
 - Fix default option not working in ``extract_option_from_string``
 - Print bot info on start
 - Remove obsolete prints
+- Fix turning of download mode
 
 
 2.5.1 (2019-01-12)
