@@ -6,6 +6,7 @@ Changelog
 
 - Send as group of 10 by default for anime dbs
 - Send groups of 10 if max group size of 10 is exceeded by the user in anime db
+- Fix default option not working in ``extract_option_from_string``
 
 
 2.5.1 (2019-01-12)

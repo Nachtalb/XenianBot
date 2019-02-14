@@ -107,6 +107,7 @@ class AnimeDatabases(BaseCommand):
             name (:obj:`str`): Name of the option
             text (:obj:`str`): Text itself
             type_ (:obj:`str` or :obj:`int`, optional): Type of option is it a string or an int, default is string
+            default (:obj:`any`, optional): Default value to return if `name` was not found in `text`
 
         Returns
             :obj:`tuple`: First item the text without the option, the second the value of the option
@@ -132,7 +133,7 @@ class AnimeDatabases(BaseCommand):
             if type_ == int:
                 out = int(re.findall('\d+', match[0])[0])
 
-        return text, out
+        return text, out if out is not None else default
 
     def get_image(self, post_id: int, image_url: str = None):
         """Save image to file and save in db
