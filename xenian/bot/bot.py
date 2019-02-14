@@ -7,6 +7,7 @@ from telegram import Bot, TelegramError, Update
 from telegram.ext import CommandHandler, Filters, Updater
 
 import xenian.bot
+from xenian.bot.utils import get_self
 from .commands import BaseCommand
 from .settings import ADMINS, LOG_LEVEL, MODE, TELEGRAM_API_TOKEN
 
@@ -33,6 +34,10 @@ def main():
     dispatcher = updater.dispatcher
 
     xenian.bot.job_queue = updater.job_queue
+
+    def on_start():
+        self = get_self(updater.bot)
+        logger.info(f'Acting as {self.name} [link: {self.link}, id: {self.id}], with the key "{TELEGRAM_API_TOKEN}"')
 
     def stop_and_restart(chat_id):
         """Gracefully stop the Updater and replace the current process with a new one.
@@ -74,10 +79,12 @@ def main():
         updater.bot.set_webhook(url=webhook['url'])
         send_message_if_reboot()
         logger.info('Starting webhook...')
+        on_start()
     else:
         updater.start_polling()
         logger.info('Start polling...')
         send_message_if_reboot()
+        on_start()
         updater.idle()
 
 
