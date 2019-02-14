@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+
 from PIL import Image
 from io import BufferedWriter
 from tempfile import NamedTemporaryFile, TemporaryDirectory
@@ -522,7 +523,11 @@ class VideoDownloader(BaseCommand):
                 if file_size < 5e+7:
                     try:
                         bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
-                        bot.send_document(chat_id=chat_id, document=open(file_path, mode='rb'), filename=filename)
+
+                        bot.send_message(chat_id=chat_id, text='Depending on the filesize the upload could take some '
+                                                               'time')
+                        bot.send_document(chat_id=chat_id, document=open(file_path, mode='rb'), filename=filename,
+                                          timeout=60)
                         sent = True
                     except (NetworkError, TimedOut, BadRequest):
                         pass
@@ -535,6 +540,15 @@ class VideoDownloader(BaseCommand):
 
                     path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
                     url_path = os.path.join(path, filename)
+
+                    if os.path.isfile(url_path):
+                        # Can not send a download link to the user if the file is stored locally without url config
+                        bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text='The file was to big to sent or for some reason could not be sent directly. Another '
+                                 'way of sending the file was not configured by the adminstrator. You can use /support '
+                                 'to contact the admins.')
+                        return
 
                     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton('Download', url=url_path), ], ])
                     bot.send_message(
