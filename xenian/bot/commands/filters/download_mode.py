@@ -89,7 +89,7 @@ class DownloadMode(BaseFilter):
         Returns:
                 :obj:`bool`: True if the mode is now on False if off
         """
-        if self.is_mode_on(telegram_user) and (zip_mode and self.is_zip_mode_on(telegram_user)):
+        if self.is_mode_on(telegram_user) or (zip_mode and self.is_zip_mode_on(telegram_user)):
             self.turn_off(telegram_user)
             return False
         self.turn_on(telegram_user, zip_mode)
