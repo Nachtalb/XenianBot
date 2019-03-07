@@ -38,39 +38,29 @@ class UrbanDictionary(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             args (:obj:`list`, optional): List of sent arguments
         """
-        if update.message.reply_to_message is not None:
-            return
-        word = update.message.text
         if args:
             word = ' '.join(args)
-
+        else:
+            self.message.reply_text('You have to give me some text to search for.')
+            return
         definitions = ud.define(word)
 
         if not definitions:
-            update.message.reply_text('Could not find anything for: %s' % update.message.text)
+            self.message.reply_text('Could not find anything for: %s' % self.message.text)
             return
         best = definitions[0]
-        reply = """*Definition for [{word}]*
+        reply = f"""*Urban Dictionary: [{best.word}]*
 
-{definition}
+{best.definition}
 
 *Example*
 
-{example}
+{best.example}
 
 *Votes*
-{emoji_up} {upvotes} | {emoji_down} {downvotes}
-        """.format(
-            word=best.word,
-            definition=best.definition,
-            example=best.example,
-            upvotes=best.upvotes,
-            downvotes=best.downvotes,
-            emoji_up=self.e_thumbs_up,
-            emoji_down=self.e_thumbs_down
-        )
-        reply = emojize(reply, use_aliases=True)
-        update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+{self.e_thumbs_up} {best.upvotes} | {self.e_thumbs_down} {best.downvotes}
+        """
+        self.message.reply_text(emojize(reply, use_aliases=True), parse_mode=ParseMode.MARKDOWN)
 
 
 urban_dictionary = UrbanDictionary()

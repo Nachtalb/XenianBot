@@ -63,7 +63,7 @@ class Calculator(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             equation (:obj:`str`): Give an equation to solve and send the user or try to use the sent text
         """
-        equation = equation or update.message.text
+        equation = equation or self.message.text
         equation = re.sub('["\']', '', equation)
         equation = re.sub('(true|false)', '', equation, flags=re.IGNORECASE)
         message = ''
@@ -80,9 +80,9 @@ class Calculator(BaseCommand):
                     equation=equation,
                     result=result
                 )
-                update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+                self.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
             except BadRequest:
-                update.message.reply_text('Result was too long (max. 4096 characters) for Telegram.')
+                self.message.reply_text('Result was too long (max. 4096 characters) for Telegram.')
         except (SyntaxError, TypeError) as e:
             pass
 
@@ -96,9 +96,9 @@ class Calculator(BaseCommand):
         """
         equation = ' '.join(args).strip()
         if equation:
-            self.calcualate(bot, update, equation)
+            self.calcualate(self.bot, update, equation)
         else:
-            update.message.reply_text('You have to give me an equation')
+            self.message.reply_text('You have to give me an equation')
 
     @run_async
     def maths(self, bot: Bot, update: Update):
@@ -125,7 +125,7 @@ class Calculator(BaseCommand):
                 description=doc
             )
 
-        update.message.reply_text(math_list, parse_mode=ParseMode.MARKDOWN)
+        self.message.reply_text(math_list, parse_mode=ParseMode.MARKDOWN)
 
 
 calculator = Calculator()

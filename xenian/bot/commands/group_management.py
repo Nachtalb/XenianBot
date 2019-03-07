@@ -4,9 +4,8 @@ from telegram import Bot, ParseMode, Update, User
 from telegram.ext import Filters
 
 import xenian.bot
-from xenian.bot.commands import BaseCommand
-from xenian.bot.commands import filters
-from xenian.bot.utils import data, get_user_link
+from xenian.bot.commands import BaseCommand, filters
+from xenian.bot.utils import get_user_link
 
 __all__ = ['group_manager']
 
@@ -16,7 +15,6 @@ class GroupManager(BaseCommand):
     """
 
     group = 'Group Management'
-    group_data_set = 'group_management'
 
     def __init__(self):
         self.commands = [
@@ -138,94 +136,52 @@ class GroupManager(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             args (:obj:`list`): Time in min
         """
-        if update.message.reply_to_message is None:
-            update.message.reply_text('You have to reply to a message from this user to kick him.')
+        if self.message.reply_to_message is None:
+            self.message.reply_text('You have to reply to a message from this user to kick him.')
             return
 
-        chat_id = update.message.chat_id
-        from_user = update.message.from_user
-        wanted_user = update.message.reply_to_message.from_user
+        wanted_user = self.message.reply_to_message.from_user
+
         time = 10
         if args:
             try:
                 time = float(args[0])
                 if not 0.5 <= time <= 527040:
-                    update.message.reply_text('Time must be between 30 sec (0.5 min) and 366 days (527040 min).')
+                    self.message.reply_text('Time must be between 30 sec (0.5 min) and 366 days (527040 min).')
                     return
             except ValueError:
-                update.message.reply_text('You have to give me the time in min like `/kick 30`')
+                self.message.reply_text('You have to give me the time in min like `/kick 30`')
                 return
 
         now = datetime.datetime.now()
         kick_until = now - datetime.timedelta(minutes=time)
-        bot.kick_chat_member(
-            chat_id=chat_id,
-            user_id=wanted_user.id,
-            until_date=kick_until)
 
-        xenian.bot.job_queue.run_once(
-            callback=(
-                lambda bot, job: bot.send_message(
-                    chat_id,
-                    '{wanted_user} was kicked {time} min ago and can now join again'.format(
-                        time=time,
-                        wanted_user=get_user_link(wanted_user)),
-                    parse_mode=ParseMode.MARKDOWN)),
+        self.bot.kick_chat_member(chat_id=self.chat.id, user_id=wanted_user.id, until_date=kick_until)
+
+        xenian.bot.job_queue.run_once(callback=(
+            lambda bot, job: bot.send_message(
+                self.chat.id,
+                f'{get_user_link(wanted_user)} was kicked {time} min ago and can now join again',
+                parse_mode=ParseMode.MARKDOWN)),
             when=10 * 60)
 
-        bot.send_message(
-            chat_id=chat_id,
-            text='{wanted_user} was kicked for {time} min by {from_user}'.format(
-                time=time,
-                from_user=get_user_link(from_user),
-                wanted_user=get_user_link(wanted_user)),
-            parse_mode=ParseMode.MARKDOWN)
+        self.message.reply_text(f'{get_user_link(wanted_user)} was kicked for {time} min by {get_user_link(self.user)}',
+                                parse_mode=ParseMode.MARKDOWN)
 
-    def ban(self, bot: Bot, update: Update):
+    def ban(self, *args, wanted_user: User = None, **kwargs):
         """Ban a user
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        if update.message.reply_to_message is None:
-            update.message.reply_text('You have to reply to a message from this user to ban him.')
+        if self.message.reply_to_message is None and not wanted_user:
+            self.message.reply_text('You have to reply to a message from this user to ban him.')
             return
 
-        chat_id = update.message.chat_id
-        from_user = update.message.from_user
-        wanted_user = update.message.reply_to_message.from_user
+        wanted_user = wanted_user or self.message.reply_to_message.from_user
+        self.chat.group_warnings[wanted_user.id] = 3
+        self.chat.group_warnings.save()
 
-        group_data = data.get(self.group_data_set)
-
-        if not group_data.get(chat_id, None):
-            group_data[chat_id] = {}
-        if not group_data[chat_id].get(wanted_user.id, None):
-            group_data[chat_id][wanted_user.id] = 'banned'
-        else:
-            if group_data[chat_id][wanted_user.id] == 'banned':
-                bot.send_message(
-                    chat_id=chat_id,
-                    text='{wanted_user} was already banned.'.format(wanted_user=get_user_link(wanted_user)),
-                    parse_mode=ParseMode.MARKDOWN)
-                return
-            else:
-                group_data[chat_id][wanted_user.id] = 'banned'
-
-        now = datetime.datetime.now()
-
-        bot.kick_chat_member(
-            chat_id=chat_id,
-            user_id=wanted_user.id,
-            until_date=now + datetime.timedelta(seconds=5))
-        bot.send_message(
-            chat_id=chat_id,
-            text='{wanted_user} was banned by {from_user}'.format(
-                from_user=get_user_link(from_user),
-                wanted_user=get_user_link(wanted_user)),
-            parse_mode=ParseMode.MARKDOWN)
-
-        data.save(self.group_data_set, group_data)
+        self.bot.kick_chat_member(chat_id=self.chat.id, user_id=wanted_user.id, until_date=datetime.datetime.now())
+        self.message.reply_text(text=f'{get_user_link(wanted_user)} was banned by {get_user_link(self.user)}',
+                                parse_mode=ParseMode.MARKDOWN)
 
     def warn(self, bot: Bot, update: Update, wanted_user: User = None):
         """Strike a user
@@ -237,42 +193,22 @@ class GroupManager(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             wanted_user (:obj:`telegram.user.User`): Telegram User object of the user which should be warned
         """
-        if update.message.reply_to_message is None:
-            update.message.reply_text('You have to reply to a message from this user to warn him.')
-            return
-        chat_id = update.message.chat_id
-        from_user = update.message.from_user
-        wanted_user = wanted_user or update.message.reply_to_message.from_user
-
-        group_data = data.get(self.group_data_set)
-
-        if not group_data.get(chat_id, None):
-            group_data[chat_id] = {}
-        if not group_data[chat_id].get(wanted_user.id, None):
-            group_data[chat_id][wanted_user.id] = 1
-        else:
-            if group_data[chat_id][wanted_user.id] == 'banned':
-                bot.send_message(
-                    chat_id=chat_id,
-                    text='{wanted_user} was already banned.'.format(wanted_user=get_user_link(wanted_user)),
-                    parse_mode=ParseMode.MARKDOWN)
-                return
-            else:
-                group_data[chat_id][wanted_user.id] += 1
-        if group_data[chat_id][wanted_user.id] == 3:
-            self.ban(bot, update)
+        if self.message.reply_to_message is None:
+            self.message.reply_text('You have to reply to a message from this user to warn him.')
             return
 
-        bot.send_message(
-            chat_id=chat_id,
-            text=('{wanted_user} was warned by {from_user}\n User has now {warns} waning/s. With 3 warnings user '
-                  'gets banned.').format(
-                from_user=get_user_link(from_user),
-                wanted_user=get_user_link(wanted_user),
-                warns=group_data[chat_id][wanted_user.id]),
-            parse_mode=ParseMode.MARKDOWN)
+        wanted_user = wanted_user or self.message.reply_to_message.from_user
 
-        data.save(self.group_data_set, group_data)
+        self.chat.group_warnings[wanted_user.id] = self.chat.group_warnings.get(wanted_user.id, 0) + 1
+        self.chat.save()
+
+        if self.chat.group_warnings[wanted_user.id] > 2:
+            self.ban(wanted_user=wanted_user)
+            return
+        self.message.reply_text(f'{get_user_link(wanted_user)} was warned.\nUser has now '
+                                f'`{self.chat.group_warnings[wanted_user.id]}` warnings. Users with 3 warnings get '
+                                f'banned automatically.', parse_mode=ParseMode.MARKDOWN)
+        return
 
     def unwarn(self, bot: Bot, update: Update, wanted_user: User = None):
         """Remove all warnings from a user
@@ -282,31 +218,18 @@ class GroupManager(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             wanted_user (:obj:`telegram.user.User`): Telegram User object of the user which should be warned
         """
-        if update.message.reply_to_message is None:
-            update.message.reply_text('You have to reply to a message from a user to warn him.')
+        if self.message.reply_to_message is None:
+            self.message.reply_text('You have to reply to a message from a user to warn him.')
             return
-        chat_id = update.message.chat_id
-        from_user = update.message.from_user
-        wanted_user = wanted_user or update.message.reply_to_message.from_user
+        wanted_user = wanted_user or self.message.reply_to_message.from_user
 
-        group_data = data.get(self.group_data_set)
-
-        if not group_data.get(chat_id, None) or not group_data[chat_id].get(wanted_user.id, None):
-            bot.send_message(
-                chat_id=chat_id,
-                text='{wanted_user} was never warned.'.format(
-                    wanted_user=get_user_link(wanted_user)),
-                parse_mode=ParseMode.MARKDOWN)
+        if wanted_user.id not in self.chat.group_warnings:
+            self.message.reply_text(f'{get_user_link(wanted_user)} was never warned', parse_mode=ParseMode.MARKDOWN)
             return
 
-        group_data[chat_id][wanted_user.id] = 0
-        data.save(self.group_data_set, group_data)
-        bot.send_message(
-            chat_id=chat_id,
-            text='{from_user} removed {wanted_user} warnings.'.format(
-                from_user=get_user_link(from_user),
-                wanted_user=get_user_link(wanted_user)),
-            parse_mode=ParseMode.MARKDOWN)
+        self.chat.group_warnings[wanted_user.id] = 0
+        self.chat.save()
+        self.message.reply_text(f'Warnings were removed from {get_user_link(wanted_user)}.')
 
     def delete(self, bot: Bot, update: Update):
         """Delete a post from a user
@@ -315,13 +238,14 @@ class GroupManager(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        if update.message.reply_to_message is None:
+        if self.message.reply_to_message is None:
             return
-        chat_id = update.message.chat_id
-        wanted_user = update.message.reply_to_message.from_user
 
-        bot.delete_message(chat_id=chat_id, message_id=update.message.reply_to_message.message_id)
-        self.warn(bot, update, wanted_user)
+        wanted_user = self.message.reply_to_message.from_user
+
+        self.bot.delete_message(chat_id=self.chat.id, message_id=self.message.reply_to_message.message_id)
+        self.bot.delete_message(chat_id=self.chat.id, message_id=self.message.message_id)
+        self.warn(self.bot, self.update, wanted_user)
 
     def rules_define(self, bot: Bot, update: Update):
         """Define new rules for a group
@@ -330,31 +254,23 @@ class GroupManager(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        split_text = update.message.text.split(' ', 1)
-        if len(split_text) < 2:
-            update.message.reply_text('You forgot to give me the rules.')
+        text = None
+        if self.message.reply_to_message:
+            text = self.message.reply_to_message.text
+        else:
+            split_text = self.message.text.split(' ', 1)
+            if len(split_text) > 1:
+                text = split_text[1]
+
+        if not text:
+            self.message.reply_text('You either have to reply to a message with text or give me some text. '
+                                    'The rules accept markdown. ')
             return
-        elif len(split_text[1]) > 4000:
-            update.message.reply_text('Rules must be less than 4000 characters.')
-            return
 
-        text = split_text[1]
-        chat_id = update.message.chat_id
-        from_user = update.message.from_user
+        self.tg_chat.group_rules = text
+        self.tg_chat.save()
 
-        group_data = data.get(self.group_data_set)
-
-        if not group_data.get(chat_id, None):
-            group_data[chat_id] = {}
-
-        group_data[chat_id]['rules'] = text
-        data.save(self.group_data_set, group_data)
-
-        bot.send_message(
-            chat_id=chat_id,
-            text='{user} has set new /rules.'.format(user=get_user_link(from_user)),
-            parse_mode=ParseMode.MARKDOWN
-        )
+        self.message.reply_text(text=f'{get_user_link(self.user)} has set new /rules.', parse_mode=ParseMode.MARKDOWN)
 
     def rules_remove(self, bot: Bot, update: Update):
         """Remove rules for a group
@@ -363,25 +279,13 @@ class GroupManager(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        chat_id = update.message.chat_id
-        from_user = update.message.from_user
-        group_data = data.get(self.group_data_set)
-
-        if not group_data.get(chat_id, None) or not group_data[chat_id].get('rules', None):
-            bot.send_message(
-                chat_id=chat_id,
-                text='This group has no rules defined, use /rules_define to add them.')
+        if not self.tg_chat.group_rules:
+            self.message.reply_text(text='This group has no rules defined, use /rules_define to add them.')
             return
-
-        group_data[chat_id]['rules'] = ''
-        data.save(self.group_data_set, group_data)
-        bot.send_message(
-            chat_id=chat_id,
-            text='{user} has set removed the groups rules.'.format(
-                user=get_user_link(from_user)
-            ),
-            parse_mode=ParseMode.MARKDOWN
-        )
+        self.tg_chat.group_rules = ''
+        self.tg_chat.save()
+        self.message.reply_text(text=f'{get_user_link(self.user)} has set removed the groups rules.',
+                                parse_mode=ParseMode.MARKDOWN)
 
     def rules(self, bot: Bot, update: Update):
         """Show the defined group rules
@@ -390,19 +294,11 @@ class GroupManager(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        chat_id = update.message.chat_id
-        group_data = data.get(self.group_data_set)
-
-        if not group_data.get(chat_id, None) or not group_data[chat_id].get('rules', None):
-            bot.send_message(
-                chat_id=chat_id,
-                text='This group has no rules defined, use /rules_define to add them.')
+        if not self.tg_chat.group_rules:
+            self.message.reply_text('This group has no rules defined, use /rules_define to add them.')
             return
 
-        bot.send_message(
-            chat_id=chat_id,
-            text=group_data[chat_id]['rules'],
-            parse_mode=ParseMode.MARKDOWN)
+        self.message.reply_text(self.tg_chat.group_rules, parse_mode=ParseMode.MARKDOWN)
 
 
 group_manager = GroupManager()

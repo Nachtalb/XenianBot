@@ -25,7 +25,7 @@ class Decide(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        update.message.reply_text('Yes' if randint(0, 1) else 'No')
+        self.message.reply_text('Yes' if randint(0, 1) else 'No')
 
 
 decide = Decide()

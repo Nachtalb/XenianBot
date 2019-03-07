@@ -36,7 +36,7 @@ class Translate(BaseCommand):
         super(Translate, self).__init__()
 
     @run_async
-    def translate(self, bot: Bot, update: Update):
+    def translate(self, *args, **kwargs):
         """Translate the given text
 
         Args:
@@ -46,11 +46,11 @@ class Translate(BaseCommand):
         primary_text = None
         secondary_text = None
 
-        reply_to_message = update.message.reply_to_message
+        reply_to_message = self.message.reply_to_message
         if reply_to_message:
             primary_text = reply_to_message.text
 
-        split_text = update.message.text.split(' ', 1)
+        split_text = self.message.text.split(' ', 1)
         if len(split_text) > 1:
             secondary_text = split_text[1]
 
@@ -60,14 +60,14 @@ class Translate(BaseCommand):
             translate_from, new_text = get_option_from_string('lf', secondary_text)
             if translate_from:
                 if translate_from not in LANGUAGES:
-                    update.message.reply_text('Given language (`{}`) is not available'.format(translate_from))
+                    self.message.reply_text('Given language (`{}`) is not available'.format(translate_from))
                     return
                 secondary_text = new_text
 
             translate_to, new_text = get_option_from_string('lt', secondary_text)
             if translate_to:
                 if translate_to not in LANGUAGES:
-                    update.message.reply_text('Given language (`{}`) is not available'.format(translate_to))
+                    self.message.reply_text('Given language (`{}`) is not available'.format(translate_to))
                     return
                 secondary_text = new_text
             else:
@@ -77,7 +77,7 @@ class Translate(BaseCommand):
                 primary_text = secondary_text
 
         if not primary_text and not secondary_text:
-            update.message.reply_text('You either have to reply to a message or give me some text.')
+            self.message.reply_text('You either have to reply to a message or give me some text.')
             return
 
         translated = self.translate_text(primary_text, translate_from, translate_to)
@@ -86,7 +86,7 @@ class Translate(BaseCommand):
             direction=f'{translated.src} -> {translated.dest}',
             translate_text=translated.text,
         )
-        update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+        self.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
     def translate_text(self, text: str, lang_from: str = None, lang_to: str = None) -> Translated:
         """Translate text from one lang to another

@@ -1,13 +1,12 @@
 import os
 import re
 import shutil
-
-from PIL import Image
 from io import BufferedWriter
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from uuid import uuid4
 
 import youtube_dl
+from PIL import Image
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from telegram import Bot, ChatAction, Document, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, ParseMode, \
     Sticker, Update, Video
@@ -73,6 +72,29 @@ class Download(BaseCommand):
 
         super(Download, self).__init__()
 
+    def toggle_mode(self, on: bool or None = None, zip_mode: bool = False) -> bool:
+        """Toggle download / zip mode on and off
+
+        Args:
+            on (:obj:`bool` or :obj:`None`, optional): If on set to true the mode will be turned on, False == turned off
+                If the on is None the mode will be toggled automatically.
+            zip_mode (:obj:`bool`): If action should be taken for the zip mode
+
+        Returns:
+            (:obj:`bool`): New mode
+        """
+        new = on if isinstance(on, bool) else \
+            not self.tg_user.download_zip_mode if zip_mode else not self.tg_user.download_mode
+
+        if not zip_mode:
+            self.tg_user.download_zip_mode = False
+        else:
+            self.tg_user.download_zip_mode = new
+        self.tg_user.download_mode = new
+        self.tg_user.save()
+
+        return new
+
     def toggle_download_mode(self, bot: Bot, update: Update):
         """Toggle Download Mode
 
@@ -80,11 +102,8 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        mode_on = download_mode_filter.toggle_mode(update.message.from_user.id)
-        if mode_on:
-            update.message.reply_text('Download Mode on')
-        else:
-            update.message.reply_text('Download Mode off')
+        new = self.toggle_mode()
+        self.message.reply_text(f'Download Mode {"on" if new else "off"}')
 
     def toggle_zip_mode(self, bot: Bot, update: Update):
         """Toggle Zip Mode
@@ -93,15 +112,20 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        mode_on = download_mode_filter.toggle_mode(update.message.from_user.id, zip_mode=True)
-        if mode_on:
-            in_queue = len(self.ram_db.get(update.message.from_user.id, []))
-            append = (f'\nThere are still `{in_queue}` Items in the Download queue. Use /zip\_clear to clear the queue.'
-                if in_queue else '')
-            update.message.reply_text(f'Download Zip Mode on{append}', parse_mode=ParseMode.MARKDOWN)
+        new = self.toggle_mode(zip_mode=True)
+        reply = f'Download Zip Mode {"on" if new else "off"}'
+
+        if new:
+            in_queue = len(self.ram_db.get(self.message.from_user.id, []))
+            append = ''
+            if in_queue:
+                append = f'\nThere are still `{in_queue}`. Items in the Download queue. ' \
+                    f'Use /zip\\_clear to clear the queue.'
+
+            self.message.reply_text(reply + append, parse_mode=ParseMode.MARKDOWN)
         else:
-            self.download_zip(bot, update, update.message.from_user.id)
-            update.message.reply_text('Download Mode off')
+            self.message.reply_text(reply)
+            self.download_zip(self.bot, self.update, self.message.from_user.id)
 
     def zip_clear(self, bot: Bot, update: Update):
         """Clear ZIP download queue
@@ -110,11 +134,11 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        self.ram_db[update.message.from_user.id] = []
-        update.message.reply_text('ZIP download queue was cleared.', reply_to_message_id=update.message.message_id)
+        self.ram_db[self.message.from_user.id] = []
+        self.message.reply_text('ZIP download queue was cleared.', reply_to_message_id=self.message.message_id)
 
     def add_to_zip(self, update, user_id, item):
-        update.message.reply_text('Item was added', reply_to_message_id=update.message.message_id)
+        self.message.reply_text('Item was added', reply_to_message_id=self.message.message_id)
         self.ram_db.setdefault(user_id, [])
         self.ram_db[user_id].append(item)
 
@@ -127,10 +151,10 @@ class Download(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
             user_id (:obj:`int`): Id of a user
         """
-        message = update.message
+        message = self.message
         user_files = self.ram_db.get(user_id)
         if not user_files:
-            update.message.reply_text('No files sent for download')
+            self.message.reply_text('No files sent for download')
             return
 
         with TemporaryDirectory() as temp_folder:
@@ -138,8 +162,8 @@ class Download(BaseCommand):
             os.mkdir(zip_content_path)
 
             progress_bar = TelegramProgressBar(
-                bot=bot,
-                chat_id=update.message.chat_id,
+                bot=self.bot,
+                chat_id=self.chat.id,
                 full_amount=len(user_files),
                 pre_message='Downloading files\n{current} / {total}',
                 se_message='Downloading GIFs may take a while.'
@@ -150,11 +174,12 @@ class Download(BaseCommand):
                 temp_file = None
                 if isinstance(file, Sticker):
                     temp_file = NamedTemporaryFile(delete=False, dir=zip_content_path, prefix='xenian-', suffix='.png')
-                    self.download_stickers_to_file(bot, file, temp_file)
+                    self.download_stickers_to_file(self.bot, file, temp_file)
 
                 elif isinstance(file, Document) or isinstance(file, Video):
                     temp_file = NamedTemporaryFile(delete=False, dir=zip_content_path, prefix='xenian-', suffix='.gif')
-                    _, orig_path, compressed_path = self.download_video_to_file(bot, file, temp_file, temp_file.name)
+                    _, orig_path, compressed_path = self.download_video_to_file(self.bot, file, temp_file,
+                                                                                temp_file.name)
 
                 if temp_file:
                     temp_file.close()
@@ -179,7 +204,7 @@ class Download(BaseCommand):
             sticker (:obj:`telegram.sticker.Sticker`): A Sticker object
             file_object (:obj:`io.BufferedWriter`): File like object
         """
-        sticker = bot.get_file(sticker.file_id)
+        sticker = self.bot.get_file(sticker.file_id)
         sticker.download(out=file_object)
 
         if getattr(file_object, 'save', None):
@@ -200,17 +225,17 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        orig_sticker = update.message.sticker or update.message.reply_to_message.sticker
+        orig_sticker = self.message.sticker or self.message.reply_to_message.sticker
 
-        user_id = update.message.from_user.id
-        if download_mode_filter.is_zip_mode_on(user_id):
-            self.add_to_zip(update, user_id, orig_sticker)
+        user_id = self.message.from_user.id
+        if self.tg_user.download_zip_mode:
+            self.add_to_zip(self.update, user_id, orig_sticker)
             return
 
         with CustomNamedTemporaryFile(suffix='.png', prefix='xenian-') as image:
-            self.download_stickers_to_file(bot, orig_sticker, image)
+            self.download_stickers_to_file(self.bot, orig_sticker, image)
             image.seek(0)
-            bot.send_photo(update.message.chat_id, photo=image)
+            self.bot.send_photo(self.chat.id, photo=image)
 
     def download_video_to_file(self, bot: Bot, document: Document, file_object: BufferedWriter, file_object_path: str):
         """Download Sticker as images to file_object
@@ -221,7 +246,7 @@ class Download(BaseCommand):
             file_object (:obj:`io.BufferedWriter`): Actual existing file object
             file_object_path (:obj:`str`): The path to the file given in file_object
         """
-        video = bot.getFile(document.file_id)
+        video = self.bot.getFile(document.file_id)
 
         with CustomNamedTemporaryFile() as video_file:
             video.download(out=video_file)
@@ -247,19 +272,19 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        message = update.message
-        bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.TYPING)
+        message = self.message
+        self.bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.TYPING)
 
-        document = (update.message.document or update.message.video or update.message.reply_to_message.document or
-                    update.message.reply_to_message.video)
+        document = (self.message.document or self.message.video or self.message.reply_to_message.document or
+                    self.message.reply_to_message.video)
 
-        user_id = update.message.from_user.id
-        if download_mode_filter.is_zip_mode_on(user_id):
-            self.add_to_zip(update, user_id, document)
+        user_id = self.message.from_user.id
+        if self.tg_user.download_zip_mode:
+            self.add_to_zip(self.update, user_id, document)
             return
 
         with CustomNamedTemporaryFile(suffix='.gif') as video_file:
-            _, orig_path, compressed_path = self.download_video_to_file(bot, document, video_file, video_file.name)
+            _, orig_path, compressed_path = self.download_video_to_file(self.bot, document, video_file, video_file.name)
 
             uploader.connect()
             upload_path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
@@ -311,13 +336,13 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        reply_to_message = update.message.reply_to_message
+        reply_to_message = self.message.reply_to_message
         if not reply_to_message:
-            update.message.reply_text('You have to reply to some media file to start the download.')
+            self.message.reply_text('You have to reply to some media file to start the download.')
         if reply_to_message.sticker:
-            self.download_stickers(bot, update)
+            self.download_stickers(self.bot, self.update)
         if reply_to_message.video or reply_to_message.document:
-            self.download_gif(bot, update)
+            self.download_gif(self.bot, self.update)
 
 
 download = Download()
@@ -396,13 +421,13 @@ class VideoDownloader(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        user_id = update.message.from_user.id
+        user_id = self.message.from_user.id
 
         if self.video_information.get(user_id, None):
-            self.abort(bot, update)
+            self.abort(self.bot, self.update)
 
-        chat_id = update.message.chat_id
-        url = update.message.text
+        chat_id = self.chat.id
+        url = self.message.text
         url = re.sub('&list.*$', '', url)
 
         with youtube_dl.YoutubeDL({}) as ydl:
@@ -415,11 +440,11 @@ class VideoDownloader(BaseCommand):
             keyboard = self.get_keyboard('format', info)
 
             self.current_menu[user_id] = 'format'
-            bot.send_photo(
+            self.bot.send_photo(
                 chat_id=chat_id,
                 photo=info['thumbnail']
             )
-            self.keyboard_message_id[user_id] = bot.send_message(
+            self.keyboard_message_id[user_id] = self.bot.send_message(
                 chat_id=chat_id,
                 text='{extractor_key:-^20}\n'
                      '<b>{title}</b>\n'
@@ -438,10 +463,11 @@ class VideoDownloader(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        user_id = update.effective_user.id
-        chat_id = update.effective_chat.id
+        user_id = self.user.id
+        chat_id = self.chat.id
+        bot = self.bot
         url = self.video_information[user_id]['webpage_url']
-        data = update.callback_query.data.split(' ')
+        data = self.update.callback_query.data.split(' ')
 
         class DownloadHook:
             progress_bar = None
@@ -508,8 +534,8 @@ class VideoDownloader(BaseCommand):
                 }]
 
             with youtube_dl.YoutubeDL(options) as ydl:
-                bot.edit_message_reply_markup(
-                    chat_id=update.effective_chat.id,
+                self.bot.edit_message_reply_markup(
+                    chat_id=self.chat.id,
                     message_id=self.keyboard_message_id[user_id].message_id,
                     reply_markup=[])
 
@@ -522,18 +548,19 @@ class VideoDownloader(BaseCommand):
                 sent = False
                 if file_size < 5e+7:
                     try:
-                        bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
+                        self.bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
 
-                        bot.send_message(chat_id=chat_id, text='Depending on the filesize the upload could take some '
-                                                               'time')
-                        bot.send_document(chat_id=chat_id, document=open(file_path, mode='rb'), filename=filename,
-                                          timeout=60)
+                        self.bot.send_message(chat_id=chat_id,
+                                              text='Depending on the filesize the upload could take some '
+                                                   'time')
+                        self.bot.send_document(chat_id=chat_id, document=open(file_path, mode='rb'), filename=filename,
+                                               timeout=60)
                         sent = True
                     except (NetworkError, TimedOut, BadRequest):
                         pass
 
                 if not sent:
-                    bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
+                    self.bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
                     uploader.connect()
                     uploader.upload(file_path, remove_after=1800)
                     uploader.close()
@@ -543,16 +570,16 @@ class VideoDownloader(BaseCommand):
 
                     if os.path.isfile(url_path):
                         # Can not send a download link to the user if the file is stored locally without url config
-                        bot.send_message(
-                            chat_id=update.effective_chat.id,
+                        self.bot.send_message(
+                            chat_id=self.chat.id,
                             text='The file was to big to sent or for some reason could not be sent directly. Another '
                                  'way of sending the file was not configured by the adminstrator. You can use /support '
                                  'to contact the admins.')
                         return
 
                     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton('Download', url=url_path), ], ])
-                    bot.send_message(
-                        chat_id=update.effective_chat.id,
+                    self.bot.send_message(
+                        chat_id=self.chat.id,
                         text='File was either too big for Telegram or could for some reason not be sent directly, '
                              'please use this download button',
                         reply_markup=keyboard)
@@ -568,12 +595,12 @@ class VideoDownloader(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        user_id = update.callback_query.from_user.id
-        text = update.callback_query.data
+        user_id = self.update.callback_query.from_user.id
+        text = self.update.callback_query.data
 
         keyboard = self.get_keyboard(text, self.video_information[user_id])
-        bot.edit_message_reply_markup(
-            chat_id=update.effective_chat.id,
+        self.bot.edit_message_reply_markup(
+            chat_id=self.chat.id,
             message_id=self.keyboard_message_id[user_id].message_id,
             reply_markup=keyboard)
 
@@ -586,16 +613,16 @@ class VideoDownloader(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        user_id = update.effective_user.id
+        user_id = self.user.id
         text = 'Aborted {}'.format(self.video_information[user_id]['title'])
-        if update.callback_query:
-            update.callback_query.answer(text=text)
-            bot.edit_message_reply_markup(
-                chat_id=update.effective_chat.id,
+        if self.update.callback_query:
+            self.update.callback_query.answer(text=text)
+            self.bot.edit_message_reply_markup(
+                chat_id=self.chat.id,
                 message_id=self.keyboard_message_id[user_id].message_id,
                 reply_markup=[])
         else:
-            bot.send_message(chat_id=update.effective_chat.id, text=text)
+            self.bot.send_message(chat_id=self.chat.id, text=text)
 
         self.current_menu.pop(user_id, None)
         self.keyboard_message_id.pop(user_id, None)

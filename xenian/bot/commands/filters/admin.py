@@ -1,7 +1,7 @@
 from telegram import Chat, Message
 from telegram.ext import BaseFilter
 
-from xenian.bot.settings import ADMINS
+from xenian.bot.models import TgUser
 from xenian.bot.utils.telegram import user_is_admin_of_group
 
 __all__ = ['bot_admin', 'bot_group_admin', 'user_group_admin', 'reply_user_group_admin', 'all_admin_group',
@@ -16,7 +16,7 @@ class AdminFilter:
         def filter(self, message: Message) -> bool:
             """Check if current user is admin of the bot
             """
-            return '@' + message.from_user.username in ADMINS
+            return message.from_user.id in [user.id for user in TgUser.objects(is_bot_admin=True)]
 
     class BotGroupAdmin(BaseFilter):
         def filter(self, message: Message) -> bool:

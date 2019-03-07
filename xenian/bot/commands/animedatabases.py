@@ -11,12 +11,12 @@ from requests.exceptions import MissingSchema
 from telegram import Bot, ChatAction, InputFile, InputMediaPhoto, Update
 from telegram.ext import run_async
 
-from xenian.bot import mongodb_database
 from xenian.bot.commands.animedatabase_utils.base_service import BaseService
 from xenian.bot.commands.animedatabase_utils.danbooru_service import DanbooruService
 from xenian.bot.commands.animedatabase_utils.message_queue import MessageQueue
 from xenian.bot.commands.animedatabase_utils.moebooru_service import MoebooruService
 from xenian.bot.commands.animedatabase_utils.post import Post, PostError
+from xenian.bot.models import AnimeFile
 from xenian.bot.settings import ANIME_SERVICES
 from xenian.bot.utils import CustomNamedTemporaryFile, TelegramProgressBar, download_file_from_url_and_upload
 from xenian.bot.utils.telegram import retry_command
@@ -31,8 +31,6 @@ class AnimeDatabases(BaseCommand):
     group = 'Anime'
 
     def __init__(self):
-        self.files = mongodb_database.files
-
         self.services = {}
         self.init_services()
 
@@ -145,16 +143,15 @@ class AnimeDatabases(BaseCommand):
         Returns:
            ( :obj:`str`): Location of saved file
         """
-        db_entry = self.files.find_one({'file_id': post_id})
-        if db_entry:
-            location = db_entry['location']
-            if os.path.isfile(location):
-                return location
+        file = AnimeFile.objects(file_id=post_id).first()
+        if file:
+            if os.path.isfile(file.location):
+                return file.location
 
             try:
-                response = requests.head(location)
+                response = requests.head(file.location)
                 if response.status_code == 200:
-                    return location
+                    return file.location
             except MissingSchema:
                 # This gets raised when a "location" is a local file but does not exist anymore
                 pass
@@ -163,13 +160,12 @@ class AnimeDatabases(BaseCommand):
             return
 
         downloaded_image_location = download_file_from_url_and_upload(image_url)
-        self.files.update({'file_id': post_id},
-                          {'file_id': post_id, 'location': downloaded_image_location},
-                          upsert=True)
-        return downloaded_image_location
+        new_file = AnimeFile(file_id=str(post_id), location=downloaded_image_location)
+        new_file.save()
+        return new_file.location
 
     @run_async
-    def search(self, bot: Bot, update: Update, service: BaseService, args: list = None):
+    def search(self, service: BaseService, args: list = None):
         """Generic search based on :class:`BaseService`
 
         Args:
@@ -178,7 +174,7 @@ class AnimeDatabases(BaseCommand):
             service (:obj:`BaseService`): Initialized :obj:`BaseService` for the various api calls
             args (:obj:`list`, optional): List of search terms and options
         """
-        message = update.message
+        message = self.message
         text = ' '.join(args)
 
         text, page = self.extract_option_from_string('page', text, int)
@@ -220,7 +216,7 @@ class AnimeDatabases(BaseCommand):
         if not method:
             raise NotImplementedError(f'Search function ({method_name}) for service {service.name} does not exist.')
 
-        method(bot=bot, update=update, service=service, query=query, group_size=group_size, zip_it=zip_it)
+        method(bot=self.bot, update=self.update, service=service, query=query, group_size=group_size, zip_it=zip_it)
 
     @run_async
     @MessageQueue.message_queue_exc_handler('queue')
@@ -231,11 +227,9 @@ class AnimeDatabases(BaseCommand):
                 with open(item.media, 'rb') as file_:
                     item.media = InputFile(file_, attach=True)
 
-        message = update.message
-        bot.send_media_group(
-            chat_id=message.chat_id,
+        self.message.reply_media_group(
             media=group,
-            reply_to_message_id=message.message_id,
+            reply_to_message_id=self.message.message_id,
             disable_notification=True
         )
         for image in group:
@@ -246,23 +240,22 @@ class AnimeDatabases(BaseCommand):
     @retry_command
     def send_image(self, update: Update, image: InputMediaPhoto, queue: MessageQueue):
         file = None
-        message = update.message
         if os.path.isfile(image.media):
             file = open(image.media, mode='rb')
 
         sent_media = None
         if image.media.endswith(('.png', '.jpg')):
-            sent_media = message.reply_photo(
+            sent_media = self.message.reply_photo(
                 photo=file or image.media,
                 caption=image.caption,
                 disable_notification=True,
-                reply_to_message_id=message.message_id,
+                reply_to_message_id=self.message.message_id,
             )
 
         if file:
             file.seek(0)
 
-        message.chat.send_document(
+        self.message.reply_document(
             document=file or image.media,
             disable_notification=True,
             caption=image.caption,
@@ -296,9 +289,9 @@ class AnimeDatabases(BaseCommand):
 
             zip.close()
 
-            update.message.chat.send_document(
+            self.message.reply_document(
                 document=zip_file,
-                reply_to_message_id=update.message.message_id,
+                reply_to_message_id=self.message.message_id,
             )
 
     # Danbooru API commands
@@ -333,21 +326,20 @@ class AnimeDatabases(BaseCommand):
                 https://pybooru.readthedocs.io/en/stable/api_danbooru.html#pybooru.api_danbooru.DanbooruApi_Mixin.post_list
             group_size (:obj:`bool`): If the found items shall be grouped to a media group
         """
-        message = update.message
         posts = service.client.post_list(**query)
 
         if not posts:
-            message.reply_text('Nothing found on page {page}'.format(**query))
+            self.message.reply_text('Nothing found on page {page}'.format(**query))
             return
 
         progress_bar = TelegramProgressBar(
-            bot=bot,
-            chat_id=message.chat_id,
+            bot=self.bot,
+            chat_id=self.chat.id,
             pre_message=('Gathering' if group_size or zip_it else 'Sending') + ' files\n{current} / {total}',
             se_message='This could take some time.'
         )
 
-        message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
+        message_queue = MessageQueue(total=len(posts), message=self.message, group_size=group_size)
 
         parsed_posts = []
         group = []
@@ -367,20 +359,20 @@ class AnimeDatabases(BaseCommand):
                     message_queue.report(PostError(code=PostError.WRONG_FILE_TYPE, post=post))
                     continue
                 if index and index % group_size == 0:
-                    self.send_group(group=group, bot=bot, update=update, queue=message_queue)
+                    self.send_group(group=group, bot=self.bot, update=self.update, queue=message_queue)
                     group = []
                 group.append(post.telegram)
                 continue
 
-            bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.UPLOAD_PHOTO)
-            self.send_image(update=update, image=post.telegram, queue=message_queue)
+            self.bot.send_chat_action(chat_id=self.chat.id, action=ChatAction.UPLOAD_PHOTO)
+            self.send_image(update=self.update, image=post.telegram, queue=message_queue)
 
         if zip_it:
-            self.send_zip(update=update, posts=parsed_posts)
+            self.send_zip(update=self.update, posts=parsed_posts)
             return
 
         if group:
-            self.send_group(group=group, bot=bot, update=update, queue=message_queue)
+            self.send_group(group=group, bot=self.bot, update=self.update, queue=message_queue)
 
     # Moebooru API commands
 
@@ -395,21 +387,20 @@ class AnimeDatabases(BaseCommand):
 
     def moebooru_real_search(self, bot: Bot, update: Update, service: MoebooruService, query: dict,
                              group_size: bool = False, zip_it: bool = False):
-        message = update.message
         posts = service.client.post_list(**query)
 
         if not posts:
-            message.reply_text('Nothing found on page {page}'.format(**query))
+            self.message.reply_text('Nothing found on page {page}'.format(**query))
             return
 
         progress_bar = TelegramProgressBar(
-            bot=bot,
-            chat_id=message.chat_id,
+            bot=self.bot,
+            chat_id=self.chat.id,
             pre_message=('Gathering' if group_size or zip_it else 'Sending') + ' files\n{current} / {total}',
             se_message='This could take some time.'
         )
 
-        message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
+        message_queue = MessageQueue(total=len(posts), message=self.message, group_size=group_size)
 
         group = []
         parsed_posts = []
@@ -425,19 +416,19 @@ class AnimeDatabases(BaseCommand):
                     message_queue.report(PostError(code=PostError.WRONG_FILE_TYPE, post=post))
                     continue
                 if index and index % group_size == 0:
-                    self.send_group(group=group, bot=bot, update=update, queue=message_queue)
+                    self.send_group(group=group, bot=self.bot, update=self.update, queue=message_queue)
                     group = []
                 group.append(post.telegram)
                 continue
             else:
-                self.send_image(update=update, image=post.telegram, queue=message_queue)
+                self.send_image(update=self.update, image=post.telegram, queue=message_queue)
 
         if zip_it:
-            self.send_zip(update=update, posts=parsed_posts)
+            self.send_zip(update=self.update, posts=parsed_posts)
             return
 
         if group:
-            self.send_group(group=group, bot=bot, update=update, queue=message_queue)
+            self.send_group(group=group, bot=self.bot, update=self.update, queue=message_queue)
 
 
 animedatabases = AnimeDatabases()

@@ -2,6 +2,7 @@ from telegram import Bot, Update
 from telegram.ext import CommandHandler, MessageHandler
 from telegram.parsemode import ParseMode
 
+from xenian.bot.models import TgUser
 from xenian.bot.settings import ADMINS, SUPPORTER
 from xenian.bot.utils import data, get_user_link, render_template
 from .base import BaseCommand
@@ -22,7 +23,6 @@ class Builtins(BaseCommand):
             {'command': self.commands, 'description': 'Show all available commands', 'options': {'pass_args': True}},
             {'command_name': 'help', 'alias': 'commands'},
             {'command': self.support, 'description': 'Contact bot maintainer for support of any kind'},
-            {'command': self.register, 'description': 'Register the chat_id for admins and supporters', 'hidden': True},
             {
                 'command': self.contribute,
                 'description': 'Send the supporters and admins a request of any kind',
@@ -44,7 +44,7 @@ class Builtins(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        update.message.reply_text(render_template('start.html.mako'), parse_mode=ParseMode.HTML)
+        self.message.reply_text(render_template('start.html.mako'), parse_mode=ParseMode.HTML)
 
     def commands(self, bot: Bot, update: Update, args: list = None):
         """Generate and show list of available commands
@@ -91,14 +91,14 @@ class Builtins(BaseCommand):
             reply_indirect = render_template('commands_rst_indirect.mako', indirect_commands=indirect_commands)
             print(reply_direct)
             print(reply_indirect)
-            update.message.reply_text(reply_direct)
-            update.message.reply_text(reply_indirect)
+            self.message.reply_text(reply_direct)
+            self.message.reply_text(reply_indirect)
             return
         else:
             reply = render_template('commands.html.mako',
                                     direct_commands=direct_commands,
                                     indirect_commands=indirect_commands)
-        update.message.reply_text(reply, parse_mode=ParseMode.HTML)
+        self.message.reply_text(reply, parse_mode=ParseMode.HTML)
 
     def support(self, bot: Bot, update: Update):
         """Contact bot maintainer for support of any kind
@@ -107,7 +107,7 @@ class Builtins(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        update.message.reply_text(
+        self.message.reply_text(
             'If you need any help do not hesitate to contact me via "/contribute YOUR_MESSAGE", if you have found an '
             'error please use "/error ERROR_DESCRIPTION".\n\nIf you like this bot you can give me rating here: '
             'https://telegram.me/storebot?start=xenianbot'.format(SUPPORTER[0]))
@@ -121,22 +121,22 @@ class Builtins(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        split_text = update.message.text.split(' ', 1)
+        split_text = self.message.text.split(' ', 1)
         if len(split_text) < 2:
-            update.message.reply_text('Please describe your request with "/contribute YOUR_DESCRIPTION"')
+            self.message.reply_text('Please describe your request with "/contribute YOUR_DESCRIPTION"')
             return
 
         text = split_text[1]
         admin_text = 'Contribution form {user}: {text}'.format(
-            user=get_user_link(update.message.from_user),
+            user=get_user_link(self.message.from_user),
             text=text,
             parse_mode=ParseMode.MARKDOWN
         )
 
-        self.write_admins(bot, admin_text)
-        self.write_supporters(bot, admin_text)
+        self.write_admins(self.bot, admin_text)
+        self.write_supporters(self.bot, admin_text)
 
-        update.message.reply_text('I forwarded your request to the admins and supporters.')
+        self.message.reply_text('I forwarded your request to the admins and supporters.')
 
     def error(self, bot: Bot, update: Update):
         """User can use /error to let all supporter / admin know about a bug or something else which has gone wrong
@@ -145,22 +145,22 @@ class Builtins(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        split_text = update.message.text.split(' ', 1)
+        split_text = self.message.text.split(' ', 1)
         if len(split_text) < 2:
-            update.message.reply_text('Please describe your issue with "/error YOUR_DESCRIPTION"')
+            self.message.reply_text('Please describe your issue with "/error YOUR_DESCRIPTION"')
             return
 
         text = split_text[1]
         admin_text = 'Error form {user}: {text}'.format(
-            user=get_user_link(update.message.from_user),
+            user=get_user_link(self.message.from_user),
             text=text,
             parse_mode=ParseMode.MARKDOWN
         )
 
-        self.write_admins(bot, admin_text)
-        self.write_supporters(bot, admin_text)
+        self.write_admins(self.bot, admin_text)
+        self.write_supporters(self.bot, admin_text)
 
-        update.message.reply_text('I forwarded your request to the admins and supporters.')
+        self.message.reply_text('I forwarded your request to the admins and supporters.')
 
     def write_admins(self, bot: Bot, text: str):
         """Send a message to all admins
@@ -169,10 +169,9 @@ class Builtins(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             text (:obj:`str`): Message to tell the admins
         """
-        builtin_data = data.get(self.data_set_name)
-        if builtin_data.get('admin_chat_ids', None):
-            for name in builtin_data['admin_chat_ids']:
-                bot.send_message(chat_id=name, text=text)
+        users = TgUser.objects(is_bot_admin=True)
+        for user in users:
+            self.bot.send_message(chat_id=user.id, text=text)
 
     def write_supporters(self, bot: Bot, text: str):
         """Send a message to all supporters
@@ -181,33 +180,9 @@ class Builtins(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             text (:obj:`str`): Message to tell the supporters
         """
-        builtin_data = data.get(self.data_set_name)
-        if builtin_data.get('supporter_chat_ids', None):
-            for chat_id in builtin_data['supporter_chat_ids']:
-                bot.send_message(chat_id=chat_id, text=text)
-
-    def register(self, bot: Bot, update: Update):
-        """Register the chat_id for admins and supporters
-
-        Args:
-            bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
-            update (:obj:`telegram.update.Update`): Telegram Api Update Object
-        """
-        user = update.message.from_user
-        chat_id = update.message.chat_id
-        builtin_data = data.get(self.data_set_name)
-
-        if '@{}'.format(user.username) in ADMINS:
-            if not builtin_data.get('admin_chat_ids', None):
-                builtin_data['admin_chat_ids'] = {}
-            builtin_data['admin_chat_ids'][chat_id] = user.to_dict()
-
-        if '@{}'.format(user.username) in SUPPORTER:
-            if not builtin_data.get('supporter_chat_ids', None):
-                builtin_data['supporter_chat_ids'] = {}
-            builtin_data['supporter_chat_ids'][chat_id] = user.to_dict()
-
-        data.save(self.data_set_name, builtin_data)
+        users = TgUser.objects(is_bot_supporter=True)
+        for user in users:
+            self.bot.send_message(chat_id=user.id, text=text)
 
 
 builtins = Builtins()

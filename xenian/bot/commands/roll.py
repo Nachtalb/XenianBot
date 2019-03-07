@@ -37,7 +37,7 @@ class Roll(BaseCommand):
         """
         min_ = int(args[0]) if len(args) >= 1 and bool(re.match('^\d+$', args[0])) else 1
         max_ = int(args[1]) if len(args) >= 2 and bool(re.match('^\d+$', args[1])) else 6
-        update.message.reply_text(('{roll:0>' + str(len(str(max_))) + '}').format(roll=randint(min_, max_)))
+        self.message.reply_text(('{roll:0>' + str(len(str(max_))) + '}').format(roll=randint(min_, max_)))
 
 
 roll = Roll()

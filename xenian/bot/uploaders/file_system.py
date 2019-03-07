@@ -52,13 +52,13 @@ class FileSystemUploader(UploaderBase):
             chmod_outcome = 0
         else:
             copy_outcome = subprocess.call(['cp', real_file, save_path])
-            chmod_outcome = subprocess.call(['chmod', '644', save_path])
+            if os.path.isdir(os.path.realpath(save_path)):
+                os.chmod(save_path, 0o0755)
+            else:
+                os.chmod(save_path, 0o0644)
 
         if copy_outcome != 0:
             raise IOError(f'Copying file from {real_file} to {save_path} did not work.')
-
-        if chmod_outcome != 0:
-            warnings.warn(f'Could not set permissions for "{save_path}".')
 
         if remove_after:
             xenian.bot.job_queue.run_once(

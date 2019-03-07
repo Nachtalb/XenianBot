@@ -3,7 +3,7 @@ import io
 import pytesseract
 from PIL import Image
 from pytesseract import TesseractError
-from telegram import Bot, ParseMode, Update
+from telegram import Bot, File, ParseMode, Update
 from telegram.ext import run_async
 
 from xenian.bot.settings import IMAGE_TO_TEXT_LANG
@@ -59,7 +59,7 @@ class ImageToText(BaseCommand):
         for short, name in IMAGE_TO_TEXT_LANG:
             text += '`{}` -> {}\n'.format(short, name)
 
-        update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        self.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
 
     @run_async
     def image_to_text(self, bot: Bot, update: Update):
@@ -69,30 +69,21 @@ class ImageToText(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        reply_to_message = update.message.reply_to_message
-        if not reply_to_message or not reply_to_message.photo:
-            update.message.reply_text('You have to reply to an image.')
+        if not self.message.reply_to_message or not self.message.reply_to_message.photo:
+            self.message.reply_text('You have to reply to an image.')
             return
 
-        lang, text = get_option_from_string('l', update.message.text)
+        lang, text = get_option_from_string('l', self.message.text)
 
-        photo = bot.getFile(reply_to_message.photo[-1].file_id)
-        with io.BytesIO() as image_buffer:
-            photo.download(out=image_buffer)
+        photo = self.bot.getFile(self.message.reply_to_message.photo[-1].file_id)
+        found_text = self.get_text_from_photo(photo, lang)
 
-            pil_image = Image.open(image_buffer)
-            try:
-                text = self.extract_text(pil_image, lang)
-            except TesseractError:
-                update.message.reply_text('Either the given language is not supported or there was another error.\n'
-                                          'See all languages with /itt_lang.')
-
-        if text:
-            reply = '*This text was found:*\n\n{}'.format(text)
+        if found_text:
+            reply = f'*This text was found:*\n\n{found_text}'
         else:
             reply = 'No text was found. Make sure that the text is not rotated and good readable.'
 
-        update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+        self.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
     @run_async
     def image_to_text_translate(self, bot: Bot, update: Update):
@@ -102,36 +93,35 @@ class ImageToText(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        reply_to_message = update.message.reply_to_message
-        if not reply_to_message or not reply_to_message.photo:
-            update.message.reply_text('You have to reply to an image.')
+        if not self.message.reply_to_message or not self.message.reply_to_message.photo:
+            self.message.reply_text('You have to reply to an image.')
             return
 
-        lang_from, text = get_option_from_string('lf', update.message.text)
-        lang_to, text = get_option_from_string('lt', update.message.text)
+        lang_from, text = get_option_from_string('lf', self.message.text)
+        lang_to, text = get_option_from_string('lt', self.message.text)
 
-        photo = bot.getFile(reply_to_message.photo[-1].file_id)
+        photo = self.bot.getFile(self.message.reply_to_message.photo[-1].file_id)
+        found_text = self.get_text_from_photo(photo, lang_from)
+
+        if found_text:
+            translated = translate.translate_text(found_text, lang_to=lang_to)
+            reply = (f'*Found Text:*\n{found_text}\n\n'
+                     f'*Translation:* `{translated.src} -> {translated.dest}` \n\n'
+                     f'{translated.text}')
+        else:
+            reply = 'No text was found. Make sure that the text is not rotated and good readable.'
+
+        self.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+
+    def get_text_from_photo(self, photo: File, language: str) -> str:
         with io.BytesIO() as image_buffer:
             photo.download(out=image_buffer)
 
             pil_image = Image.open(image_buffer)
             try:
-                text = self.extract_text(pil_image, lang_from)
+                return self.extract_text(pil_image, language)
             except TesseractError:
-                update.message.reply_text('Either the given language is not supported or there was another error.\n'
-                                          'See all languages with /itt_lang.')
-
-        if text:
-            translated = translate.translate_text(text, lang_to=lang_to)
-            reply = '*Found Text:*\n{text}\n\n*Translation:* `{direction}` \n\n{translated}'.format(
-                text=translated.orign,
-                direction=f'{translated.src} -> {translated.dest}',
-                translated=translated.text
-            )
-        else:
-            reply = 'No text was found. Make sure that the text is not rotated and good readable.'
-
-        update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+                return ''
 
     def extract_text(self, image: object or Image, lang: str = None) -> str:
         """Extract text from an image

@@ -56,10 +56,10 @@ class ReverseImageSearch(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        if not update.message.reply_to_message:
-            update.message.reply_text('You have to reply to some media file to start the reverse search.')
+        if not self.message.reply_to_message:
+            self.message.reply_text('You have to reply to some media file to start the reverse search.')
             return
-        self.auto_search(bot, update)
+        self.auto_search(self.bot, self.update)
 
     @run_async
     def auto_search(self, bot: Bot, update: Update):
@@ -69,12 +69,12 @@ class ReverseImageSearch(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        message = update.message.reply_text('Please wait for the media file to be processed...')
-        with auto_download(bot, update, convert_video_to_gif=True) as file_path:
+        message = self.message.reply_text('Please wait for the media file to be processed...')
+        with auto_download(self.bot, self.update, convert_video_to_gif=True) as file_path:
             if file_path:
-                self.reverse_image_search(bot, update, file_path, message)
+                self.reverse_image_search(self.bot, self.update, file_path, message)
             else:
-                update.message.reply_text('Something went wrong contact and admin /error <TEXT> or try again later')
+                self.message.reply_text('Something went wrong contact and admin /error <TEXT> or try again later')
 
     def reverse_image_search(self, bot: Bot, update: Update, media_file: str, message: Message = None):
         """Send a reverse image search link for the image sent to us
@@ -99,9 +99,9 @@ class ReverseImageSearch(BaseCommand):
         if os.path.isfile(image_url):
             reply = 'This bot is not configured for this functionality, contact an admin for more information /support.'
             if message:
-                message.edit_text(reply, reply_to_message_id=update.message.message_id)
+                message.edit_text(reply, reply_to_message_id=self.message.message_id)
             else:
-                update.message.reply_text(reply, reply_to_message_id=update.message.message_id)
+                self.message.reply_text(reply, reply_to_message_id=self.message.message_id)
             return
 
         iqdb_url, google_url, tineye_url, bing_url, yandex_url = (
@@ -125,14 +125,14 @@ class ReverseImageSearch(BaseCommand):
         reply = 'Tap on the search engine of your choice.'
         reply_markup = InlineKeyboardMarkup(button_list)
         if message:
-            bot.edit_message_text(
-                chat_id=update.message.chat_id,
+            self.bot.edit_message_text(
+                chat_id=self.message.chat_id,
                 message_id=message.message_id,
                 text=reply,
                 reply_markup=reply_markup
             )
         else:
-            update.message.reply_text(
+            self.message.reply_text(
                 text=reply,
                 reply_markup=reply_markup
             )
