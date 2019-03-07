@@ -4,7 +4,8 @@
     <b>${group_name}</b>
     \n
     % for command in command_list:
-        <code>/${command['command']}
+        /${command['command']}
+        <code>
             % for arg in command['args']:
                 &lt;${arg}&gt;
             % endfor
