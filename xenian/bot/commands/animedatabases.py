@@ -19,7 +19,6 @@ from xenian.bot.commands.animedatabase_utils.moebooru_service import MoebooruSer
 from xenian.bot.commands.animedatabase_utils.post import Post, PostError
 from xenian.bot.settings import ANIME_SERVICES
 from xenian.bot.utils import CustomNamedTemporaryFile, TelegramProgressBar, download_file_from_url_and_upload
-from xenian.bot.utils.telegram import retry_command
 from . import BaseCommand
 
 __all__ = ['animedatabases']
@@ -224,7 +223,6 @@ class AnimeDatabases(BaseCommand):
 
     @run_async
     @MessageQueue.message_queue_exc_handler('queue')
-    @retry_command
     def send_group(self, bot: Bot, update: Update, group: Iterable[InputMediaPhoto], queue: MessageQueue):
         for item in group:
             if os.path.isfile(item.media):
@@ -243,7 +241,6 @@ class AnimeDatabases(BaseCommand):
 
     @run_async
     @MessageQueue.message_queue_exc_handler('queue')
-    @retry_command
     def send_image(self, update: Update, image: InputMediaPhoto, queue: MessageQueue):
         file = None
         message = update.message
@@ -271,7 +268,6 @@ class AnimeDatabases(BaseCommand):
         queue.report()
 
     @run_async
-    @retry_command
     def send_zip(self, update: Update, posts=Iterable[Post]):
         with CustomNamedTemporaryFile(prefix='xenian-', suffix='.zip') as zip_file:
             zip = zipfile.ZipFile(zip_file.name, mode='w')
