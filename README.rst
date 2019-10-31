@@ -1,6 +1,8 @@
 Xenian Bot
 ==========
 
+❗️I won't be working on this repo anymore. It will be replaced with a complete rewrite based on Django to get a better DB implementation and a backend. It will be more stable / faster and easier to use. ATM a beta it out at `@Xenian2Bot <https://t.me/Xenian2Bot>`__, which doesn't have all the features yet. ❗️
+
 `@XenianBot <https://t.me/XenianBot>`__ \|
 `GitHub <https://github.com/Nachtalb/XenianBot>`__
 
