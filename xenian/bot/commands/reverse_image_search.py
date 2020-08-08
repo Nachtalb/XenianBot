@@ -3,6 +3,8 @@ import os
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Message, Update
 from telegram.ext import Filters, run_async
 from telegram.ext.messagehandler import MessageHandler
+from telegram.error import Unauthorized
+from telegram.utils.promise import Promise
 
 from xenian.bot.commands.filters import download_mode_filter
 from xenian.bot.commands.reverse_image_search_engines.bing import BingReverseImageSearchEngine
@@ -69,14 +71,19 @@ class ReverseImageSearch(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        message = update.message.reply_text('Please wait for the media file to be processed...')
+        try:
+            message = update.message.reply_text('Please wait for the media file to be processed...')
+        except Unauthorized:
+            user = update.effective_user
+            print(f'Bot was blocked by {user.username or user.full_name}')
+            return
         with auto_download(bot, update, convert_video_to_gif=True) as file_path:
             if file_path:
                 self.reverse_image_search(bot, update, file_path, message)
             else:
                 update.message.reply_text('Something went wrong contact and admin /error <TEXT> or try again later')
 
-    def reverse_image_search(self, bot: Bot, update: Update, media_file: str, message: Message = None):
+    def reverse_image_search(self, bot: Bot, update: Update, media_file: str, message: Promise = None):
         """Send a reverse image search link for the image sent to us
 
         Args:
@@ -98,6 +105,7 @@ class ReverseImageSearch(BaseCommand):
 
         if os.path.isfile(image_url):
             reply = 'This bot is not configured for this functionality, contact an admin for more information /support.'
+            message = message.result()
             if message:
                 message.edit_text(reply, reply_to_message_id=update.message.message_id)
             else:
@@ -124,6 +132,8 @@ class ReverseImageSearch(BaseCommand):
 
         reply = 'Tap on the search engine of your choice.'
         reply_markup = InlineKeyboardMarkup(button_list)
+
+        message = message.result()
         if message:
             bot.edit_message_text(
                 chat_id=update.message.chat_id,

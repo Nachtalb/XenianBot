@@ -1,8 +1,9 @@
 from typing import Sized
 
 from emoji import emojize
-from telegram import Bot, ParseMode
+from telegram import Bot, ParseMode, Message
 from telegram.error import TimedOut
+from telegram.utils.promise import Promise
 
 __all__ = ['TelegramProgressBar']
 
@@ -43,7 +44,7 @@ class TelegramProgressBar:
             use emojis like so :cake: or :joy:
         items (:obj:`Sized`): A Iterable object which should be iterated over
     """
-    last_message = None
+    _last_message = None
 
     def __init__(self,
                  bot: Bot,
@@ -72,6 +73,16 @@ class TelegramProgressBar:
 
         self.current_step = 0
         self.started = False
+
+    @property
+    def last_message(self) -> Message:
+        if isinstance(self._last_message, Promise):
+            self._last_message = self._last_message.result()
+        return self._last_message
+
+    @last_message.setter
+    def last_message(self, value):
+        self._last_message = value
 
     def __call__(self, items: Sized = None):
         """Iterate over given items or range of total items

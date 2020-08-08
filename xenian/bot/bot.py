@@ -2,9 +2,12 @@ import logging
 import os
 import sys
 from threading import Thread
+from queue import Queue
 
 from telegram import Bot, TelegramError, Update
-from telegram.ext import CommandHandler, Filters, Updater
+from telegram.ext import CommandHandler, Filters, Updater, Dispatcher, JobQueue
+from telegram.ext.messagequeue import queuedmessage, MessageQueue
+from telegram.utils.request import Request
 
 import xenian.bot
 from xenian.bot.utils import get_self
@@ -28,12 +31,39 @@ def error(bot: Bot, update: Update, error: TelegramError):
         bot.send_message(chat_id=update.effective_chat.id, text='Whoops, there was an error. Please try again.')
 
 
-def main():
-    global job_queue
-    updater = Updater(TELEGRAM_API_TOKEN)
-    dispatcher = updater.dispatcher
+class MQBot(Bot):
+    def __init__(self, *args, **kwargs):
+        super(MQBot, self).__init__(*args, **kwargs)
+        self._is_messages_queued_default = True
+        self._msg_queue  = MessageQueue(all_burst_limit=2,
+                                        all_time_limit_ms=1024,
+                                        group_burst_limit=19,
+                                        group_time_limit_ms=6000)
+    def __del__(self):
+        try:
+            self._msg_queue.stop()
+        except:
+            pass
 
-    xenian.bot.job_queue = updater.job_queue
+    @queuedmessage
+    def _message(self, *args, **kwargs):
+        return super(MQBot, self,)._message(*args, **kwargs)
+
+def main():
+    workers = 8
+    con_pool_size = workers + 4
+
+    job_queue = JobQueue()
+
+    request = Request(con_pool_size=con_pool_size)
+    bot = MQBot(token=TELEGRAM_API_TOKEN, request=request)
+    dispatcher = Dispatcher(bot, Queue(),
+                           job_queue=job_queue,
+                           workers=workers)
+    job_queue.set_dispatcher(dispatcher)
+    updater = Updater(dispatcher=dispatcher, workers=None)
+
+    xenian.bot.job_queue = job_queue
 
     def on_start():
         self = get_self(updater.bot)
