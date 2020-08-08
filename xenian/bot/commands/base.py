@@ -8,6 +8,7 @@ from xenian.bot.settings import LOG_LEVEL
 
 __all__ = ['BaseCommand']
 
+COMMAND_LOGGER = logging.getLogger('CommandLogger')
 
 class BaseCommand:
     """Base of any command class
@@ -73,6 +74,20 @@ class BaseCommand:
 
         self.normalize_commands()
 
+    @staticmethod
+    def command_log_wrapper(func):
+        if func.__name__ == 'add_to_database_command':
+            return func
+        def wrapper(*args, **kwargs):
+            update = next(iter([var for var in list(args) + list(kwargs.values()) if isinstance(var, Update)]), None)
+            if update and update.effective_user:
+                user = update.effective_user
+                name = '@' + user.username if user.username else user.full_name
+
+                COMMAND_LOGGER.info(f'Call from "{name}" to "{func.__qualname__}"')
+            return func(*args, **kwargs)
+        return wrapper
+
     def normalize_commands(self):
         """Normalize commands faults, add defaults and add them to :obj:`BaseCommand.all_commands`
         """
@@ -91,7 +106,7 @@ class BaseCommand:
                 'title': command.get('title', None) or command['command'].__name__.capitalize().replace('_', ' '),
                 'description': command.get('description', ''),
                 'command_name': command.get('command_name', command['command'].__name__),
-                'command': command['command'],
+                'command': BaseCommand.command_log_wrapper(command['command']),
                 'handler': command.get('handler', CommandHandler),
                 'options': command.get('options', {}),
                 'hidden': command.get('hidden', False),
