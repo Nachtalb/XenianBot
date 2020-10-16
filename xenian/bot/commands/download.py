@@ -326,9 +326,9 @@ download = Download()
 class VideoDownloader(BaseCommand):
     keyboard_message_id = {}
     """Keyboard message chat id of current download
-    
+
     Key must always be user_id
-    
+
     Examples:
         keyboard_message_id = {
             'some_user': 'message_id'
@@ -337,10 +337,10 @@ class VideoDownloader(BaseCommand):
 
     current_menu = {}
     """Which menu the user is in
-    
+
     Key must always be user_id
     Possible menus: 'format', 'audio', 'video', 'video_quality', 'audio_quality'
-    
+
     Examples:
         current_menu = {
             'some_user': 'video'
@@ -349,7 +349,7 @@ class VideoDownloader(BaseCommand):
 
     video_information = {}
     """Extracted video information
-    
+
     Key must always be user_id
     """
 
