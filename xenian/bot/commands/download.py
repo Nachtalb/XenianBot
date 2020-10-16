@@ -425,7 +425,7 @@ class VideoDownloader(BaseCommand):
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=False,
                 reply_markup=keyboard
-            )
+            ).result()
 
     @run_async
     def download(self, bot: Bot, update: Update):
