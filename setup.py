@@ -36,7 +36,7 @@ setup(name='XenianBot',
           'requests-html',
           'setuptools',
           'urbandictionary',
-          'youtube-dl',
+          'youtube-dlc',
       ],
 
       entry_points={

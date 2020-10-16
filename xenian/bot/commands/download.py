@@ -8,13 +8,13 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from urllib.parse import urldefrag
 from uuid import uuid4
 
-import youtube_dl
+import youtube_dlc
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from telegram import Bot, ChatAction, Document, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, ParseMode, \
     Sticker, Update, Video
 from telegram.error import BadRequest, NetworkError, TimedOut
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, run_async
-from youtube_dl import DownloadError
+from youtube_dlc import DownloadError
 
 from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
@@ -407,7 +407,7 @@ class VideoDownloader(BaseCommand):
         # Remove potential playlist argument from url
         url = re.sub('([&?])list=.*(&|$)', '\g<1>', url)
 
-        with youtube_dl.YoutubeDL({}) as ydl:
+        with youtube_dlc.YoutubeDL({}) as ydl:
             try:
                 info = ydl.extract_info(url, download=False)
             except DownloadError:
@@ -489,7 +489,7 @@ class VideoDownloader(BaseCommand):
             elif data[1] == 'audio':
                 format_id = 'bestaudio'
             elif data[1] == 'video_audio':
-                format_id = None
+                format_id = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'  # best mp4 wiht best m4a
 
         with TemporaryDirectory() as temp_dir:
             download_hook = DownloadHook()
@@ -510,7 +510,7 @@ class VideoDownloader(BaseCommand):
 
             # Remove buttons
             message.edit_text(text=message.text_html, parse_mode=ParseMode.HTML)
-            with youtube_dl.YoutubeDL(options) as ydl:
+            with youtube_dlc.YoutubeDL(options) as ydl:
                 ydl.download([url, ])
 
                 filename = os.listdir(temp_dir)[0]
