@@ -441,6 +441,7 @@ class VideoDownloader(BaseCommand):
         chat_id = update.effective_chat.id
         url = self.video_information[user_id]['webpage_url']
         data = update.callback_query.data.split(' ')
+        message = update.effective_message
 
         class DownloadHook:
             progress_bar = None
@@ -507,6 +508,8 @@ class VideoDownloader(BaseCommand):
                     'preferredquality': '192',
                 }]
 
+            # Remove buttons
+            message.edit_text(text=message.text_html, parse_mode=ParseMode.HTML)
             with youtube_dl.YoutubeDL(options) as ydl:
                 bot.edit_message_reply_markup(
                     chat_id=update.effective_chat.id,
@@ -590,12 +593,10 @@ class VideoDownloader(BaseCommand):
         text = 'Aborted {}'.format(self.video_information[user_id]['title'])
         if update.callback_query:
             update.callback_query.answer(text=text)
-            bot.edit_message_reply_markup(
-                chat_id=update.effective_chat.id,
-                message_id=self.keyboard_message_id[user_id].message_id,
-                reply_markup=[])
-        else:
-            bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+        message = update.effective_message
+        # Remove buttons
+        message.edit_text(text=message.text_html, parse_mode=ParseMode.HMTL)
 
         self.current_menu.pop(user_id, None)
         self.keyboard_message_id.pop(user_id, None)
