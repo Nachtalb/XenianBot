@@ -511,11 +511,6 @@ class VideoDownloader(BaseCommand):
             # Remove buttons
             message.edit_text(text=message.text_html, parse_mode=ParseMode.HTML)
             with youtube_dl.YoutubeDL(options) as ydl:
-                bot.edit_message_reply_markup(
-                    chat_id=update.effective_chat.id,
-                    message_id=self.keyboard_message_id[user_id].message_id,
-                    reply_markup=[])
-
                 ydl.download([url, ])
 
                 filename = os.listdir(temp_dir)[0]
