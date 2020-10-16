@@ -488,16 +488,17 @@ class VideoDownloader(BaseCommand):
             elif data[1] == 'audio':
                 format_id = 'bestaudio'
             elif data[1] == 'video_audio':
-                format_id = 'best'
+                format_id = None
 
         with TemporaryDirectory() as temp_dir:
             download_hook = DownloadHook()
             options = {
-                'format': format_id,
-                'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
+                'outtmpl': os.path.join(temp_dir, '%(title)s-%(id)s.%(ext)s'),
                 'restrictfilenames': True,
                 'progress_hooks': [download_hook.hook],
             }
+            if format_id:
+                options['format'] = format_id
 
             if data[1] == 'audio' and data[2] == 'best':
                 options['postprocessors'] = [{
@@ -634,9 +635,9 @@ class VideoDownloader(BaseCommand):
                     keyboard.append([InlineKeyboardButton('Audio Only', callback_data='audio'), ])
                 if [format_ for format_ in formats.values() if format_['video']]:
                     keyboard.append([InlineKeyboardButton('Video Only', callback_data='video'), ])
-            keyboard.append([InlineKeyboardButton('Video + Audio', callback_data='video_audio'), ])
+            keyboard.append([InlineKeyboardButton('Video + Audio', callback_data='download video_audio best'), ])
 
-        elif keyboard_name in ['video', 'audio', 'video_audio']:
+        elif keyboard_name in ['video', 'audio']:
             name = keyboard_name.title().replace('_', ' + ')
             keyboard = [[
                 InlineKeyboardButton('Best {}'.format(name), callback_data='download {} best'.format(keyboard_name)),
