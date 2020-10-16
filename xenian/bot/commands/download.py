@@ -412,7 +412,7 @@ class VideoDownloader(BaseCommand):
                 info = ydl.extract_info(url, download=False)
             except DownloadError:
                 return
-            info['short_description'] = re.sub(r'\n\s*\n', '\n', info.get('description', ''))
+            info['short_description'] = re.sub(r'\n\s*\n', '\n', (info.get('description', '') or ''))
             self.video_information[user_id] = info
             keyboard = self.get_keyboard('format', info)
 
