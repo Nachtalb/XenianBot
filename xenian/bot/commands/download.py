@@ -415,18 +415,15 @@ class VideoDownloader(BaseCommand):
             keyboard = self.get_keyboard('format', info)
 
             self.current_menu[user_id] = 'format'
-            bot.send_photo(
-                chat_id=chat_id,
-                photo=info['thumbnail']
-            )
             self.keyboard_message_id[user_id] = bot.send_message(
                 chat_id=chat_id,
-                text='{extractor_key:-^20}\n'
+                text='<a href="{webpage_url}">&#8205;</a>'
+                     '{extractor_key:-^20}\n'
                      '<b>{title}</b>\n'
                      '{short_description:.150}...\n'
                      '- {uploader}\n'.format(**info),
                 parse_mode=ParseMode.HTML,
-                disable_web_page_preview=True,
+                disable_web_page_preview=False,
                 reply_markup=keyboard
             )
 
