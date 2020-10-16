@@ -244,3 +244,4 @@ data/
 buildout.cfg
 src/
 .mr.developer.cfg
+.vim
