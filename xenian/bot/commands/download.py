@@ -617,8 +617,8 @@ class VideoDownloader(BaseCommand):
             for format_ in video_information['formats']:
                 formats[format_['format_id']] = {
                     'ext': format_.get('ext', None),
-                    'video': format_['vcodec'] if format_.get('vcodec', None) != 'none' else None,
-                    'audio': format_['acodec'] if format_.get('acodec', None) != 'none' else None,
+                    'video': format_['vcodec'] if format_.get('vcodec', 'none') != 'none' else None,
+                    'audio': format_['acodec'] if format_.get('acodec', 'none') != 'none' else None,
                     'filesize': format_.get('filesize', None),
                     'res':
                         '%sx%s' % (format_['width'], format_['height'])
@@ -636,7 +636,7 @@ class VideoDownloader(BaseCommand):
                     keyboard.append([InlineKeyboardButton('Audio Only', callback_data='audio'), ])
                 if [format_ for format_ in formats.values() if format_['video']]:
                     keyboard.append([InlineKeyboardButton('Video Only', callback_data='video'), ])
-            keyboard.append([InlineKeyboardButton('Video + Audio', callback_data='download video_audio best'), ])
+            keyboard.append([InlineKeyboardButton('Best', callback_data='download video_audio best'), ])
 
         elif keyboard_name in ['video', 'audio']:
             name = keyboard_name.title().replace('_', ' + ')
