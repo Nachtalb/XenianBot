@@ -421,9 +421,8 @@ class VideoDownloader(BaseCommand):
                 chat_id=chat_id,
                 text='<a href="{webpage_url}">&#8205;</a>'
                      '{extractor_key:-^20}\n'
-                     '<b>{title}</b>\n'
-                     '{short_description:.150}...\n'
-                     '- {uploader}\n'.format(**info),
+                     '<b>{uploader} - {title}</b>\n'
+                     '{short_description:.150}...'.format(**info),
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=False,
                 reply_markup=keyboard
@@ -494,7 +493,7 @@ class VideoDownloader(BaseCommand):
         with TemporaryDirectory() as temp_dir:
             download_hook = DownloadHook()
             options = {
-                'outtmpl': os.path.join(temp_dir, '%(title)s-%(id)s.%(ext)s'),
+                'outtmpl': os.path.join(temp_dir, '%(uploader)s - %(title)s [%(id)s].%(ext)s'),
                 'restrictfilenames': True,
                 'progress_hooks': [download_hook.hook],
             }
