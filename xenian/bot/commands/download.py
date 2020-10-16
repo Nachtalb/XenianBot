@@ -5,6 +5,7 @@ import shutil
 from PIL import Image
 from io import BufferedWriter
 from tempfile import NamedTemporaryFile, TemporaryDirectory
+from urllib.parse import urldefrag
 from uuid import uuid4
 
 import youtube_dl
@@ -402,8 +403,9 @@ class VideoDownloader(BaseCommand):
             self.abort(bot, update)
 
         chat_id = update.message.chat_id
-        url = update.message.text
-        url = re.sub('&list.*$', '', url)
+        url = urldefrag(update.message.text).url
+        # Remove potential playlist argument from url
+        url = re.sub('([&?])list=.*(&|$)', '\g<1>', url)
 
         with youtube_dl.YoutubeDL({}) as ydl:
             try:
