@@ -590,7 +590,7 @@ class VideoDownloader(BaseCommand):
 
         message = update.effective_message
         # Remove buttons
-        message.edit_text(text=message.text_html, parse_mode=ParseMode.HMTL)
+        message.edit_text(text=message.text_html, parse_mode=ParseMode.HTML)
 
         self.current_menu.pop(user_id, None)
         self.keyboard_message_id.pop(user_id, None)
