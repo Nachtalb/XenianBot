@@ -20,6 +20,9 @@ from xenian.bot.commands.animedatabase_utils.post import Post, PostError
 from xenian.bot.settings import ANIME_SERVICES
 from xenian.bot.utils import CustomNamedTemporaryFile, TelegramProgressBar, download_file_from_url_and_upload
 from . import BaseCommand
+import logging
+
+logger = logging.getLogger('animedatabases')
 
 __all__ = ['animedatabases']
 
@@ -194,11 +197,23 @@ class AnimeDatabases(BaseCommand):
             terms = text.split(',')
         else:
             terms = text.split(' ')
-        terms = self.filter_terms(terms)
+        #  terms = self.filter_terms(terms)
 
-        actual_tags = [term for term in terms if ':' not in term]  # Qualifiers like "order:score" are not tags
-        if service.count_qualifiers_as_tag:
-            actual_tags = terms
+        numbers = list(filter(str.isdigit, terms))
+        try:
+            page = page or int(numbers[0])
+            limit = limit or int(numbers[1])
+        except (IndexError, KeyError):
+            pass
+        finally:
+            terms = set(terms) - set(numbers)
+
+        actual_tags = terms
+        if not service.count_qualifiers_as_tag:
+            actual_tags = [term for term in terms if ':' not in term]  # Qualifiers like "order:score" are not tags
+
+        logger.info(f'page={page} limit={limit} group_size={group_size} zip_it={zip_it}')
+        logger.info(f'terms={actual_tags}')
 
         if service.tag_limit and len(actual_tags) > service.tag_limit:
             message.reply_text(f'Only {service.tag_limit} tags can be used.', reply_to_message_id=message.message_id)
@@ -305,13 +320,13 @@ class AnimeDatabases(BaseCommand):
 
         image_url = self.get_image(post['id'], image_url) or image_url
 
-        if not image_url and service.session:
-            response = service.session.get(post_url)
-            img_tag = response.html.find('#image-container > img')
+        # if not image_url and service.session:
+        #     response = service.session.get(post_url)
+        #     img_tag = response.html.find('#image-container > img')
 
-            if img_tag:
-                img_tag = img_tag[0]
-                image_url = self.get_image(post['id'], img_tag.attrs['src'])
+        #     if img_tag:
+        #         img_tag = img_tag[0]
+        #         image_url = self.get_image(post['id'], img_tag.attrs['src'])
 
         if not image_url:
             raise PostError(code=PostError.IMAGE_NOT_FOUND, post=Post(post=post, post_url=post_url))
