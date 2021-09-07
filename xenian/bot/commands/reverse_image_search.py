@@ -12,6 +12,8 @@ from xenian.bot.commands.reverse_image_search_engines.google import GoogleRevers
 from xenian.bot.commands.reverse_image_search_engines.iqdb import IQDBReverseImageSearchEngine
 from xenian.bot.commands.reverse_image_search_engines.tineye import TinEyeReverseImageSearchEngine
 from xenian.bot.commands.reverse_image_search_engines.yandex import YandexReverseImageSearchEngine
+from xenian.bot.commands.reverse_image_search_engines.saucenao import SauceNaoReverseImageSearchEngine
+from xenian.bot.commands.reverse_image_search_engines.trace import TraceReverseImageSearchEngine
 from xenian.bot.utils import auto_download
 from . import BaseCommand
 
@@ -96,9 +98,10 @@ class ReverseImageSearch(BaseCommand):
         image_extension = os.path.splitext(media_file)[1]
         image_name = 'irs-' + str(uuid4())[:8]
 
-        iqdb_search, google_search, tineye_search, bing_search, yandex_search = (
+        iqdb_search, google_search, tineye_search, bing_search, yandex_search, saucenao_search, trace_search = (
             IQDBReverseImageSearchEngine(), GoogleReverseImageSearchEngine(), TinEyeReverseImageSearchEngine(),
-            BingReverseImageSearchEngine(), YandexReverseImageSearchEngine()
+            BingReverseImageSearchEngine(), YandexReverseImageSearchEngine(), SauceNaoReverseImageSearchEngine(),
+            TraceReverseImageSearchEngine(),
         )
 
         image_url = iqdb_search.upload_image(media_file, image_name + image_extension, remove_after=3600)
@@ -112,21 +115,25 @@ class ReverseImageSearch(BaseCommand):
                 update.message.reply_text(reply, reply_to_message_id=update.message.message_id)
             return
 
-        iqdb_url, google_url, tineye_url, bing_url, yandex_url = (
+        iqdb_url, google_url, tineye_url, bing_url, yandex_url, saucenao_url, trace_url = (
             iqdb_search.get_search_link_by_url(image_url), google_search.get_search_link_by_url(image_url),
             tineye_search.get_search_link_by_url(image_url), bing_search.get_search_link_by_url(image_url),
-            yandex_search.get_search_link_by_url(image_url)
+            yandex_search.get_search_link_by_url(image_url), saucenao_search.get_search_link_by_url(image_url),
+            trace_search.get_search_link_by_url(image_url),
         )
 
         button_list = [[
             InlineKeyboardButton(text='Go To Image', url=image_url)
         ], [
             InlineKeyboardButton(text='IQDB', url=iqdb_url),
+            InlineKeyboardButton(text='SAUCENAO', url=saucenao_url),
+        ], [
             InlineKeyboardButton(text='GOOGLE', url=google_url),
-        ], [
             InlineKeyboardButton(text='YANDEX', url=yandex_url),
-            InlineKeyboardButton(text='BING', url=bing_url),
         ], [
+            InlineKeyboardButton(text='BING', url=bing_url),
+            InlineKeyboardButton(text='TRACE', url=trace_url),
+        ],[
             InlineKeyboardButton(text='TINEYE', url=tineye_url),
         ]]
 
