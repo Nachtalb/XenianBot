@@ -16,6 +16,25 @@ in Telegram. To see my full capability, send me ``/commands`` and you will see e
 
 If you like this bot you can rate it `here <https://telegram.me/storebot?start=xenianbot>`__.
 
+
+Image Search
+------------
+
+Just send your photos to this bot and start an image reverse search. You can search for images, stickers and videos.
+
+In case you have *Downloade Mode* turned on (for downloading stickers etc.) you can either use ``/search`` on the image or 
+turn *Download Mode* off with ``/download_mode`` (toggles on / off).
+
+Included engines:
+
+- IQDB
+- SauceNAO
+- Google
+- Yandex
+- Bing
+- Trace
+- TinEye
+
 Commands
 --------
 
