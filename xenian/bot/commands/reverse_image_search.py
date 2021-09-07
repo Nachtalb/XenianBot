@@ -79,7 +79,7 @@ class ReverseImageSearch(BaseCommand):
             user = update.effective_user
             print(f'Bot was blocked by {user.username or user.full_name}')
             return
-        with auto_download(bot, update, convert_video_to_gif=True) as file_path:
+        with auto_download(bot, update, first_frame=True) as file_path:
             if file_path:
                 self.reverse_image_search(bot, update, file_path, message)
             else:

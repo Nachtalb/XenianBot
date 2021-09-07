@@ -43,6 +43,22 @@ def video_to_gif_download(bot: Bot, message: Message):
 
 
 @contextmanager
+def first_frame_from_video(bot: Bot, message: Message):
+    with video_download(bot, message) as video_path:
+        with extract_first_frame(video_path) as image_path:
+            yield image_path
+
+
+@contextmanager
+def extract_first_frame(video_path: str):
+    video_clip = VideoFileClip(video_path, audio=False)
+
+    with NamedTemporaryFile(suffix='.jpg') as jpg_file:
+        video_clip.save_frame(jpg_file.name)
+        yield jpg_file.name
+
+
+@contextmanager
 def video_to_gif(video_path: str):
     """Convert a video to a gif
 
@@ -129,7 +145,7 @@ def image_download(bot: Bot, message: Message):
 
 
 @contextmanager
-def auto_download(bot: Bot, update: Update, convert_video_to_gif: bool = False):
+def auto_download(bot: Bot, update: Update, convert_video_to_gif: bool = False, first_frame: bool = False):
     """Auto download the correct file with the given message
 
     How the file to download is chosen:
@@ -168,7 +184,9 @@ def auto_download(bot: Bot, update: Update, convert_video_to_gif: bool = False):
     elif msg.sticker:
         generator = sticker_download
     elif msg.document or msg.video:
-        if convert_video_to_gif:
+        if first_frame:
+            generator = first_frame_from_video
+        elif convert_video_to_gif:
             generator = video_to_gif_download
         else:
             generator = video_download
