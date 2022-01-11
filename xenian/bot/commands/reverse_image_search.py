@@ -115,26 +115,19 @@ class ReverseImageSearch(BaseCommand):
                 update.message.reply_text(reply, reply_to_message_id=update.message.message_id)
             return
 
-        iqdb_url, google_url, tineye_url, bing_url, yandex_url, saucenao_url, trace_url = (
-            iqdb_search.get_search_link_by_url(image_url), google_search.get_search_link_by_url(image_url),
-            tineye_search.get_search_link_by_url(image_url), bing_search.get_search_link_by_url(image_url),
-            yandex_search.get_search_link_by_url(image_url), saucenao_search.get_search_link_by_url(image_url),
-            trace_search.get_search_link_by_url(image_url),
-        )
-
         button_list = [[
             InlineKeyboardButton(text='Go To Image', url=image_url)
         ], [
-            InlineKeyboardButton(text='IQDB', url=iqdb_url),
-            InlineKeyboardButton(text='SAUCENAO', url=saucenao_url),
+            iqdb_search.button(image_url),
+            saucenao_search.button(image_url),
         ], [
-            InlineKeyboardButton(text='GOOGLE', url=google_url),
-            InlineKeyboardButton(text='YANDEX', url=yandex_url),
+            google_search.button(image_url),
+            yandex_search.button(image_url),
         ], [
-            InlineKeyboardButton(text='BING', url=bing_url),
-            InlineKeyboardButton(text='TRACE', url=trace_url),
+            bing_search.button(image_url),
+            trace_search.button(image_url),
         ],[
-            InlineKeyboardButton(text='TINEYE', url=tineye_url),
+            tineye_search.button(image_url),
         ]]
 
         reply = 'Tap on the search engine of your choice.'

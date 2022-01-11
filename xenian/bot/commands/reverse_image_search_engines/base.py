@@ -3,6 +3,7 @@ import os
 from urllib.parse import quote_plus
 
 import requests
+from telegram import InlineKeyboardButton
 
 from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
@@ -38,6 +39,9 @@ class ReverseImageSearchEngine:
         self.url_base = url_base
         self.url_path = url_path
         self.name = name
+
+    def button(self, url):
+        return InlineKeyboardButton(text=self.name.upper(), url=self.get_search_link_by_url(url))
 
     def get_search_link_by_url(self, url) -> str:
         """Get the reverse image search link for the given url

@@ -11,5 +11,5 @@ class SauceNaoReverseImageSearchEngine(ReverseImageSearchEngine):
         super(SauceNaoReverseImageSearchEngine, self).__init__(
             url_base='https://saucenao.com',
             url_path='/search.php?url={image_url}',
-            name='iqdb'
+            name='SauceNao'
         )

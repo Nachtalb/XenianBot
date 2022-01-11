@@ -14,7 +14,7 @@ class Data:
         self.data_dir = os.path.join(dir_path, 'data')
         os.makedirs(self.data_dir, exist_ok=True)
 
-    def save(self, name: str, data: object):
+    def save(self, name: str, data: dict):
         """Save object to json
 
         Args:
@@ -31,7 +31,7 @@ class Data:
         with copen(path, mode='w', encoding='utf-8') as data_file:
             json.dump(data, data_file, ensure_ascii=False, indent=4, sort_keys=True, )
 
-    def get(self, name: object) -> object:
+    def get(self, name: str) -> dict:
         """Get data by name
 
         Args:
