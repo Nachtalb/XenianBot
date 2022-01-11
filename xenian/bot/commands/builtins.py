@@ -196,18 +196,26 @@ class Builtins(BaseCommand):
         user = update.message.from_user
         chat_id = update.message.chat_id
         builtin_data = data.get(self.data_set_name)
+        register_as = ''
 
-        if '@{}'.format(user.username) in ADMINS:
+        if '{}'.format(user.username) in ADMINS:
             if not builtin_data.get('admin_chat_ids', None):
                 builtin_data['admin_chat_ids'] = {}
             builtin_data['admin_chat_ids'][chat_id] = user.to_dict()
+            register_as = 'Admin'
 
-        if '@{}'.format(user.username) in SUPPORTER:
+        if '{}'.format(user.username) in SUPPORTER:
             if not builtin_data.get('supporter_chat_ids', None):
                 builtin_data['supporter_chat_ids'] = {}
             builtin_data['supporter_chat_ids'][chat_id] = user.to_dict()
+            register_as += ' Supporter'
+
+        if not register_as:
+            return
 
         data.save(self.data_set_name, builtin_data)
+
+        update.message.reply_text(f'You have been registered as {register_as.strip()}')
 
 
 builtins = Builtins()
