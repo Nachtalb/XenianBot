@@ -1,31 +1,19 @@
 import os
 from uuid import uuid4
 
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Message, Update
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import Unauthorized
 from telegram.ext import Filters, run_async
 from telegram.ext.messagehandler import MessageHandler
 from telegram.utils.promise import Promise
 from xenian.bot.commands.filters import download_mode_filter
-from xenian.bot.commands.reverse_image_search_engines.bing import (
+from xenian.bot.commands.reverse_image_search_engines import (
     BingReverseImageSearchEngine,
-)
-from xenian.bot.commands.reverse_image_search_engines.google import (
     GoogleReverseImageSearchEngine,
-)
-from xenian.bot.commands.reverse_image_search_engines.iqdb import (
     IQDBReverseImageSearchEngine,
-)
-from xenian.bot.commands.reverse_image_search_engines.saucenao import (
     SauceNaoReverseImageSearchEngine,
-)
-from xenian.bot.commands.reverse_image_search_engines.tineye import (
     TinEyeReverseImageSearchEngine,
-)
-from xenian.bot.commands.reverse_image_search_engines.trace import (
     TraceReverseImageSearchEngine,
-)
-from xenian.bot.commands.reverse_image_search_engines.yandex import (
     YandexReverseImageSearchEngine,
 )
 from xenian.bot.utils import auto_download
@@ -177,7 +165,10 @@ class ReverseImageSearch(BaseCommand):
             ],
         ]
 
-        reply = "Tap on the search engine of your choice."
+        reply = (
+            "Tap on the search engine of your choice. For an even better experience with more search providers and"
+            " in telegram search results use @reverse_image_search_bot."
+        )
         reply_markup = InlineKeyboardMarkup(button_list)
 
         message = message.result()
