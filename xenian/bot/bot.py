@@ -64,7 +64,7 @@ def main():
     bot = MQBot(token=TELEGRAM_API_TOKEN, request=request)
     dispatcher = Dispatcher(bot, Queue(), job_queue=job_queue, workers=workers)
     job_queue.set_dispatcher(dispatcher)
-    updater = Updater(dispatcher=dispatcher)
+    updater = Updater(dispatcher=dispatcher, workers=None)  # type: ignore
 
     xenian.bot.job_queue = job_queue
 
