@@ -12,6 +12,8 @@ services:
     restart: unless-stopped
     networks:
       - app-tier
+    depends_on:
+      - xenian_db
 
   xenian_db:
     container_name: 'xenian_db'
