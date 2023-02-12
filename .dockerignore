@@ -1,0 +1,10 @@
+config
+Dockerfile
+LICENSE
+Session.vim
+*.egg-info
+config
+docker-compose.yml
+requirements.txt
+data
+data_db
