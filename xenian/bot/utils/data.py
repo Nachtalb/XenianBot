@@ -1,6 +1,7 @@
-from codecs import open as copen
 import json
-import os
+from pathlib import Path
+
+from xenian.bot import settings
 
 __all__ = ["data"]
 
@@ -9,9 +10,8 @@ class Data:
     """Class for managing simple persistent data"""
 
     def __init__(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.data_dir = os.path.join(dir_path, "data")
-        os.makedirs(self.data_dir, exist_ok=True)
+        self.data_dir = settings.CONFIG_PATH / "persistent"
+        self.data_dir.mkdir(exist_ok=True)
 
     def save(self, name: str, data: dict):
         """Save object to json
@@ -20,21 +20,20 @@ class Data:
             name (:obj:`str`): Name of data object
             data (:obj:`object`): JSON serializable data object
         """
-        name = os.path.splitext(os.path.basename(name))[0]
-        path = os.path.join(self.data_dir, name + ".json")
+        path = self.data_dir / (Path(name).stem + ".json")
         try:
             data = self.serialize(dict(data))
         except TypeError:
             pass
 
-        with copen(path, mode="w", encoding="utf-8") as data_file:
-            json.dump(
+        path.write_text(
+            json.dumps(
                 data,
-                data_file,
                 ensure_ascii=False,
                 indent=4,
                 sort_keys=True,
             )
+        )
 
     def get(self, name: str) -> dict:
         """Get data by name
@@ -45,20 +44,15 @@ class Data:
         Returns:
             Object saved in the data file
         """
-        name = os.path.splitext(os.path.basename(name))[0]
-        path = os.path.join(self.data_dir, name + ".json")
-        if not os.path.isfile(path):
-            file = copen(path, encoding="utf-8", mode="w")
-            file.close()
+        path = self.data_dir / (Path(name).stem + ".json")
+        if not path.is_file():
+            data = {}
+        else:
+            data = json.loads(path.read_text())
 
-        with copen(path, encoding="utf-8") as data_file:
-            content = data_file.read()
-            content = content or "{}"
-
-            data = json.loads(content)
-            if isinstance(data, dict):
-                data = self.deserialize(data)
-            return data
+        if isinstance(data, dict):
+            data = self.deserialize(data)
+        return data
 
     def serialize(self, data: dict) -> dict:
         """Serialize a dict recursively
