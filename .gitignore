@@ -236,8 +236,6 @@ $RECYCLE.BIN/
 *.lnk
 
 ### Bot
-log/
-tmp/
-data/
-src/
 .vim
+config/
+data/
