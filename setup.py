@@ -37,5 +37,5 @@ setup(
         "idna<3a",
         "python-dotenv==0.21.1",
     ],
-    entry_points={"console_scripts": ["bot = xenian.bot.bot:main"]},
+    entry_points={"console_scripts": ["bot = xenian.bot.cli:main"]},
 )

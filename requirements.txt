@@ -9,6 +9,7 @@ Pillow==9.4.0
 Pybooru==4.2.0
 pymongo==3.11.0
 pytesseract==0.3.10
+python-dotenv==0.21.1
 python-telegram-bot==12.8
 requests-html==0.10.0
 urbandictionary==1.1
