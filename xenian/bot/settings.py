@@ -23,8 +23,6 @@ if not config_file.exists():
 config = json.loads(config_file.read_text())
 
 
-BASE_DIR = Path(__file__) / "commands/templates"
-
 TELEGRAM_API_TOKEN = config["bot_token"]
 
 ANIME_SERVICES = config["anime_services"]
@@ -33,7 +31,7 @@ ADMINS = config["admins"]
 
 SUPPORTER = config["supporters"]
 
-TEMPLATE_DIR = config["template_dir"].format(BASE_DIR=str(BASE_DIR))
+TEMPLATE_DIR = config["template_dir"].format(BASE_DIR=Path(__file__).parent.parent.parent)
 
 # More information about polling and webhooks can be found here:
 # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Webhooks
