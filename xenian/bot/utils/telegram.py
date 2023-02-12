@@ -2,11 +2,11 @@ from functools import wraps
 from typing import Callable
 
 from telegram import Bot, Update, User
-from telegram.error import TimedOut, NetworkError
+from telegram.error import NetworkError, TimedOut
 
 from . import MWT
 
-__all__ = ['get_self', 'get_user_link', 'get_option_from_string', 'user_is_admin_of_group']
+__all__ = ["get_self", "get_user_link", "get_option_from_string", "user_is_admin_of_group"]
 
 
 @MWT(timeout=60 * 60)
@@ -19,7 +19,7 @@ def get_self(bot: Bot) -> User:
     Returns:
         :obj:`User`: The user object of this bot
     """
-    return bot.get_me()
+    return bot.get_me()  # type: ignore
 
 
 def get_user_link(user: User) -> str:
@@ -34,9 +34,9 @@ def get_user_link(user: User) -> str:
         :obj:`str`: The link to a user
     """
     if user.username:
-        return '@{}'.format(user.username)
+        return "@{}".format(user.username)
     else:
-        return '[{}](tg://user?id={})'.format(user.first_name, user.id)
+        return "[{}](tg://user?id={})".format(user.first_name, user.id)
 
 
 def get_option_from_string(option_short: str, string: str) -> tuple:
@@ -60,15 +60,15 @@ def get_option_from_string(option_short: str, string: str) -> tuple:
     Returns:
         :obj:`tuple`: A Tuple of the found option and the string without the option or a tuple of two None's
     """
-    splitted_text = string.split(' ')
-    option_short = option_short if option_short.startswith('-') else '-' + option_short
+    splitted_text = string.split(" ")
+    option_short = option_short if option_short.startswith("-") else "-" + option_short
     if option_short in splitted_text:
         in_list_position = splitted_text.index(option_short)
         if len(splitted_text) > in_list_position + 1:
             option = splitted_text[in_list_position + 1]
             for index in range(2):
                 del splitted_text[in_list_position]
-            string = ' '.join(splitted_text)
+            string = " ".join(splitted_text)
             return option, string
     return None, None
 

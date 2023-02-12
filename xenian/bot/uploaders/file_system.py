@@ -4,16 +4,16 @@ import warnings
 
 import xenian.bot
 from xenian.bot.utils.temp_file import CustomNamedTemporaryFile
+
 from .base import UploaderBase
 
 
 class FileSystemUploader(UploaderBase):
-    """Save files on file system
-    """
+    """Save files on file system"""
 
-    _mandatory_configuration = {'path': str}
+    _mandatory_configuration = {"path": str}
 
-    def upload(self, file, filename: str = None, save_path: str = None, remove_after: int = None):
+    def upload(self, file, filename: str | None = None, save_path: str = None, remove_after: int = None):
         """Upload file to the ssh server
 
         Args:
@@ -25,10 +25,10 @@ class FileSystemUploader(UploaderBase):
             remove_after (:obj:`int`, optional): After how much time to remove the file in sec.
                 Defaults to None (do not remove)
         """
-        is_file_object = bool(getattr(file, 'read', False))
+        is_file_object = bool(getattr(file, "read", False))
         if is_file_object:
             if filename is None:
-                raise ValueError('filename must be set when file is a file like object')
+                raise ValueError("filename must be set when file is a file like object")
             with CustomNamedTemporaryFile(delete=False) as new_file:
                 file.seek(0)
                 new_file.write(file.read())
@@ -40,22 +40,21 @@ class FileSystemUploader(UploaderBase):
             real_file = file
             filename = filename or os.path.basename(real_file)
 
-        save_dir = os.path.join(self.configuration['path'], save_path) if save_path else \
-            self.configuration['path']
+        save_dir = os.path.join(self.configuration["path"], save_path) if save_path else self.configuration["path"]
         save_path = os.path.join(save_dir, filename)
         os.makedirs(save_dir, exist_ok=True)
 
         save_path = os.path.realpath(save_path)
         real_file = os.path.realpath(real_file)
-        if os.name == 'nt':
-            copy_outcome = subprocess.call(['copy', real_file, save_path], shell=True)
+        if os.name == "nt":
+            copy_outcome = subprocess.call(["copy", real_file, save_path], shell=True)
             chmod_outcome = 0
         else:
-            copy_outcome = subprocess.call(['cp', real_file, save_path])
-            chmod_outcome = subprocess.call(['chmod', '644', save_path])
+            copy_outcome = subprocess.call(["cp", real_file, save_path])
+            chmod_outcome = subprocess.call(["chmod", "644", save_path])
 
         if copy_outcome != 0:
-            raise IOError(f'Copying file from {real_file} to {save_path} did not work.')
+            raise IOError(f"Copying file from {real_file} to {save_path} did not work.")
 
         if chmod_outcome != 0:
             warnings.warn(f'Could not set permissions for "{save_path}".')
@@ -64,7 +63,8 @@ class FileSystemUploader(UploaderBase):
             xenian.bot.job_queue.run_once(
                 callback=lambda bot, job: self.remove(save_path, True),
                 when=remove_after,
-                name='Remove file locally: {}'.format(save_path))
+                name="Remove file locally: {}".format(save_path),
+            )
 
         if is_file_object:
             os.unlink(real_file)

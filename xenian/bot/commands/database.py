@@ -1,11 +1,12 @@
 from pymongo import MongoClient
 from telegram import Bot, Chat, Message, Update, User
-from telegram.ext import MessageHandler, run_async, Handler, Filters
+from telegram.ext import Filters, Handler, MessageHandler, run_async
 
 from xenian.bot import mongodb_database
+
 from .base import BaseCommand
 
-__all__ = ['database']
+__all__ = ["database"]
 
 
 class Database(BaseCommand):
@@ -15,17 +16,17 @@ class Database(BaseCommand):
         users (:obj:`pymongo.collection.Collection`): Connection to the pymongo databased
     """
 
-    name = 'Bot Helpers'
+    name = "Bot Helpers"
 
     def __init__(self):
         self.commands = [
             {
-                'command': self.add_to_database_command,
-                'title': 'Add to Database',
-                'description': 'Adds user, message and chat to database',
-                'handler': MessageHandler,
-                'group': 1,
-                'hidden': True,
+                "command": self.add_to_database_command,
+                "title": "Add to Database",
+                "description": "Adds user, message and chat to database",
+                "handler": MessageHandler,
+                "group": 1,
+                "hidden": True,
             },
         ]
 
@@ -43,9 +44,12 @@ class Database(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
-        self.upsert_chat(update.effective_chat)
-        self.upsert_message(update.effective_message)
-        self.upsert_user(update.effective_user)
+        if update.effective_chat:
+            self.upsert_chat(update.effective_chat)
+        if update.effective_message:
+            self.upsert_message(update.effective_message)
+        if update.effective_user:
+            self.upsert_user(update.effective_user)
 
     def upsert_user(self, user: User):
         """Insert or if existing update user
@@ -53,7 +57,7 @@ class Database(BaseCommand):
         Args:
             user (:obj:`telegram.user.User`): Telegram Api User Object
         """
-        self.users.update({'id': user.id}, user.to_dict(), upsert=True)
+        self.users.update({"id": user.id}, user.to_dict(), upsert=True)
 
     def upsert_message(self, message: Message):
         """Insert or if existing update message
@@ -61,7 +65,7 @@ class Database(BaseCommand):
         Args:
             message (:obj:`telegram.message.Message`): Telegram Api Message Object
         """
-        self.messages.update({'message_id': message.message_id}, message.to_dict(), upsert=True)
+        self.messages.update({"message_id": message.message_id}, message.to_dict(), upsert=True)
 
     def upsert_chat(self, chat: Chat):
         """Insert or if existing update chat
@@ -69,7 +73,7 @@ class Database(BaseCommand):
         Args:
             chat (:obj:`telegram.chat.Chat`): Telegram Api Chat Object
         """
-        self.chats.update({'id': chat.id}, chat.to_dict(), upsert=True)
+        self.chats.update({"id": chat.id}, chat.to_dict(), upsert=True)
 
 
 database = Database()

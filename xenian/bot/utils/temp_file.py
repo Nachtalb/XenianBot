@@ -1,14 +1,15 @@
+from contextlib import contextmanager
 import io
 import os
-from contextlib import contextmanager
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 from types import MethodType
+from typing import Generator
 
-__all__ = ['CustomNamedTemporaryFile', 'save_file']
+__all__ = ["CustomNamedTemporaryFile", "save_file"]
 
 
 @contextmanager
-def CustomNamedTemporaryFile(delete=True, close=None, *args, **kwargs) -> _TemporaryFileWrapper:
+def CustomNamedTemporaryFile(delete=True, close=None, *args, **kwargs) -> Generator[_TemporaryFileWrapper, None, None]:
     """A custom ``tempfile.NamedTemporaryFile`` to enable the following points
 
     - Save without closing the file

@@ -4,7 +4,7 @@ from requests_html import HTMLSession
 
 from xenian.bot.commands.animedatabase_utils.base_service import BaseService
 
-SITE_LIST['safebooru'] = {'url': 'https://safebooru.donmai.us'}
+SITE_LIST["safebooru"] = {"url": "https://safebooru.donmai.us"}
 
 
 class DanbooruService(BaseService):
@@ -17,7 +17,7 @@ class DanbooruService(BaseService):
     ADMIN = 50
 
     LEVEL_RESTRICTIONS = {
-        'tag_limit': {
+        "tag_limit": {
             FREE_LEVEL: 2,
             GOLD_LEVEL: 6,
             PLATINUM_LEVEL: 12,
@@ -26,7 +26,7 @@ class DanbooruService(BaseService):
             MODERATOR: 40,
             ADMIN: 50,
         },
-        'censored_tags': {
+        "censored_tags": {
             FREE_LEVEL: True,
             GOLD_LEVEL: False,
             PLATINUM_LEVEL: False,
@@ -34,12 +34,14 @@ class DanbooruService(BaseService):
             JANITOR: False,
             MODERATOR: False,
             ADMIN: False,
-        }
+        },
     }
 
-    type = 'danbooru'
+    type = "danbooru"
 
-    def __init__(self, name: str, url: str, api: str = None, username: str = None, password: str = None) -> None:
+    def __init__(
+        self, name: str, url: str, api: str | None = None, username: str | None = None, password: str | None = None
+    ) -> None:
         super(DanbooruService, self).__init__(name=name, url=url, api=api, username=username, password=password)
         self.user_level = None
 
@@ -49,36 +51,36 @@ class DanbooruService(BaseService):
     def init_client(self):
         if self.api:
             if not self.username:
-                raise ValueError('Danbooru API Services need a Username when API key is given.')
+                raise ValueError("Danbooru API Services need a Username when API key is given.")
             self.client = PyDanbooru(site_name=self.name, site_url=self.url, api_key=self.api, username=self.username)
         else:
             self.client = PyDanbooru(site_name=self.name, site_url=self.url)
 
         self.user_level = self.get_user_level()
-        self.tag_limit = self.LEVEL_RESTRICTIONS['tag_limit'][self.user_level]
-        self.censored_tags = self.LEVEL_RESTRICTIONS['censored_tags'][self.user_level]
+        self.tag_limit = self.LEVEL_RESTRICTIONS["tag_limit"][self.user_level]
+        self.censored_tags = self.LEVEL_RESTRICTIONS["censored_tags"][self.user_level]
 
         if not self.url:
-            self.url = self.client.site_url.lstrip('/')
+            self.url = self.client.site_url.lstrip("/")
 
     def init_session(self):
         if self.username and self.password and self.url:
             self.session = HTMLSession()
             login_page = self.session.get(f'{self.url.lstrip("/")}/session/new')
             try:
-                form = login_page.html.find('.simple_form')[0]
+                form = login_page.html.find(".simple_form")[0]  # type: ignore
             except Exception as err:
-                __import__('pdb').set_trace()
+                __import__("pdb").set_trace()
                 raise err
 
             login_data = {
-                'name': self.username,
-                'password': self.password,
-                'remember': '1',
+                "name": self.username,
+                "password": self.password,
+                "remember": "1",
             }
-            for input in form.find('input'):
-                value = input.attrs.get('value', None)
-                name = input.attrs.get('name', None)
+            for input in form.find("input"):
+                value = input.attrs.get("value", None)
+                name = input.attrs.get("name", None)
                 if name:
                     login_data.setdefault(name, value)
 
@@ -88,5 +90,5 @@ class DanbooruService(BaseService):
         user_level = 20
         if self.username:
             user = self.client.user_list(name_matches=self.client.username)
-            user_level = user[0]['level']
+            user_level = user[0]["level"]
         return user_level

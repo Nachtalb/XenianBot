@@ -1,14 +1,15 @@
-import logging
 from copy import deepcopy
+import logging
 
 from telegram import Bot, Update
 from telegram.ext import CallbackQueryHandler, CommandHandler, Filters, MessageHandler
 
 from xenian.bot.settings import LOG_LEVEL
 
-__all__ = ['BaseCommand']
+__all__ = ["BaseCommand"]
 
-COMMAND_LOGGER = logging.getLogger('CommandLogger')
+COMMAND_LOGGER = logging.getLogger("CommandLogger")
+
 
 class BaseCommand:
     """Base of any command class
@@ -60,9 +61,10 @@ class BaseCommand:
             - group (:class:`int`): Which handler group the command should be in
         group (:class:`str`): The group name shown in the /commands message
     """
+
     all_commands = []
     commands = []
-    group = 'Base Group'
+    group = "Base Group"
 
     def __init__(self):
         """Initialize the command class
@@ -76,80 +78,86 @@ class BaseCommand:
 
     @staticmethod
     def command_log_wrapper(func):
-        if func.__name__ == 'add_to_database_command':
+        if func.__name__ == "add_to_database_command":
             return func
+
         def wrapper(*args, **kwargs):
             update = next(iter([var for var in list(args) + list(kwargs.values()) if isinstance(var, Update)]), None)
             if update and update.effective_user:
                 user = update.effective_user
-                name = '@' + user.username if user.username else user.full_name
+                name = "@" + user.username if user.username else user.full_name
 
                 COMMAND_LOGGER.info(f'Call from "{name}" to "{func.__qualname__}"')
             return func(*args, **kwargs)
+
         return wrapper
 
     def normalize_commands(self):
-        """Normalize commands faults, add defaults and add them to :obj:`BaseCommand.all_commands`
-        """
+        """Normalize commands faults, add defaults and add them to :obj:`BaseCommand.all_commands`"""
         updated_commands = []
         alias_commands = []
         for command in self.commands:
-            if isinstance(command.get('alias', None), str):
+            if isinstance(command.get("alias", None), str):
                 alias_commands.append(command)
                 continue
-            if command['command'].__name__ == '<lambda>' and (not command.get('command_name') and
-                                                              not command.get('handler') == CallbackQueryHandler):
-                raise ValueError('If "command_wrapper" is used a "command_name" has to be defined or the handler must '
-                                 'be an CallbackQueryHandeler!')
+            if command["command"].__name__ == "<lambda>" and (
+                not command.get("command_name") and not command.get("handler") == CallbackQueryHandler
+            ):
+                raise ValueError(
+                    'If "command_wrapper" is used a "command_name" has to be defined or the handler must '
+                    "be an CallbackQueryHandeler!"
+                )
 
             command = {
-                'title': command.get('title', None) or command['command'].__name__.capitalize().replace('_', ' '),
-                'description': command.get('description', ''),
-                'command_name': command.get('command_name', command['command'].__name__),
-                'command': BaseCommand.command_log_wrapper(command['command']),
-                'handler': command.get('handler', CommandHandler),
-                'options': command.get('options', {}),
-                'hidden': command.get('hidden', False),
-                'args': command.get('args', []),
-                'group': command.get('group', 0)
+                "title": command.get("title", None) or command["command"].__name__.capitalize().replace("_", " "),
+                "description": command.get("description", ""),
+                "command_name": command.get("command_name", command["command"].__name__),
+                "command": BaseCommand.command_log_wrapper(command["command"]),
+                "handler": command.get("handler", CommandHandler),
+                "options": command.get("options", {}),
+                "hidden": command.get("hidden", False),
+                "args": command.get("args", []),
+                "group": command.get("group", 0),
             }
 
-            if command['handler'] == CommandHandler and command['options'].get('command', None) is None:
-                command['options']['command'] = command['command_name']
+            if command["handler"] == CommandHandler and command["options"].get("command", None) is None:
+                command["options"]["command"] = command["command_name"]
 
-            if command['handler'] == MessageHandler and command['options'].get('filters', None) is None:
-                command['options']['filters'] = Filters.all
+            if command["handler"] == MessageHandler and command["options"].get("filters", None) is None:
+                command["options"]["filters"] = Filters.all
 
             # Set CallbackQueryHandler options if not yet set
-            if command['options'].get('callback', None) is None:
-                command['options']['callback'] = command['command']
+            if command["options"].get("callback", None) is None:
+                command["options"]["callback"] = command["command"]
 
             updated_commands.append(command)
 
         self.commands = updated_commands
 
         for alias_command in alias_commands:
-            alias_name = alias_command['alias']
+            alias_name = alias_command["alias"]
 
             real_command = self.get_command_by_name(alias_name)
             if not real_command:
                 continue
 
             new_command = deepcopy(real_command)
-            new_command['options']['command'] = alias_command['command_name']
+            new_command["options"]["command"] = alias_command["command_name"]
             for key, value in alias_command.items():
-                if key in ['title', 'description', 'hidden', 'group', 'command_name']:
+                if key in ["title", "description", "hidden", "group", "command_name"]:
                     new_command[key] = value
 
             updated_commands.append(new_command)
 
         for command in updated_commands:
             try:
-                int(command['group'])
+                int(command["group"])
             except ValueError:
-                raise ValueError('Command group has to be an integer: command {}, given group {}'.format(
-                    command['command_name'], command['group']
-                ))
+                raise ValueError(
+                    "Command group has to be an integer: command {}, given group {}".format(
+                        command["command_name"], command["group"]
+                    )
+                )
 
         self.commands = updated_commands
 
@@ -162,7 +170,7 @@ class BaseCommand:
         Returns:
             (:obj:`dict` | :obj:`None`): The found command or :obj:`None` if no command was found
         """
-        commands_found = list(filter(lambda command: command['command_name'] == name, self.commands))
+        commands_found = list(filter(lambda command: command["command_name"] == name, self.commands))
         return commands_found[0] if commands_found else None
 
     def command_wrapper(self, method: callable, *args, **kwargs):
@@ -178,5 +186,6 @@ class BaseCommand:
             **kwargs (:obj:`dict`, optional): Unused keyword arguments but preserved for compatibility
         """
         if LOG_LEVEL <= logging.DEBUG:
-            update.message.reply_text('This command was not implemented by the admin.',
-                                      reply_to_message_id=update.message.message_id)
+            update.message.reply_text(
+                "This command was not implemented by the admin.", reply_to_message_id=update.message.message_id
+            )

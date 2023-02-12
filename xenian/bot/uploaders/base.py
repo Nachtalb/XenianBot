@@ -29,13 +29,11 @@ class UploaderBase:
             self.connect()
 
     def connect(self):
-        """Connect to the server defined in the configuration
-        """
+        """Connect to the server defined in the configuration"""
         pass
 
     def close(self):
-        """Close connection to the server
-        """
+        """Close connection to the server"""
         pass
 
     def upload(self, file, remove_after: int):

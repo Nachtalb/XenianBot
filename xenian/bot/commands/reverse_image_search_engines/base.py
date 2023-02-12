@@ -8,7 +8,7 @@ from telegram import InlineKeyboardButton
 from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
 
-__all__ = ['ReverseImageSearchEngine']
+__all__ = ["ReverseImageSearchEngine"]
 
 
 class ReverseImageSearchEngine:
@@ -29,13 +29,14 @@ class ReverseImageSearchEngine:
             `/searchbyimage?&image_url={image_url}`
         name (:obj:`str`, optional): Give the Search engine a name if you want
     """
-    name = 'Base Reverse Image Search Engine'
+
+    name = "Base Reverse Image Search Engine"
     logger = logging.getLogger(__name__)
 
     search_html = None
     search_url = None
 
-    def __init__(self, url_base, url_path, name=None):
+    def __init__(self, url_base, url_path, name: str = ""):
         self.url_base = url_base
         self.url_path = url_path
         self.name = name
@@ -53,7 +54,7 @@ class ReverseImageSearchEngine:
             :obj:`str`: Generated reverse image search engine for the given image
         """
         self.search_url = url
-        self.search_html = ''
+        self.search_html = ""
         return self.url_base + self.url_path.format(image_url=quote_plus(url))
 
     def get_search_link_by_file(self, file_) -> str:
@@ -67,7 +68,7 @@ class ReverseImageSearchEngine:
         """
         return self.get_search_link_by_url(self.upload_image(file_))
 
-    def upload_image(self, image_file, file_name: str = None, remove_after: int=None) -> str:
+    def upload_image(self, image_file, file_name: str | None = None, remove_after: int | None = None) -> str:
         """Upload the given image to the in the settings specified place.
 
         Args:
@@ -82,7 +83,7 @@ class ReverseImageSearchEngine:
         """
         if not file_name:
             if not isinstance(image_file, str):
-                error_message = 'When image_file is a file like object the file_name must be set.'
+                error_message = "When image_file is a file like object the file_name must be set."
                 self.logger.warning(error_message)
                 raise ValueError(error_message)
             file_name = os.path.basename(image_file)
@@ -91,7 +92,7 @@ class ReverseImageSearchEngine:
         uploader.upload(image_file, file_name, remove_after=remove_after)
         uploader.close()
 
-        path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
+        path = UPLOADER.get("url", None) or UPLOADER["configuration"].get("path", None) or ""
         return os.path.join(path, file_name)
 
     def get_html(self, url=None) -> str:
@@ -108,7 +109,7 @@ class ReverseImageSearchEngine:
         """
         if not url:
             if not self.search_url:
-                raise ValueError('No url defined and no last_searched_url available!')
+                raise ValueError("No url defined and no last_searched_url available!")
             url = self.search_url
         if url == self.search_url and self.search_html:
             return self.search_html

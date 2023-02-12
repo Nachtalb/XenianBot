@@ -6,10 +6,10 @@ from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
 from xenian.bot.utils.temp_file import CustomNamedTemporaryFile
 
-__all__ = ['download_file_from_url', 'download_file_from_url_and_upload', 'upload_image']
+__all__ = ["download_file_from_url", "download_file_from_url_and_upload", "upload_image"]
 
 
-def upload_image(image_file, target_file_name: str = None, remove_after: int = None) -> str:
+def upload_image(image_file, target_file_name: str | None = None, remove_after: int | None = None) -> str:
     """Upload the given image to the in the settings specified place.
 
     Args:
@@ -24,7 +24,7 @@ def upload_image(image_file, target_file_name: str = None, remove_after: int = N
     """
     if not target_file_name:
         if not isinstance(image_file, str):
-            error_message = 'When image_file is a file like object the file_name must be set.'
+            error_message = "When image_file is a file like object the file_name must be set."
             raise ValueError(error_message)
         target_file_name = os.path.basename(image_file)
 
@@ -32,7 +32,7 @@ def upload_image(image_file, target_file_name: str = None, remove_after: int = N
     uploader.upload(image_file, target_file_name, remove_after=remove_after)
     uploader.close()
 
-    path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
+    path = UPLOADER.get("url", None) or UPLOADER["configuration"].get("path", None) or ""
     return os.path.join(path, target_file_name)
 
 
@@ -46,14 +46,16 @@ def download_file_from_url(url: str) -> str:
         (:obj:`str`): Path to the download file.
 
     """
-    with CustomNamedTemporaryFile(delete=False, mode='wb') as file_:
+    with CustomNamedTemporaryFile(delete=False, mode="wb") as file_:
         response = requests.get(url, allow_redirects=True)
         file_.write(response.content)
         file_.close()
         return file_.name
 
 
-def download_file_from_url_and_upload(url: str, target_file_name: str = None, remove_after: int = None) -> str:
+def download_file_from_url_and_upload(
+    url: str, target_file_name: str | None = None, remove_after: int | None = None
+) -> str:
     """Download a file from an url
 
     Args:
@@ -65,7 +67,7 @@ def download_file_from_url_and_upload(url: str, target_file_name: str = None, re
         (:obj:`str`): Path to the download file.
 
     """
-    url = url.rstrip('/')
+    url = url.rstrip("/")
     if not target_file_name:
         target_file_name = os.path.basename(url)
 

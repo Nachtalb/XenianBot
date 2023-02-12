@@ -3,7 +3,7 @@ from telegram.ext import BaseFilter
 
 from xenian.bot import mongodb_database
 
-__all__ = ['anime_save_mode']
+__all__ = ["anime_save_mode"]
 
 
 class AnimeSaveModeFilter(BaseFilter):
@@ -24,8 +24,8 @@ class AnimeSaveModeFilter(BaseFilter):
         Returns:
             :obj:`bool`
         """
-        data = self.gif_save_mode.find_one({'chat_id': message.chat_id})
-        return data['mode'] if data else False
+        data = self.gif_save_mode.find_one({"chat_id": message.chat_id})
+        return data["mode"] if data else False
 
 
 anime_save_mode = AnimeSaveModeFilter()

@@ -1,9 +1,9 @@
-from telegram import Message, Chat
+from telegram import Chat, Message
 from telegram.ext import BaseFilter
 
 from xenian.bot import mongodb_database
 
-__all__ = ['custom_db_save_mode']
+__all__ = ["custom_db_save_mode"]
 
 
 class CustomDBSaveModeFilter(BaseFilter):
@@ -24,8 +24,8 @@ class CustomDBSaveModeFilter(BaseFilter):
         Returns:
             :obj:`bool`
         """
-        data = self.custom_db_save_mode.find_one({'chat_id': message.chat.id})
-        return data['mode'] if data else False
+        data = self.custom_db_save_mode.find_one({"chat_id": message.chat.id})
+        return data["mode"] if data else False
 
 
 custom_db_save_mode = CustomDBSaveModeFilter()

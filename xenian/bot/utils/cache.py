@@ -1,6 +1,6 @@
 import time
 
-__all__ = ['MWT']
+__all__ = ["MWT"]
 
 
 class MWT(object):
@@ -8,6 +8,7 @@ class MWT(object):
 
     Copied from: http://code.activestate.com/recipes/325905-memoize-decorator-with-timeout/#c1
     """
+
     _caches = {}
     _timeouts = {}
 

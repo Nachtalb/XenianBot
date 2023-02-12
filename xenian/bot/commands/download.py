@@ -1,75 +1,87 @@
+from io import BufferedWriter
 import os
 import re
 import shutil
-
-from PIL import Image
-from io import BufferedWriter
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from urllib.parse import urldefrag
 from uuid import uuid4
 
-import youtube_dlc
+from PIL import Image
 from moviepy.video.io.VideoFileClip import VideoFileClip
-from telegram import Bot, ChatAction, Document, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, ParseMode, \
-    Sticker, Update, Video
+from telegram import (
+    Bot,
+    ChatAction,
+    Document,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    MessageEntity,
+    ParseMode,
+    Sticker,
+    Update,
+    Video,
+)
 from telegram.error import BadRequest, NetworkError, TimedOut
 from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, run_async
-from youtube_dlc import DownloadError
+import yt_dlp
+from yt_dlp import DownloadError
 
 from xenian.bot.settings import UPLOADER
 from xenian.bot.uploaders import uploader
 from xenian.bot.utils import CustomNamedTemporaryFile, TelegramProgressBar, save_file
+
 from . import BaseCommand
 from .filters.download_mode import download_mode_filter
 
-__all__ = ['download', 'video_downloader']
+__all__ = ["download", "video_downloader"]
 
 
 class Download(BaseCommand):
-    group = 'Download'
+    group = "Download"
     ram_db = {}
 
     def __init__(self):
         self.commands = [
             {
-                'title': 'Toggle Download Mode on / off',
-                'description': 'If on download stickers and gifs sent to the bot of off reverse search is reactivated. '
-                               'Does not work in groups',
-                'command_name': 'download_mode',
-                'command': self.toggle_download_mode,
-                'options': {'filters': ~ Filters.group}
+                "title": "Toggle Download Mode on / off",
+                "description": (
+                    "If on download stickers and gifs sent to the bot of off reverse search is reactivated. "
+                    "Does not work in groups"
+                ),
+                "command_name": "download_mode",
+                "command": self.toggle_download_mode,
+                "options": {"filters": ~Filters.group},
             },
             {
-                'title': 'Toggle Zip Download Mode on / off',
-                'description': 'If zip mode is on collect all downloads and zip them upon disabling zip mode',
-                'command_name': 'zip_mode',
-                'command': self.toggle_zip_mode,
-                'options': {'filters': ~ Filters.group}
+                "title": "Toggle Zip Download Mode on / off",
+                "description": "If zip mode is on collect all downloads and zip them upon disabling zip mode",
+                "command_name": "zip_mode",
+                "command": self.toggle_zip_mode,
+                "options": {"filters": ~Filters.group},
             },
             {
-                'title': 'Clear ZIP download queue',
-                'description': 'Clear ZIP download queue',
-                'command': self.zip_clear,
-                'options': {'filters': ~ Filters.group}
+                "title": "Clear ZIP download queue",
+                "description": "Clear ZIP download queue",
+                "command": self.zip_clear,
+                "options": {"filters": ~Filters.group},
             },
             {
-                'title': 'Download Stickers',
-                'description': 'Turn on /download_mode and send stickers',
-                'handler': MessageHandler,
-                'command': self.download_stickers,
-                'options': {'filters': Filters.sticker & download_mode_filter & ~ Filters.group}
+                "title": "Download Stickers",
+                "description": "Turn on /download_mode and send stickers",
+                "handler": MessageHandler,
+                "command": self.download_stickers,
+                "options": {"filters": Filters.sticker & download_mode_filter & ~Filters.group},
             },
             {
-                'title': 'Download Gifs',
-                'description': 'Turn on /download_mode and send videos and gifs',
-                'handler': MessageHandler,
-                'command': self.download_gif,
-                'options': {'filters': (Filters.video | Filters.document) & download_mode_filter & ~ Filters.group}
+                "title": "Download Gifs",
+                "description": "Turn on /download_mode and send videos and gifs",
+                "handler": MessageHandler,
+                "command": self.download_gif,
+                "options": {"filters": (Filters.video | Filters.document) & download_mode_filter & ~Filters.group},
             },
             {
-                'description': 'Reply to media for download',
-                'command': self.download,
-            }
+                "description": "Reply to media for download",
+                "command": self.download,
+            },
         ]
 
         super(Download, self).__init__()
@@ -81,11 +93,13 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
+        if not update.message:
+            return
         mode_on = download_mode_filter.toggle_mode(update.message.from_user.id)
         if mode_on:
-            update.message.reply_text('Download Mode on')
+            update.message.reply_text("Download Mode on")
         else:
-            update.message.reply_text('Download Mode off')
+            update.message.reply_text("Download Mode off")
 
     def toggle_zip_mode(self, bot: Bot, update: Update):
         """Toggle Zip Mode
@@ -94,15 +108,20 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
+        if not update.message:
+            return
         mode_on = download_mode_filter.toggle_mode(update.message.from_user.id, zip_mode=True)
         if mode_on:
             in_queue = len(self.ram_db.get(update.message.from_user.id, []))
-            append = (f'\nThere are still `{in_queue}` Items in the Download queue. Use /zip\_clear to clear the queue.'
-                if in_queue else '')
-            update.message.reply_text(f'Download Zip Mode on{append}', parse_mode=ParseMode.MARKDOWN)
+            append = (
+                f"\nThere are still `{in_queue}` Items in the Download queue. Use /zip\_clear to clear the queue."
+                if in_queue
+                else ""
+            )
+            update.message.reply_text(f"Download Zip Mode on{append}", parse_mode=ParseMode.MARKDOWN)
         else:
             self.download_zip(bot, update, update.message.from_user.id)
-            update.message.reply_text('Download Mode off')
+            update.message.reply_text("Download Mode off")
 
     def zip_clear(self, bot: Bot, update: Update):
         """Clear ZIP download queue
@@ -111,11 +130,13 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
+        if not update.message:
+            return
         self.ram_db[update.message.from_user.id] = []
-        update.message.reply_text('ZIP download queue was cleared.', reply_to_message_id=update.message.message_id)
+        update.message.reply_text("ZIP download queue was cleared.", reply_to_message_id=update.message.message_id)
 
     def add_to_zip(self, update, user_id, item):
-        update.message.reply_text('Item was added', reply_to_message_id=update.message.message_id)
+        update.message.reply_text("Item was added", reply_to_message_id=update.message.message_id)
         self.ram_db.setdefault(user_id, [])
         self.ram_db[user_id].append(item)
 
@@ -131,46 +152,50 @@ class Download(BaseCommand):
         message = update.message
         user_files = self.ram_db.get(user_id)
         if not user_files:
-            update.message.reply_text('No files sent for download')
+            update.message.reply_text("No files sent for download")
             return
 
         with TemporaryDirectory() as temp_folder:
-            zip_content_path = os.path.join(temp_folder, 'zip_content')
+            zip_content_path = os.path.join(temp_folder, "zip_content")
             os.mkdir(zip_content_path)
 
             progress_bar = TelegramProgressBar(
                 bot=bot,
                 chat_id=update.message.chat_id,
                 full_amount=len(user_files),
-                pre_message='Downloading files\n{current} / {total}',
-                se_message='Downloading GIFs may take a while.'
+                pre_message="Downloading files\n{current} / {total}",
+                se_message="Downloading GIFs may take a while.",
             )
             progress_bar.start()
 
             for index, file in enumerate(user_files):
                 temp_file = None
                 if isinstance(file, Sticker):
-                    temp_file = NamedTemporaryFile(delete=False, dir=zip_content_path, prefix='xenian-', suffix='.png')
-                    self.download_stickers_to_file(bot, file, temp_file)
+                    temp_file = NamedTemporaryFile(delete=False, dir=zip_content_path, prefix="xenian-", suffix=".png")
+                    self.download_stickers_to_file(bot, file, temp_file)  # type: ignore
 
                 elif isinstance(file, Document) or isinstance(file, Video):
-                    temp_file = NamedTemporaryFile(delete=False, dir=zip_content_path, prefix='xenian-', suffix='.gif')
-                    _, orig_path, compressed_path = self.download_video_to_file(bot, file, temp_file, temp_file.name)
+                    temp_file = NamedTemporaryFile(delete=False, dir=zip_content_path, prefix="xenian-", suffix=".gif")
+                    _, orig_path, compressed_path = self.download_video_to_file(bot, file, temp_file, temp_file.name)  # type: ignore
 
                 if temp_file:
                     temp_file.close()
                 progress_bar.update(new_amount=index + 1)
 
-            zip_path = os.path.join(temp_folder, os.path.basename(f'downloads_{user_id}'))
+            zip_path = os.path.join(temp_folder, os.path.basename(f"downloads_{user_id}"))
             os.chmod(zip_content_path, 0o40755)
-            created_zip = shutil.make_archive(zip_path, format='zip', root_dir=zip_content_path, base_dir='.')
+            created_zip = shutil.make_archive(zip_path, format="zip", root_dir=zip_content_path, base_dir=".")
 
             if os.path.getsize(created_zip) > 52428800:
-                message.reply_text('File is too big, sorry!', reply_to_message_id=message.message_id)
+                message.reply_text("File is too big, sorry!", reply_to_message_id=message.message_id)
             else:
-                with open(created_zip, mode='br') as zip_file:
-                    message.reply_document(zip_file, filename=os.path.basename(created_zip), timeout=50,
-                                           reply_to_message_id=message.message_id)
+                with open(created_zip, mode="br") as zip_file:
+                    message.reply_document(
+                        zip_file,
+                        filename=os.path.basename(created_zip),
+                        timeout=50,
+                        reply_to_message_id=message.message_id,
+                    )
 
     def download_stickers_to_file(self, bot: Bot, sticker: Sticker, file_object: BufferedWriter):
         """Download Sticker as images to file_object
@@ -180,16 +205,16 @@ class Download(BaseCommand):
             sticker (:obj:`telegram.sticker.Sticker`): A Sticker object
             file_object (:obj:`io.BufferedWriter`): File like object
         """
-        sticker = bot.get_file(sticker.file_id)
-        sticker.download(out=file_object)
+        sticker = bot.get_file(sticker.file_id)  # type: ignore
+        sticker.download(out=file_object)  # type: ignore
 
-        if getattr(file_object, 'save', None):
-            file_object.save()
+        if hasattr(file_object, "save"):
+            file_object.save()  # type: ignore
         else:
             save_file(file_object)
 
         image = Image.open(file_object.name)
-        image.save(file_object, format='png')
+        image.save(file_object, format="png")
 
         return file_object
 
@@ -201,6 +226,8 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
+        if not update.message:
+            return
         orig_sticker = update.message.sticker or update.message.reply_to_message.sticker
 
         user_id = update.message.from_user.id
@@ -208,7 +235,7 @@ class Download(BaseCommand):
             self.add_to_zip(update, user_id, orig_sticker)
             return
 
-        with CustomNamedTemporaryFile(suffix='.png', prefix='xenian-') as image:
+        with CustomNamedTemporaryFile(suffix=".png", prefix="xenian-") as image:
             self.download_stickers_to_file(bot, orig_sticker, image)
             image.seek(0)
             bot.send_photo(update.message.chat_id, photo=image)
@@ -225,7 +252,7 @@ class Download(BaseCommand):
         video = bot.getFile(document.file_id)
 
         with CustomNamedTemporaryFile() as video_file:
-            video.download(out=video_file)
+            video.download(out=video_file)  # type: ignore
             video_file.close()
             video_clip = VideoFileClip(video_file.name, audio=False)
 
@@ -234,10 +261,10 @@ class Download(BaseCommand):
 
             dirname = os.path.dirname(file_object_path)
             file_name = os.path.splitext(file_object_path)[0]
-            compressed_gif_path = os.path.join(dirname, file_name + '-min.gif')
+            compressed_gif_path = os.path.join(dirname, file_name + "-min.gif")
 
-            os.system('gifsicle -O3 --lossy=50 -o {dst} {src}'.format(dst=compressed_gif_path, src=file_object_path))
-            compressed_gif_path = compressed_gif_path if os.path.isfile(compressed_gif_path) else ''
+            os.system("gifsicle -O3 --lossy=50 -o {dst} {src}".format(dst=compressed_gif_path, src=file_object_path))
+            compressed_gif_path = compressed_gif_path if os.path.isfile(compressed_gif_path) else ""
             return file_object, file_object_path, compressed_gif_path
 
     @run_async
@@ -248,38 +275,44 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
+        if not update.message:
+            return
         message = update.message
         bot.send_chat_action(chat_id=message.chat_id, action=ChatAction.TYPING)
 
-        document = (update.message.document or update.message.video or update.message.reply_to_message.document or
-                    update.message.reply_to_message.video)
+        document = (
+            update.message.document
+            or update.message.video
+            or update.message.reply_to_message.document
+            or update.message.reply_to_message.video
+        )
 
         user_id = update.message.from_user.id
         if download_mode_filter.is_zip_mode_on(user_id):
             self.add_to_zip(update, user_id, document)
             return
 
-        with CustomNamedTemporaryFile(suffix='.gif') as video_file:
+        with CustomNamedTemporaryFile(suffix=".gif") as video_file:
             _, orig_path, compressed_path = self.download_video_to_file(bot, document, video_file, video_file.name)
 
             uploader.connect()
-            upload_path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
+            upload_path = UPLOADER.get("url", None) or UPLOADER["configuration"].get("path", None) or ""
 
-            upload_orig_file_name = 'xenian-{}.gif'.format(str(uuid4())[:8])
+            upload_orig_file_name = "xenian-{}.gif".format(str(uuid4())[:8])
             uploader.upload(orig_path, upload_orig_file_name)
 
-            orig_host_path = upload_path + '/' + upload_orig_file_name
+            orig_host_path = upload_path + "/" + upload_orig_file_name
 
             compressed_host_path = None
             if os.path.isfile(compressed_path):
-                upload_compressed_file_name = 'xenian-{}-min.gif'.format(str(uuid4())[:8])
+                upload_compressed_file_name = "xenian-{}-min.gif".format(str(uuid4())[:8])
                 uploader.upload(compressed_path, upload_compressed_file_name)
-                compressed_host_path = upload_path + '/' + upload_compressed_file_name
+                compressed_host_path = upload_path + "/" + upload_compressed_file_name
 
             # If the host path a local path we can't send it as an URL, so we send the gif just as a ZIP file.
             if os.path.isfile(orig_host_path):
                 with TemporaryDirectory() as temp_folder:
-                    zip_content_path = os.path.join(temp_folder, 'zip_content')
+                    zip_content_path = os.path.join(temp_folder, "zip_content")
                     os.mkdir(zip_content_path)
                     uploader.upload(orig_host_path, zip_content_path)
                     if compressed_host_path:
@@ -287,22 +320,33 @@ class Download(BaseCommand):
 
                     zip_path = os.path.join(temp_folder, os.path.basename(orig_host_path))
                     os.chmod(zip_content_path, 0o40755)
-                    created_zip = shutil.make_archive(zip_path, format='zip', root_dir=zip_content_path, base_dir='.')
+                    created_zip = shutil.make_archive(zip_path, format="zip", root_dir=zip_content_path, base_dir=".")
                     if os.path.getsize(created_zip) > 52428800:
-                        message.reply_text('File is too big, sorry!', reply_to_message_id=message.message_id)
+                        message.reply_text("File is too big, sorry!", reply_to_message_id=message.message_id)
                     else:
-                        with open(created_zip, mode='br') as zip_file:
-                            message.reply_document(zip_file, filename=os.path.basename(created_zip),
-                                                   reply_to_message_id=message.message_id)
+                        with open(created_zip, mode="br") as zip_file:
+                            message.reply_document(
+                                zip_file, filename=os.path.basename(created_zip), reply_to_message_id=message.message_id
+                            )
                 uploader.close()
                 return
             uploader.close()
 
             downloadable_file = compressed_host_path or orig_host_path
 
-            reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Download GIF", url=downloadable_file), ], ])
-            message.reply_photo(downloadable_file, 'Instant GIF Download', reply_markup=reply_markup,
-                                reply_to_message_id=message.message_id)
+            reply_markup = InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton("Download GIF", url=downloadable_file),
+                    ],
+                ]
+            )
+            message.reply_photo(
+                downloadable_file,
+                "Instant GIF Download",
+                reply_markup=reply_markup,
+                reply_to_message_id=message.message_id,
+            )
 
     @run_async
     def download(self, bot: Bot, update: Update):
@@ -312,9 +356,11 @@ class Download(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
+        if not update.message:
+            return
         reply_to_message = update.message.reply_to_message
         if not reply_to_message:
-            update.message.reply_text('You have to reply to some media file to start the download.')
+            update.message.reply_text("You have to reply to some media file to start the download.")
         if reply_to_message.sticker:
             self.download_stickers(bot, update)
         if reply_to_message.video or reply_to_message.document:
@@ -354,38 +400,38 @@ class VideoDownloader(BaseCommand):
     Key must always be user_id
     """
 
-    group = 'Download'
+    group = "Download"
 
     def __init__(self):
         self.commands = [
             {
-                'title': 'Video from URL',
-                'description': 'Turn on /download_mode and send links to videos like a youtube video',
-                'handler': MessageHandler,
-                'command': self.video_from_url,
-                'options': {'filters': Filters.entity(MessageEntity.URL) & download_mode_filter & ~ Filters.group}
+                "title": "Video from URL",
+                "description": "Turn on /download_mode and send links to videos like a youtube video",
+                "handler": MessageHandler,
+                "command": self.video_from_url,
+                "options": {"filters": Filters.entity(MessageEntity.URL) & download_mode_filter & ~Filters.group},
             },
             {
-                'description': 'Video Download Menu Changes',
-                'command': self.menu_change,
-                'handler': CallbackQueryHandler,
-                'options': {'pattern': '^(video|audio|format)'},
-                'hidden': True
+                "description": "Video Download Menu Changes",
+                "command": self.menu_change,
+                "handler": CallbackQueryHandler,
+                "options": {"pattern": "^(video|audio|format)"},
+                "hidden": True,
             },
             {
-                'description': 'Abort Video Download',
-                'command': self.abort,
-                'handler': CallbackQueryHandler,
-                'options': {'pattern': '^abort$'},
-                'hidden': True
+                "description": "Abort Video Download",
+                "command": self.abort,
+                "handler": CallbackQueryHandler,
+                "options": {"pattern": "^abort$"},
+                "hidden": True,
             },
             {
-                'description': 'Download the video / audio',
-                'command': self.download,
-                'handler': CallbackQueryHandler,
-                'options': {'pattern': '^download'},
-                'hidden': True
-            }
+                "description": "Download the video / audio",
+                "command": self.download,
+                "handler": CallbackQueryHandler,
+                "options": {"pattern": "^download"},
+                "hidden": True,
+            },
         ]
         super(VideoDownloader, self).__init__()
 
@@ -405,27 +451,29 @@ class VideoDownloader(BaseCommand):
         chat_id = update.message.chat_id
         url = urldefrag(update.message.text).url
         # Remove potential playlist argument from url
-        url = re.sub('([&?])list=.*(&|$)', '\g<1>', url)
+        url = re.sub("([&?])list=.*(&|$)", "\g<1>", url)
 
-        with youtube_dlc.YoutubeDL({}) as ydl:
+        with yt_dlp.YoutubeDL({}) as ydl:
             try:
                 info = ydl.extract_info(url, download=False)
             except DownloadError:
                 return
-            info['short_description'] = re.sub(r'\n\s*\n', '\n', (info.get('description', '') or ''))
+            info["short_description"] = re.sub(r"\n\s*\n", "\n", (info.get("description", "") or ""))
             self.video_information[user_id] = info
-            keyboard = self.get_keyboard('format', info)
+            keyboard = self.get_keyboard("format", info)
 
-            self.current_menu[user_id] = 'format'
+            self.current_menu[user_id] = "format"
             self.keyboard_message_id[user_id] = bot.send_message(
                 chat_id=chat_id,
-                text='<a href="{webpage_url}">&#8205;</a>'
-                     '{extractor_key:-^20}\n'
-                     '<b>{uploader} - {title}</b>\n'
-                     '{short_description:.150}...'.format(**info),
+                text=(
+                    '<a href="{webpage_url}">&#8205;</a>'
+                    "{extractor_key:-^20}\n"
+                    "<b>{uploader} - {title}</b>\n"
+                    "{short_description:.150}...".format(**info)
+                ),
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=False,
-                reply_markup=keyboard
+                reply_markup=keyboard,
             ).result()
 
     @run_async
@@ -438,8 +486,8 @@ class VideoDownloader(BaseCommand):
         """
         user_id = update.effective_user.id
         chat_id = update.effective_chat.id
-        url = self.video_information[user_id]['webpage_url']
-        data = update.callback_query.data.split(' ')
+        url = self.video_information[user_id]["webpage_url"]
+        data = update.callback_query.data.split(" ")
         message = update.effective_message
 
         class DownloadHook:
@@ -452,15 +500,15 @@ class VideoDownloader(BaseCommand):
                 Args:
                     download_event (:obj:`dict`): Dictionary with information about the event and the file
                 """
-                if download_event['status'] == 'downloading' and self.can_send_status:
-                    total_amount = download_event.get('total_bytes', None)
-                    downloaded = download_event['downloaded_bytes']
+                if download_event["status"] == "downloading" and self.can_send_status:
+                    total_amount = download_event.get("total_bytes", None)
+                    downloaded = download_event["downloaded_bytes"]
                     fragments = False
 
                     if not total_amount:
                         fragments = True
-                        total_amount = download_event.get('fragment_count', None)
-                        downloaded = download_event.get('fragment_index', None)
+                        total_amount = download_event.get("fragment_count", None)
+                        downloaded = download_event.get("fragment_index", None)
 
                     if total_amount is not None:
                         if self.progress_bar is None:
@@ -468,63 +516,71 @@ class VideoDownloader(BaseCommand):
                                 bot=bot,
                                 chat_id=chat_id,
                                 full_amount=total_amount if fragments else total_amount / 1000000,
-                                pre_message='Downloading Video\n{current} / {total} %s' % (
-                                    'fragments' if fragments else 'MB')
+                                pre_message="Downloading Video\n{current} / {total} %s"
+                                % ("fragments" if fragments else "MB"),
                             )
                             self.progress_bar.start()
                             return
                         self.progress_bar.update(
                             new_amount=downloaded if fragments else downloaded / 1000000,
-                            new_full_amount=total_amount if fragments else total_amount / 1000000
+                            new_full_amount=total_amount if fragments else total_amount / 1000000,
                         )
                     else:
                         self.can_send_status = False
-                        bot.send_message(chat_id=chat_id, text='Downloading Video\nNo download status available.')
+                        bot.send_message(chat_id=chat_id, text="Downloading Video\nNo download status available.")
 
         format_id = data[2]
-        if format_id == 'best':
-            if data[1] == 'video':
-                format_id = 'bestvideo/best'
-            elif data[1] == 'audio':
-                format_id = 'bestaudio'
-            elif data[1] == 'video_audio':
-                format_id = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'  # best mp4 wiht best m4a
+        if format_id == "best":
+            if data[1] == "video":
+                format_id = "bestvideo/best"
+            elif data[1] == "audio":
+                format_id = "bestaudio"
+            elif data[1] == "video_audio":
+                format_id = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"  # best mp4 wiht best m4a
 
         with TemporaryDirectory() as temp_dir:
             download_hook = DownloadHook()
             options = {
-                'outtmpl': os.path.join(temp_dir, '%(uploader)s - %(title)s [%(id)s].%(ext)s'),
-                'restrictfilenames': True,
-                'progress_hooks': [download_hook.hook],
+                "outtmpl": os.path.join(temp_dir, "%(uploader)s - %(title)s [%(id)s].%(ext)s"),
+                "restrictfilenames": True,
+                "progress_hooks": [download_hook.hook],
             }
             if format_id:
-                options['format'] = format_id
+                options["format"] = format_id
 
-            if data[1] == 'audio' and data[2] == 'best':
-                options['postprocessors'] = [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }]
+            if data[1] == "audio" and data[2] == "best":
+                options["postprocessors"] = [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "mp3",
+                        "preferredquality": "192",
+                    }
+                ]
 
             # Remove buttons
             message.edit_text(text=message.text_html, parse_mode=ParseMode.HTML)
-            with youtube_dlc.YoutubeDL(options) as ydl:
-                ydl.download([url, ])
+            with yt_dlp.YoutubeDL(options) as ydl:
+                ydl.download(
+                    [
+                        url,
+                    ]
+                )
 
                 filename = os.listdir(temp_dir)[0]
                 file_path = os.path.join(temp_dir, filename)
 
                 file_size = os.path.getsize(file_path)
                 sent = False
-                if file_size < 5e+7:
+                if file_size < 5e7:
                     try:
                         bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
 
-                        bot.send_message(chat_id=chat_id, text='Depending on the filesize the upload could take some '
-                                                               'time')
-                        bot.send_document(chat_id=chat_id, document=open(file_path, mode='rb'), filename=filename,
-                                          timeout=60)
+                        bot.send_message(
+                            chat_id=chat_id, text="Depending on the filesize the upload could take some time"
+                        )
+                        bot.send_document(
+                            chat_id=chat_id, document=open(file_path, mode="rb"), filename=filename, timeout=60
+                        )
                         sent = True
                     except (NetworkError, TimedOut, BadRequest):
                         pass
@@ -535,24 +591,36 @@ class VideoDownloader(BaseCommand):
                     uploader.upload(file_path, remove_after=1800)
                     uploader.close()
 
-                    path = UPLOADER.get('url', None) or UPLOADER['configuration'].get('path', None) or ''
+                    path = UPLOADER.get("url", None) or UPLOADER["configuration"].get("path", None) or ""
                     url_path = os.path.join(path, filename)
 
                     if os.path.isfile(url_path):
                         # Can not send a download link to the user if the file is stored locally without url config
                         bot.send_message(
                             chat_id=update.effective_chat.id,
-                            text='The file was to big to sent or for some reason could not be sent directly. Another '
-                                 'way of sending the file was not configured by the adminstrator. You can use /support '
-                                 'to contact the admins.')
+                            text=(
+                                "The file was to big to sent or for some reason could not be sent directly. Another "
+                                "way of sending the file was not configured by the adminstrator. You can use /support "
+                                "to contact the admins."
+                            ),
+                        )
                         return
 
-                    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton('Download', url=url_path), ], ])
+                    keyboard = InlineKeyboardMarkup(
+                        [
+                            [
+                                InlineKeyboardButton("Download", url=url_path),
+                            ],
+                        ]
+                    )
                     bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text='File was either too big for Telegram or could for some reason not be sent directly, '
-                             'please use this download button',
-                        reply_markup=keyboard)
+                        text=(
+                            "File was either too big for Telegram or could for some reason not be sent directly, "
+                            "please use this download button"
+                        ),
+                        reply_markup=keyboard,
+                    )
 
                 self.current_menu.pop(user_id, None)
                 self.keyboard_message_id.pop(user_id, None)
@@ -572,7 +640,8 @@ class VideoDownloader(BaseCommand):
         bot.edit_message_reply_markup(
             chat_id=update.effective_chat.id,
             message_id=self.keyboard_message_id[user_id].message_id,
-            reply_markup=keyboard)
+            reply_markup=keyboard,
+        )
 
         self.current_menu[user_id] = text
 
@@ -584,7 +653,7 @@ class VideoDownloader(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
         user_id = update.effective_user.id
-        text = 'Aborted {}'.format(self.video_information[user_id]['title'])
+        text = "Aborted {}".format(self.video_information[user_id]["title"])
         if update.callback_query:
             update.callback_query.answer(text=text)
 
@@ -607,56 +676,83 @@ class VideoDownloader(BaseCommand):
             :class:`telegram.inline.inlinekeyboardmarkup.InlineKeyboardMarkup`: InlineKeyboardMarkup with the new menu
         """
         formats = {}
-        if video_information.get('formats', None):
-            for format_ in video_information['formats']:
-                formats[format_['format_id']] = {
-                    'ext': format_.get('ext', None),
-                    'video': format_['vcodec'] if format_.get('vcodec', 'none') != 'none' else None,
-                    'audio': format_['acodec'] if format_.get('acodec', 'none') != 'none' else None,
-                    'filesize': format_.get('filesize', None),
-                    'res':
-                        '%sx%s' % (format_['width'], format_['height'])
-                        if format_.get('height', None) and format_.get('width', None)
-                        else None,
-                    'vcodec': format_.get('vcodec', None),
-                    'acodec': format_.get('acodec', None),
-                    'abr': '%sk' % format_['abr'] if format_.get('abr', None) else None,
+        if video_information.get("formats", None):
+            for format_ in video_information["formats"]:
+                formats[format_["format_id"]] = {
+                    "ext": format_.get("ext", None),
+                    "video": format_["vcodec"] if format_.get("vcodec", "none") != "none" else None,
+                    "audio": format_["acodec"] if format_.get("acodec", "none") != "none" else None,
+                    "filesize": format_.get("filesize", None),
+                    "res": "%sx%s" % (format_["width"], format_["height"])
+                    if format_.get("height", None) and format_.get("width", None)
+                    else None,
+                    "vcodec": format_.get("vcodec", None),
+                    "acodec": format_.get("acodec", None),
+                    "abr": "%sk" % format_["abr"] if format_.get("abr", None) else None,
                 }
 
         keyboard = []
-        if keyboard_name == 'format':
+        if keyboard_name == "format":
             if formats:
-                if [format_ for format_ in formats.values() if format_['audio']]:
-                    keyboard.append([InlineKeyboardButton('Audio Only', callback_data='audio'), ])
-                if [format_ for format_ in formats.values() if format_['video']]:
-                    keyboard.append([InlineKeyboardButton('Video Only', callback_data='video'), ])
-            keyboard.append([InlineKeyboardButton('Best', callback_data='download video_audio best'), ])
+                if [format_ for format_ in formats.values() if format_["audio"]]:
+                    keyboard.append(
+                        [
+                            InlineKeyboardButton("Audio Only", callback_data="audio"),
+                        ]
+                    )
+                if [format_ for format_ in formats.values() if format_["video"]]:
+                    keyboard.append(
+                        [
+                            InlineKeyboardButton("Video Only", callback_data="video"),
+                        ]
+                    )
+            keyboard.append(
+                [
+                    InlineKeyboardButton("Best", callback_data="download video_audio best"),
+                ]
+            )
 
-        elif keyboard_name in ['video', 'audio']:
-            name = keyboard_name.title().replace('_', ' + ')
-            keyboard = [[
-                InlineKeyboardButton('Best {}'.format(name), callback_data='download {} best'.format(keyboard_name)),
-            ], ]
+        elif keyboard_name in ["video", "audio"]:
+            name = keyboard_name.title().replace("_", " + ")
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        "Best {}".format(name), callback_data="download {} best".format(keyboard_name)
+                    ),
+                ],
+            ]
             if formats:
-                keyboard.append([InlineKeyboardButton('Advanced', callback_data='{}_quality'.format(keyboard_name)), ])
-        elif keyboard_name.endswith('_quality'):
-            name = keyboard_name.replace('_quality', '')
-            keyboard = self.get_advance_keyboard('{}'.format(name), formats)
+                keyboard.append(
+                    [
+                        InlineKeyboardButton("Advanced", callback_data="{}_quality".format(keyboard_name)),
+                    ]
+                )
+        elif keyboard_name.endswith("_quality"):
+            name = keyboard_name.replace("_quality", "")
+            keyboard = self.get_advance_keyboard("{}".format(name), formats)
 
         menu_structure = {
-            'format': 'abort',
-            'video': 'format',
-            'audio': 'format',
-            'video_audio': 'format',
-            'video_quality': 'video',
-            'audio_quality': 'audio',
-            'video_audio_quality': 'video_audio',
+            "format": "abort",
+            "video": "format",
+            "audio": "format",
+            "video_audio": "format",
+            "video_quality": "video",
+            "audio_quality": "audio",
+            "video_audio_quality": "video_audio",
         }
 
-        if keyboard_name == 'format':
-            keyboard.append([InlineKeyboardButton('Abort', callback_data=menu_structure[keyboard_name]), ])
+        if keyboard_name == "format":
+            keyboard.append(
+                [
+                    InlineKeyboardButton("Abort", callback_data=menu_structure[keyboard_name]),
+                ]
+            )
         else:
-            keyboard.append([InlineKeyboardButton('Back', callback_data=menu_structure[keyboard_name]), ])
+            keyboard.append(
+                [
+                    InlineKeyboardButton("Back", callback_data=menu_structure[keyboard_name]),
+                ]
+            )
 
         return InlineKeyboardMarkup(keyboard)
 
@@ -672,18 +768,29 @@ class VideoDownloader(BaseCommand):
         keyboard = []
 
         for format_id, format_ in formats.items():
-            if (advance_menu == 'audio' and format_['video']) or \
-                    (advance_menu == 'video' and format_['audio']) or \
-                    (advance_menu == 'video_audio' and (not format_['video'] or not format_['audio'])):
+            if (
+                (advance_menu == "audio" and format_["video"])
+                or (advance_menu == "video" and format_["audio"])
+                or (advance_menu == "video_audio" and (not format_["video"] or not format_["audio"]))
+            ):
                 continue
 
-            text = ''
+            text = ""
             for key, value in format_.items():
-                if key not in ['video', 'filesize', 'audio'] and value not in ['none', ] and value:
-                    text += '{key}: {value} '.format(key=key, value=value)
+                if (
+                    key not in ["video", "filesize", "audio"]
+                    and value
+                    not in [
+                        "none",
+                    ]
+                    and value
+                ):
+                    text += "{key}: {value} ".format(key=key, value=value)
             text = text.strip()
             keyboard.append(
-                [InlineKeyboardButton(text=text, callback_data='download {} {}'.format(advance_menu, format_id)), ]
+                [
+                    InlineKeyboardButton(text=text, callback_data="download {} {}".format(advance_menu, format_id)),
+                ]
             )
         return keyboard
 

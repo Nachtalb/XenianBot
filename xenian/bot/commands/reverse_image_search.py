@@ -6,6 +6,7 @@ from telegram.error import Unauthorized
 from telegram.ext import Filters, run_async
 from telegram.ext.messagehandler import MessageHandler
 from telegram.utils.promise import Promise
+
 from xenian.bot.commands.filters import download_mode_filter
 from xenian.bot.commands.reverse_image_search_engines import (
     BingReverseImageSearchEngine,
@@ -37,12 +38,7 @@ class ReverseImageSearch(BaseCommand):
                 "handler": MessageHandler,
                 "options": {
                     "filters": (
-                        (
-                            Filters.video
-                            | Filters.document
-                            | Filters.photo
-                            | Filters.sticker
-                        )
+                        (Filters.video | Filters.document | Filters.photo | Filters.sticker)
                         & ~Filters.group
                         & ~Filters.reply
                         & ~download_mode_filter
@@ -67,10 +63,10 @@ class ReverseImageSearch(BaseCommand):
             bot (:obj:`telegram.bot.Bot`): Telegram Api Bot Object.
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
+        if not update.message:
+            return
         if not update.message.reply_to_message:
-            update.message.reply_text(
-                "You have to reply to some media file to start the reverse search."
-            )
+            update.message.reply_text("You have to reply to some media file to start the reverse search.")
             return
         self.auto_search(bot, update)
 
@@ -83,24 +79,23 @@ class ReverseImageSearch(BaseCommand):
             update (:obj:`telegram.update.Update`): Telegram Api Update Object
         """
         try:
-            message = update.message.reply_text(
-                "Please wait for the media file to be processed..."
-            )
+            if not update.message:
+                return
+            message = update.message.reply_text("Please wait for the media file to be processed...")
         except Unauthorized:
             user = update.effective_user
-            print(f"Bot was blocked by {user.username or user.full_name}")
+            if not user:
+                print("Fock me m8")
+            else:
+                print(f"Bot was blocked by {user.username or user.full_name}")
             return
         with auto_download(bot, update, first_frame=True) as file_path:
             if file_path:
                 self.reverse_image_search(bot, update, file_path, message)
             else:
-                update.message.reply_text(
-                    "Something went wrong contact and admin /error <TEXT> or try again later"
-                )
+                update.message.reply_text("Something went wrong contact and admin /error <TEXT> or try again later")
 
-    def reverse_image_search(
-        self, bot: Bot, update: Update, media_file: str, message: Promise = None
-    ):
+    def reverse_image_search(self, bot: Bot, update: Update, media_file: str, message: Promise | None = None):
         """Send a reverse image search link for the image sent to us
 
         Args:
@@ -113,15 +108,7 @@ class ReverseImageSearch(BaseCommand):
         image_extension = os.path.splitext(media_file)[1]
         image_name = "irs-" + str(uuid4())[:8]
 
-        (
-            iqdb_search,
-            google_search,
-            tineye_search,
-            bing_search,
-            yandex_search,
-            saucenao_search,
-            trace_search,
-        ) = (
+        (iqdb_search, google_search, tineye_search, bing_search, yandex_search, saucenao_search, trace_search,) = (
             IQDBReverseImageSearchEngine(),
             GoogleReverseImageSearchEngine(),
             TinEyeReverseImageSearchEngine(),
@@ -131,19 +118,17 @@ class ReverseImageSearch(BaseCommand):
             TraceReverseImageSearchEngine(),
         )
 
-        image_url = iqdb_search.upload_image(
-            media_file, image_name + image_extension, remove_after=3600
-        )
+        image_url = iqdb_search.upload_image(media_file, image_name + image_extension, remove_after=3600)
 
+        if not message or not update.message:
+            return
         if os.path.isfile(image_url):
             reply = "This bot is not configured for this functionality, contact an admin for more information /support."
             message = message.result()
             if message:
                 message.edit_text(reply, reply_to_message_id=update.message.message_id)
             else:
-                update.message.reply_text(
-                    reply, reply_to_message_id=update.message.message_id
-                )
+                update.message.reply_text(reply, reply_to_message_id=update.message.message_id)
             return
 
         button_list = [

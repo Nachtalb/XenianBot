@@ -1,10 +1,11 @@
-import json
-import os
-import re
-import zipfile
 from collections import OrderedDict
 from copy import deepcopy
+import json
+import logging
+import os
+import re
 from typing import Any, Callable, Iterable
+import zipfile
 
 import requests
 from requests.exceptions import MissingSchema
@@ -18,19 +19,23 @@ from xenian.bot.commands.animedatabase_utils.message_queue import MessageQueue
 from xenian.bot.commands.animedatabase_utils.moebooru_service import MoebooruService
 from xenian.bot.commands.animedatabase_utils.post import Post, PostError
 from xenian.bot.settings import ANIME_SERVICES
-from xenian.bot.utils import CustomNamedTemporaryFile, TelegramProgressBar, download_file_from_url_and_upload
+from xenian.bot.utils import (
+    CustomNamedTemporaryFile,
+    TelegramProgressBar,
+    download_file_from_url_and_upload,
+)
+
 from . import BaseCommand
-import logging
 
-logger = logging.getLogger('animedatabases')
+logger = logging.getLogger("animedatabases")
 
-__all__ = ['animedatabases']
+__all__ = ["animedatabases"]
 
 
 class AnimeDatabases(BaseCommand):
-    """The class for all danbooru related commands
-    """
-    group = 'Anime'
+    """The class for all danbooru related commands"""
+
+    group = "Anime"
 
     def __init__(self):
         self.files = mongodb_database.files
@@ -41,25 +46,26 @@ class AnimeDatabases(BaseCommand):
         super(AnimeDatabases, self).__init__()
 
     def init_services(self):
-        """Initialize services
-        """
+        """Initialize services"""
         for service in ANIME_SERVICES:
-            name = service['name']
+            name = service["name"]
             service_information = deepcopy(service)
-            del service_information['type']
-            if service['type'] == 'danbooru':
+            del service_information["type"]
+            if service["type"] == "danbooru":
                 self.services[name] = DanbooruService(**service_information)
-            if service['type'] == 'moebooru':
+            if service["type"] == "moebooru":
                 self.services[name] = MoebooruService(**service_information)
 
-            self.commands.append({
-                'title': name.capitalize(),
-                'description': f'Search on {name}',
-                'command': self.search_wrapper(name),
-                'command_name': name,
-                'options': {'pass_args': True},
-                'args': ['tag1', 'tag2...', 'page=PAGE_NUM', 'limit=LIMIT', 'group=SIZE']
-            })
+            self.commands.append(
+                {
+                    "title": name.capitalize(),
+                    "description": f"Search on {name}",
+                    "command": self.search_wrapper(name),
+                    "command_name": name,
+                    "options": {"pass_args": True},
+                    "args": ["tag1", "tag2...", "page=PAGE_NUM", "limit=LIMIT", "group=SIZE"],
+                }
+            )
 
     def search_wrapper(self, service_name: str) -> Callable:
         """Wrapper to set the service for the search command
@@ -75,7 +81,7 @@ class AnimeDatabases(BaseCommand):
         """
         service = self.services[service_name]
 
-        method_name = f'{service.type}_search'
+        method_name = f"{service.type}_search"
         method = getattr(self, method_name, None)
 
         if not method:
@@ -86,7 +92,7 @@ class AnimeDatabases(BaseCommand):
 
         return search
 
-    def filter_terms(self, terms: list) -> list:
+    def filter_terms(self, terms: Iterable) -> list:
         """Ensure terms for the danbooru tag search are valid
 
         Args:
@@ -95,14 +101,14 @@ class AnimeDatabases(BaseCommand):
         Returns:
                 :obj:`list`: List with the given strings validated
         """
-        black_list = re.compile('[^\w_\- +~*:]+')
-        terms = map(lambda term: black_list.sub('', term), terms)
+        black_list = re.compile("[^\w_\- +~*:]+")
+        terms = map(lambda term: black_list.sub("", term), terms)
         terms = map(lambda term: term.strip(), terms)
-        terms = map(lambda term: term.replace(' ', '_'), terms)
+        terms = map(lambda term: term.replace(" ", "_"), terms)
         terms = filter(lambda term: not black_list.match(term) and bool(term), terms)
         return list(OrderedDict.fromkeys(terms))
 
-    def extract_option_from_string(self, name: str, text: str, type_: str or int = None, default: Any = None) -> tuple:
+    def extract_option_from_string(self, name: str, text: str, type_=None, default: Any = None) -> tuple:
         """Extract option from string
 
         Args:
@@ -116,28 +122,25 @@ class AnimeDatabases(BaseCommand):
         """
         if type_ is bool:
             if name in text:
-                text = text.replace(name, '', 1)
+                text = text.replace(name, "", 1)
                 return text, not bool(default)
             return text, bool(default)
 
         type_ = type_ or str
-        options = {
-            'name': name,
-            'type': '\d' if type_ == int else '\w'
-        }
+        options = {"name": name, "type": "\d" if type_ == int else "\w"}
         out = None
 
-        page_pattern = re.compile('{name}[ =:]+{type}+'.format(**options), re.IGNORECASE)
+        page_pattern = re.compile("{name}[ =:]+{type}+".format(**options), re.IGNORECASE)
         match = page_pattern.findall(text)
         if match:
-            text = page_pattern.sub('', text)
-            out = re.findall('\d+', match[0])[0]
+            text = page_pattern.sub("", text)
+            out = re.findall("\d+", match[0])[0]
             if type_ == int:
-                out = int(re.findall('\d+', match[0])[0])
+                out = int(re.findall("\d+", match[0])[0])
 
         return text, out if out is not None else default
 
-    def get_image(self, post_id: int, image_url: str = None):
+    def get_image(self, post_id: int, image_url: str | None = None):
         """Save image to file and save in db
 
         Args:
@@ -147,9 +150,9 @@ class AnimeDatabases(BaseCommand):
         Returns:
            ( :obj:`str`): Location of saved file
         """
-        db_entry = self.files.find_one({'file_id': post_id})
+        db_entry = self.files.find_one({"file_id": post_id})
         if db_entry:
-            location = db_entry['location']
+            location = db_entry["location"]
             if os.path.isfile(location):
                 return location
 
@@ -165,13 +168,13 @@ class AnimeDatabases(BaseCommand):
             return
 
         downloaded_image_location = download_file_from_url_and_upload(image_url)
-        self.files.update({'file_id': post_id},
-                          {'file_id': post_id, 'location': downloaded_image_location},
-                          upsert=True)
+        self.files.update(
+            {"file_id": post_id}, {"file_id": post_id, "location": downloaded_image_location}, upsert=True
+        )
         return downloaded_image_location
 
     @run_async
-    def search(self, bot: Bot, update: Update, service: BaseService, args: list = None):
+    def search(self, bot: Bot, update: Update, service: BaseService, args: list | None = None):
         """Generic search based on :class:`BaseService`
 
         Args:
@@ -180,23 +183,25 @@ class AnimeDatabases(BaseCommand):
             service (:obj:`BaseService`): Initialized :obj:`BaseService` for the various api calls
             args (:obj:`list`, optional): List of search terms and options
         """
+        if args is None or not update.message:
+            return
         message = update.message
-        text = ' '.join(args)
+        text = " ".join(args)
 
-        text, page = self.extract_option_from_string('page', text, int)
-        text, zip_it = self.extract_option_from_string('zip', text, bool)
-        text, limit = self.extract_option_from_string('limit', text, int)
-        text, group_size = self.extract_option_from_string('group', text, int, default=10)
+        text, page = self.extract_option_from_string("page", text, int)
+        text, zip_it = self.extract_option_from_string("zip", text, bool)
+        text, limit = self.extract_option_from_string("limit", text, int)
+        text, group_size = self.extract_option_from_string("group", text, int, default=10)
         group_size = group_size or None
 
         if group_size and group_size > 10:
-            message.reply_text('Max group size is 10, use default (10)', reply_to_message_id=message.message_id)
+            message.reply_text("Max group size is 10, use default (10)", reply_to_message_id=message.message_id)
             group_size = 10
 
-        if ',' in text:
-            terms = text.split(',')
+        if "," in text:
+            terms = text.split(",")
         else:
-            terms = text.split(' ')
+            terms = text.split(" ")
         #  terms = self.filter_terms(terms)
 
         numbers = list(filter(str.isdigit, terms))
@@ -210,60 +215,61 @@ class AnimeDatabases(BaseCommand):
 
         actual_tags = terms
         if not service.count_qualifiers_as_tag:
-            actual_tags = [term for term in terms if ':' not in term]  # Qualifiers like "order:score" are not tags
+            actual_tags = [term for term in terms if ":" not in term]  # Qualifiers like "order:score" are not tags
 
-        logger.info(f'page={page} limit={limit} group_size={group_size} zip_it={zip_it}')
-        logger.info(f'terms={actual_tags}')
+        logger.info(f"page={page} limit={limit} group_size={group_size} zip_it={zip_it}")
+        logger.info(f"terms={actual_tags}")
 
         if service.tag_limit and len(actual_tags) > service.tag_limit:
-            message.reply_text(f'Only {service.tag_limit} tags can be used.', reply_to_message_id=message.message_id)
+            message.reply_text(f"Only {service.tag_limit} tags can be used.", reply_to_message_id=message.message_id)
             return
 
         if service.censored_tags:
-            message.reply_text('Some tags may be censored', reply_to_message_id=message.message_id)
+            message.reply_text("Some tags may be censored", reply_to_message_id=message.message_id)
 
         query = {
-            'page': page or 0,
-            'limit': limit if limit and limit <= 100 else 10,
-            'tags': ' '.join(terms),
+            "page": page or 0,
+            "limit": limit if limit and limit <= 100 else 10,
+            "tags": " ".join(terms),
         }
 
-        method_name = f'{service.type}_real_search'
+        method_name = f"{service.type}_real_search"
         method = getattr(self, method_name, None)
 
         if not method:
-            raise NotImplementedError(f'Search function ({method_name}) for service {service.name} does not exist.')
+            raise NotImplementedError(f"Search function ({method_name}) for service {service.name} does not exist.")
 
         method(bot=bot, update=update, service=service, query=query, group_size=group_size, zip_it=zip_it)
 
     @run_async
-    @MessageQueue.message_queue_exc_handler('queue')
+    @MessageQueue.message_queue_exc_handler("queue")
     def send_group(self, bot: Bot, update: Update, group: Iterable[InputMediaPhoto], queue: MessageQueue):
+        if not update.message:
+            return
         for item in group:
             if os.path.isfile(item.media):
-                with open(item.media, 'rb') as file_:
+                with open(item.media, "rb") as file_:
                     item.media = InputFile(file_, attach=True)
 
         message = update.message
         bot.send_media_group(
-            chat_id=message.chat_id,
-            media=group,
-            reply_to_message_id=message.message_id,
-            disable_notification=True
+            chat_id=message.chat_id, media=group, reply_to_message_id=message.message_id, disable_notification=True
         )
         for image in group:
             queue.report()
 
     @run_async
-    @MessageQueue.message_queue_exc_handler('queue')
+    @MessageQueue.message_queue_exc_handler("queue")
     def send_image(self, update: Update, image: InputMediaPhoto, queue: MessageQueue):
+        if not update.message:
+            return
         file = None
         message = update.message
         if os.path.isfile(image.media):
-            file = open(image.media, mode='rb')
+            file = open(image.media, mode="rb")
 
         sent_media = None
-        if image.media.endswith(('.png', '.jpg')):
+        if image.media.endswith((".png", ".jpg")):
             sent_media = message.reply_photo(
                 photo=file or image.media,
                 caption=image.caption,
@@ -283,27 +289,29 @@ class AnimeDatabases(BaseCommand):
         queue.report()
 
     @run_async
-    def send_zip(self, update: Update, posts=Iterable[Post]):
-        with CustomNamedTemporaryFile(prefix='xenian-', suffix='.zip') as zip_file:
-            zip = zipfile.ZipFile(zip_file.name, mode='w')
+    def send_zip(self, update: Update, posts: Iterable[Post]):
+        if not update.message:
+            return
+        with CustomNamedTemporaryFile(prefix="xenian-", suffix=".zip") as zip_file:
+            zip = zipfile.ZipFile(zip_file.name, mode="w")
 
-            text_file_content = ''
+            text_file_content = ""
             for post in posts:
                 if os.path.isfile(post.media):
-                    filename = os.path.basename(str(post.post['id']) + os.path.splitext(post.media)[1])
-                    json_filename = filename + '.json'
+                    filename = os.path.basename(str(post.post["id"]) + os.path.splitext(post.media)[1])
+                    json_filename = filename + ".json"
                     zip.write(post.media, filename)
-                    text_file_content += f'{filename} ({filename}.json) -> {post.post_url}\n'
+                    text_file_content += f"{filename} ({filename}.json) -> {post.post_url}\n"
 
-                    with CustomNamedTemporaryFile(mode='w') as json_file:
+                    with CustomNamedTemporaryFile(mode="w") as json_file:
                         json.dump(post.post, json_file, indent=4, sort_keys=True)
                         json_file.close()
                         zip.write(json_file.name, json_filename)
 
-            with CustomNamedTemporaryFile(mode='w') as text_file:
+            with CustomNamedTemporaryFile(mode="w") as text_file:
                 text_file.write(text_file_content)
                 text_file.close()
-                zip.write(text_file.name, 'Links.txt')
+                zip.write(text_file.name, "Links.txt")
 
             zip.close()
 
@@ -315,10 +323,10 @@ class AnimeDatabases(BaseCommand):
     # Danbooru API commands
 
     def danbooru_get_image(self, post: dict, service: DanbooruService) -> Post:
-        image_url = post.get('large_file_url', None)
-        post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
+        image_url = post.get("large_file_url", None)
+        post_url = "{domain}/posts/{post_id}".format(domain=service.url, post_id=post["id"])
 
-        image_url = self.get_image(post['id'], image_url) or image_url
+        image_url = self.get_image(post["id"], image_url) or image_url
 
         # if not image_url and service.session:
         #     response = service.session.get(post_url)
@@ -331,10 +339,17 @@ class AnimeDatabases(BaseCommand):
         if not image_url:
             raise PostError(code=PostError.IMAGE_NOT_FOUND, post=Post(post=post, post_url=post_url))
 
-        return Post(post, media=image_url, caption=f'@XenianBot - {post_url}', post_url=post_url)
+        return Post(post, media=image_url, caption=f"@XenianBot - {post_url}", post_url=post_url)
 
-    def danbooru_real_search(self, bot: Bot, update: Update, service: DanbooruService, query: dict,
-                             group_size: bool = False, zip_it: bool = False):
+    def danbooru_real_search(
+        self,
+        bot: Bot,
+        update: Update,
+        service: DanbooruService,
+        query: dict,
+        group_size: bool = False,
+        zip_it: bool = False,
+    ):
         """Send Danbooru API Service queried images to user
 
         Args:
@@ -344,18 +359,20 @@ class AnimeDatabases(BaseCommand):
                 https://pybooru.readthedocs.io/en/stable/api_danbooru.html#pybooru.api_danbooru.DanbooruApi_Mixin.post_list
             group_size (:obj:`bool`): If the found items shall be grouped to a media group
         """
+        if not update.message:
+            return
         message = update.message
         posts = service.client.post_list(**query)
 
         if not posts:
-            message.reply_text('Nothing found on page {page}'.format(**query))
+            message.reply_text("Nothing found on page {page}".format(**query))
             return
 
         progress_bar = TelegramProgressBar(
             bot=bot,
             chat_id=message.chat_id,
-            pre_message=('Gathering' if group_size or zip_it else 'Sending') + ' files\n{current} / {total}',
-            se_message='This could take some time.'
+            pre_message=("Gathering" if group_size or zip_it else "Sending") + " files\n{current} / {total}",
+            se_message="This could take some time.",
         )
 
         message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)
@@ -396,28 +413,35 @@ class AnimeDatabases(BaseCommand):
     # Moebooru API commands
 
     def moebooru_get_image(self, post: dict, service: MoebooruService, download: bool = False) -> Post:
-        post_url = '{domain}/posts/{post_id}'.format(domain=service.url, post_id=post['id'])
-        image_path = post['file_url']
+        post_url = "{domain}/posts/{post_id}".format(domain=service.url, post_id=post["id"])
+        image_path = post["file_url"]
 
         if download:
-            image_path = self.get_image(post['id'], post['file_url'])
+            image_path = self.get_image(post["id"], post["file_url"])
 
-        return Post(post=post, media=image_path, caption=f'@XenianBot - {post_url}', post_url=post_url)
+        return Post(post=post, media=image_path, caption=f"@XenianBot - {post_url}", post_url=post_url)
 
-    def moebooru_real_search(self, bot: Bot, update: Update, service: MoebooruService, query: dict,
-                             group_size: bool = False, zip_it: bool = False):
+    def moebooru_real_search(
+        self,
+        bot: Bot,
+        update: Update,
+        service: MoebooruService,
+        query: dict,
+        group_size: bool = False,
+        zip_it: bool = False,
+    ):
         message = update.message
         posts = service.client.post_list(**query)
 
         if not posts:
-            message.reply_text('Nothing found on page {page}'.format(**query))
+            message.reply_text("Nothing found on page {page}".format(**query))
             return
 
         progress_bar = TelegramProgressBar(
             bot=bot,
             chat_id=message.chat_id,
-            pre_message=('Gathering' if group_size or zip_it else 'Sending') + ' files\n{current} / {total}',
-            se_message='This could take some time.'
+            pre_message=("Gathering" if group_size or zip_it else "Sending") + " files\n{current} / {total}",
+            se_message="This could take some time.",
         )
 
         message_queue = MessageQueue(total=len(posts), message=message, group_size=group_size)

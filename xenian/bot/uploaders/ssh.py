@@ -4,6 +4,7 @@ from tempfile import NamedTemporaryFile
 import paramiko
 
 import xenian.bot
+
 from .base import UploaderBase
 
 
@@ -20,7 +21,7 @@ class SSHUploader(UploaderBase):
         connect (:obj:`bool`, optional): If the uploader should directly connect to the server
     """
 
-    _mandatory_configuration = {'host': str, 'user': str, 'password': str, 'upload_dir': str}
+    _mandatory_configuration = {"host": str, "user": str, "password": str, "upload_dir": str}
 
     def __init__(self, configuration: dict, connect: bool = False):
         self.ssh = None
@@ -29,29 +30,31 @@ class SSHUploader(UploaderBase):
         super().__init__(configuration, connect)
 
     def connect(self):
-        """Connect to the server defined in the configuration
-        """
+        """Connect to the server defined in the configuration"""
         self.ssh = paramiko.SSHClient()
         self.ssh.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
 
-        if self.configuration.get('key_filename', None):
-            self.ssh.connect(self.configuration['host'],
-                             username=self.configuration['user'],
-                             password=self.configuration['password'],
-                             key_filename=self.configuration['key_filename'])
+        if self.configuration.get("key_filename", None):
+            self.ssh.connect(
+                self.configuration["host"],
+                username=self.configuration["user"],
+                password=self.configuration["password"],
+                key_filename=self.configuration["key_filename"],
+            )
         else:
-            self.ssh.connect(self.configuration['host'],
-                             username=self.configuration['user'],
-                             password=self.configuration['password'])
+            self.ssh.connect(
+                self.configuration["host"], username=self.configuration["user"], password=self.configuration["password"]
+            )
         self.sftp = self.ssh.open_sftp()
 
     def close(self):
-        """Close connection to the server
-        """
-        self.sftp.close()
-        self.ssh.close()
+        """Close connection to the server"""
+        if self.sftp:
+            self.sftp.close()
+        if self.ssh:
+            self.ssh.close()
 
-    def upload(self, file, filename: str = None, upload_dir: str = None, remove_after: int = None):
+    def upload(self, file, filename: str | None = None, upload_dir: str | None = None, remove_after: int | None = None):
         """Upload file to the ssh server
 
         Args:
@@ -62,10 +65,10 @@ class SSHUploader(UploaderBase):
             remove_after (:obj:`int`, optional): After how much time to remove the file in sec.
                 Defaults to None (do not remove)
         """
-        is_file_object = bool(getattr(file, 'read', False))
+        is_file_object = bool(getattr(file, "read", False))
         if is_file_object:
             if filename is None:
-                raise ValueError('filename must be set when file is a file like object')
+                raise ValueError("filename must be set when file is a file like object")
             with NamedTemporaryFile(delete=False) as new_file:
                 file.seek(0)
                 new_file.write(file.read())
@@ -76,17 +79,22 @@ class SSHUploader(UploaderBase):
             real_file = file
             filename = filename or os.path.basename(real_file)
 
-        upload_dir = os.path.join(self.configuration['upload_dir'], upload_dir) if upload_dir else \
-            self.configuration['upload_dir']
+        upload_dir = (
+            os.path.join(self.configuration["upload_dir"], upload_dir)
+            if upload_dir
+            else self.configuration["upload_dir"]
+        )
         upload_path = os.path.join(upload_dir, filename)
 
-        self.sftp.put(real_file, upload_path)
+        if self.sftp:
+            self.sftp.put(real_file, upload_path)
 
         if remove_after:
-            xenian.bot.job_queue.run_once(
+            xenian.bot.job_queue.run_once(  # type: ignore
                 callback=lambda bot, job: self.remove(upload_path, True),
                 when=remove_after,
-                name='Remove on server: {}'.format(upload_path))
+                name="Remove on server: {}".format(upload_path),
+            )
         if is_file_object:
             os.unlink(real_file)
 
@@ -103,7 +111,8 @@ class SSHUploader(UploaderBase):
         if self_connect:
             self.connect()
 
-        self.sftp.remove(file_path)
+        if self.sftp:
+            self.sftp.remove(file_path)
 
         if self_connect:
             self.close()

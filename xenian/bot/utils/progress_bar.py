@@ -1,11 +1,11 @@
 from typing import Sized
 
 from emoji import emojize
-from telegram import Bot, ParseMode, Message
+from telegram import Bot, Message, ParseMode
 from telegram.error import TimedOut
 from telegram.utils.promise import Promise
 
-__all__ = ['TelegramProgressBar']
+__all__ = ["TelegramProgressBar"]
 
 
 class TelegramProgressBar:
@@ -44,20 +44,22 @@ class TelegramProgressBar:
             use emojis like so :cake: or :joy:
         items (:obj:`Sized`): A Iterable object which should be iterated over
     """
+
     _last_message = None
 
-    def __init__(self,
-                 bot: Bot,
-                 chat_id: int,
-                 full_amount: int or float = None,
-                 step_size: int or float = None,
-                 line_width: int = None,
-                 pre_message: str = None,
-                 se_message: str = None,
-                 loaded_char: str = None,
-                 unloaded_char: str = None,
-                 items: Sized = None,
-                 ):
+    def __init__(
+        self,
+        bot: Bot,
+        chat_id: int,
+        full_amount: int | float = None,
+        step_size: int | float = None,
+        line_width: int = None,
+        pre_message: str = None,
+        se_message: str = None,
+        loaded_char: str = None,
+        unloaded_char: str = None,
+        items: Sized = None,
+    ):
         # Mandatory
         self.bot = bot
         self.chat_id = chat_id
@@ -65,10 +67,10 @@ class TelegramProgressBar:
         self.full_amount = full_amount or None
         self.step_size = step_size or 1
         self.line_width = line_width or 20
-        self.pre_message = emojize(pre_message or '', use_aliases=True)
-        self.se_message = emojize(se_message or '', use_aliases=True)
-        self.loaded_char = emojize(loaded_char or '▉', use_aliases=True)
-        self.unloaded_char = emojize(unloaded_char or '▒', use_aliases=True)
+        self.pre_message = emojize(pre_message or "", language="alias")
+        self.se_message = emojize(se_message or "", language="alias")
+        self.loaded_char = emojize(loaded_char or "▉", language="alias")
+        self.unloaded_char = emojize(unloaded_char or "▒", language="alias")
         self.items = items or None
 
         self.current_step = 0
@@ -87,22 +89,23 @@ class TelegramProgressBar:
     def __call__(self, items: Sized = None):
         """Iterate over given items or range of total items
 
-         Args:
-            items (:obj:`Sized`): A Iterable object which should be iterated over
+        Args:
+           items (:obj:`Sized`): A Iterable object which should be iterated over
         """
         self.items = items or self.items
         yield from self
 
-    def start(self,
-              current_step: int or float = None,
-              full_amount: int or float = None,
-              line_width: int = None,
-              pre_message: str = None,
-              se_message: str = None,
-              loaded_char: str = None,
-              unloaded_char: str = None,
-              items: Sized = None,
-              ):
+    def start(
+        self,
+        current_step: int | float | None = None,
+        full_amount: int | float | None = None,
+        line_width: int | None = None,
+        pre_message: str | None = None,
+        se_message: str | None = None,
+        loaded_char: str | None = None,
+        unloaded_char: str | None = None,
+        items: Sized | None = None,
+    ):
         """Show empty progressbar and initialize any new value.
 
         Args:
@@ -131,32 +134,36 @@ class TelegramProgressBar:
         self.line_width = line_width or 20
 
         if not self.full_amount and not self.items:
-            raise ValueError('Either full_amount or items must be set.')
+            raise ValueError("Either full_amount or items must be set.")
 
         if self.items:
             self.full_amount = len(self.items)
 
         if pre_message:
-            self.pre_message = emojize(pre_message, use_aliases=True)
+            self.pre_message = emojize(pre_message, language="alias")
         if se_message:
-            self.se_message = emojize(se_message, use_aliases=True)
+            self.se_message = emojize(se_message, language="alias")
         if loaded_char:
-            self.loaded_char = emojize(loaded_char, use_aliases=True)
+            self.loaded_char = emojize(loaded_char, language="alias")
         if unloaded_char:
-            self.unloaded_char = emojize(unloaded_char, use_aliases=True)
+            self.unloaded_char = emojize(unloaded_char, language="alias")
 
-        message = '{pre}{bar}{se}'.format(pre=self.pre_message + '\n' if self.pre_message else '',
-                                          bar=self.unloaded_char * self.line_width,
-                                          se='\n' + self.se_message if self.se_message else '')
+        message = "{pre}{bar}{se}".format(
+            pre=self.pre_message + "\n" if self.pre_message else "",
+            bar=self.unloaded_char * self.line_width,
+            se="\n" + self.se_message if self.se_message else "",
+        )
         message = message.format(current=self.current_step, total=self.full_amount, step_size=self.step_size)
         self.last_message = self.bot.send_message(self.chat_id, message, parse_mode=ParseMode.MARKDOWN)
         self.started = True
 
-    def update(self,
-               new_amount: int or float,
-               new_full_amount: int or float = None,
-               pre_message: str = None,
-               se_message: str = None):
+    def update(
+        self,
+        new_amount: int | float,
+        new_full_amount: int | float | None = None,
+        pre_message: str | None = None,
+        se_message: str | None = None,
+    ):
         """Update progress bar with its new amount.
 
         Args:
@@ -177,29 +184,28 @@ class TelegramProgressBar:
         self.print_message()
 
     def increase(self):
-        """Increase current_step and send a message if item is nth step_size item.
-        """
+        """Increase current_step and send a message if item is nth step_size item."""
         self.current_step += 1
         if self.current_step % self.step_size != 0 and self.current_step != self.full_amount:
             return
         self.print_message()
 
     def print_message(self):
-        """Print message to user
-        """
-        loaded_percentage = 1 / self.full_amount * self.current_step
+        """Print message to user"""
+        loaded_percentage = 1 / self.full_amount * self.current_step  # type: ignore
         loaded_chars_amount = round(self.line_width * loaded_percentage)
 
         bar = (self.loaded_char * loaded_chars_amount) + (self.unloaded_char * (self.line_width - loaded_chars_amount))
 
-        message = '{pre}{bar}{se}'.format(pre=self.pre_message + '\n' if self.pre_message else '',
-                                          bar=bar,
-                                          se='\n' + self.se_message if self.se_message else '')
+        message = "{pre}{bar}{se}".format(
+            pre=self.pre_message + "\n" if self.pre_message else "",
+            bar=bar,
+            se="\n" + self.se_message if self.se_message else "",
+        )
 
         message = message.format(
-            current=round(self.current_step, 2),
-            total=round(self.full_amount, 2),
-            step_size=self.step_size)
+            current=round(self.current_step, 2), total=round(self.full_amount, 2), step_size=self.step_size  # type: ignore
+        )
         if self.last_message:
             if self.last_message.text == message:
                 return
@@ -211,26 +217,24 @@ class TelegramProgressBar:
         self.last_message = self.bot.send_message(self.chat_id, message, parse_mode=ParseMode.MARKDOWN)
 
     def remove(self):
-        """Remove your progressbar from Telegram.
-        """
+        """Remove your progressbar from Telegram."""
         if self.last_message:
             self.bot.delete_message(self.chat_id, self.last_message.message_id)
 
     def __iter__(self):
-        """Iterate over given items or range of total items
-        """
+        """Iterate over given items or range of total items"""
         if not self.started:
             self.start()
 
-        iterable = self.items or range(self.full_amount)
-        for item in iterable:
+        iterable = self.items or range(self.full_amount)  # type: ignore
+        for item in iterable:  # type: ignore
             yield item
             self.increase()
 
-    def enumerate(self, items: Sized = None):
+    def enumerate(self, items: Sized = []):
         """Iterate overr given items or range of total items + returning the index
 
-         Args:
-            items (:obj:`Sized`): A Iterable object which should be iterated over
+        Args:
+           items (:obj:`Sized`): A Iterable object which should be iterated over
         """
         yield from enumerate(self(items=items))

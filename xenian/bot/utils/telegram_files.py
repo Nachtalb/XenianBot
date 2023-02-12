@@ -1,24 +1,30 @@
-import os
 from contextlib import contextmanager
+import os
 from tempfile import NamedTemporaryFile
 
 from PIL import Image
-from imageio.core import NeedDownloadError
 from imageio import plugins
-from telegram import Bot, Update, Message
+from imageio.core.fetching import NeedDownloadError
+from telegram import Bot, Message, Update
 
 from . import CustomNamedTemporaryFile
 
 try:
     from moviepy.video.io.VideoFileClip import VideoFileClip
 except NeedDownloadError as error:
-    if 'ffmpeg.download()' in error.args[0]:
+    if "ffmpeg.download()" in error.args[0]:
         plugins.ffmpeg.download()
     else:
         raise error
 
-__all__ = ['image_download', 'sticker_download', 'video_download', 'video_to_gif', 'video_to_gif_download',
-           'auto_download']
+__all__ = [
+    "image_download",
+    "sticker_download",
+    "video_download",
+    "video_to_gif",
+    "video_to_gif_download",
+    "auto_download",
+]
 
 
 @contextmanager
@@ -53,7 +59,7 @@ def first_frame_from_video(bot: Bot, message: Message):
 def extract_first_frame(video_path: str):
     video_clip = VideoFileClip(video_path, audio=False)
 
-    with NamedTemporaryFile(suffix='.jpg') as jpg_file:
+    with NamedTemporaryFile(suffix=".jpg") as jpg_file:
         video_clip.save_frame(jpg_file.name)
         yield jpg_file.name
 
@@ -69,14 +75,14 @@ def video_to_gif(video_path: str):
     """
     video_clip = VideoFileClip(video_path, audio=False)
 
-    with NamedTemporaryFile(suffix='.gif') as gif_file:
+    with NamedTemporaryFile(suffix=".gif") as gif_file:
         video_clip.write_gif(gif_file.name)
 
         dirname = os.path.dirname(gif_file.name)
         file_name = os.path.splitext(gif_file.name)[0]
-        compressed_gif_path = os.path.join(dirname, file_name + '-min.gif')
+        compressed_gif_path = os.path.join(dirname, file_name + "-min.gif")
 
-        os.system('gifsicle -O3 --lossy=50 -o {dst} {src}'.format(dst=compressed_gif_path, src=gif_file.name))
+        os.system("gifsicle -O3 --lossy=50 -o {dst} {src}".format(dst=compressed_gif_path, src=gif_file.name))
         if os.path.isfile(compressed_gif_path):
             yield compressed_gif_path
         else:
@@ -95,10 +101,10 @@ def video_download(bot: Bot, message: Message):
         :obj:`str`: Path to gif file
     """
     document = message.document or message.video
-    video = bot.getFile(document.file_id)
+    video = bot.getFile(document.file_id)  # type: ignore
 
-    with NamedTemporaryFile(suffix='.mp4') as video_file:
-        video.download(video_file.name)
+    with NamedTemporaryFile(suffix=".mp4") as video_file:
+        video.download(video_file.name)  # type: ignore
 
         yield video_file.name
 
@@ -115,13 +121,13 @@ def sticker_download(bot: Bot, message: Message):
     Returns:
         :obj:`str`: Path to image file
     """
-    sticker_image = bot.getFile(message.sticker.file_id)
+    sticker_image = bot.getFile(message.sticker.file_id)  # type: ignore
 
-    with CustomNamedTemporaryFile(suffix='.png') as image_file:
-        sticker_image.download(out=image_file)
+    with CustomNamedTemporaryFile(suffix=".png") as image_file:
+        sticker_image.download(out=image_file)  # type: ignore
         image_file.close()
         pil_image = Image.open(image_file.name).convert("RGBA")
-        pil_image.save(image_file.name, 'png')
+        pil_image.save(image_file.name, "png")
 
         yield image_file.name
 
@@ -139,8 +145,8 @@ def image_download(bot: Bot, message: Message):
         :obj:`str`: Path to image file
     """
     photo = bot.getFile(message.photo[-1].file_id)
-    with NamedTemporaryFile(suffix='.png') as image_file:
-        photo.download(out=image_file)
+    with NamedTemporaryFile(suffix=".png") as image_file:
+        photo.download(out=image_file)  # type: ignore
         yield image_file.name
 
 
@@ -173,8 +179,10 @@ def auto_download(bot: Bot, update: Update, convert_video_to_gif: bool = False, 
     """
     generator = None
 
+    if not update.message:
+        return
     msg = update.message
-    reply_to_msg = msg.reply_to_message if getattr(msg, 'reply_to_message') else msg
+    reply_to_msg = msg.reply_to_message if getattr(msg, "reply_to_message") else msg
 
     if reply_to_msg is not msg:
         msg = reply_to_msg
