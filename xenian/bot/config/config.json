@@ -61,9 +61,7 @@
   "mongodb": {
     "server": {
       "host": "xenian_db",
-      "port": 27017,
-      "username": "xenian",
-      "password": "xenian"
+      "port": 27017
     },
     "db_name": "xenian"
   }

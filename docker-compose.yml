@@ -19,11 +19,6 @@ services:
     container_name: 'xenian_db'
     image: 'bitnami/mongodb:latest'
     restart: unless-stopped
-    environment:
-      - MONGODB_USERNAME=xenian
-      - MONGODB_PASSWORD=xenian
-      - MONGODB_DATABASE=xenian
-      - MONGODB_ROOT_PASSWORD=some_secret
     volumes:
       - ./data_db:/bitnami/mongodb
     networks:
