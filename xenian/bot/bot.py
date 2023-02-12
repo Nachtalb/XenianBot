@@ -110,7 +110,7 @@ def main():
     if MODE["active"] == "webhook":
         webhook = MODE["webhook"]
         updater.start_webhook(listen=webhook["listen"], port=webhook["port"], url_path=webhook["url_path"])
-        updater.bot.set_webhook(url=webhook["url"])
+        updater.bot.set_webhook(url=f"https://{webhook['host']}/{webhook['url_path']}")
         send_message_if_reboot()
         logger.info("Starting webhook...")
         on_start()
