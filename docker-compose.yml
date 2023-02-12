@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  xenian_bot:
+    container_name: xenian_bot
+    build: .
+    # ports:
+    #   - 5000:80
+    env_file: .env
+    volumes:
+      - ./settings.py:/bot/xenian/bot/settings.py
+
+
