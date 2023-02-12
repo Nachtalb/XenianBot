@@ -1,6 +1,5 @@
-from pymongo import MongoClient
-from telegram import Bot, Chat, Message, Update, User
-from telegram.ext import Filters, Handler, MessageHandler, run_async
+from telegram import Bot, Chat, Update, User
+from telegram.ext import MessageHandler, run_async
 
 from xenian.bot import mongodb_database
 
@@ -32,7 +31,6 @@ class Database(BaseCommand):
 
         self.users = mongodb_database.users
         self.chats = mongodb_database.chats
-        self.messages = mongodb_database.messages
 
         super(Database, self).__init__()
 
@@ -46,8 +44,6 @@ class Database(BaseCommand):
         """
         if update.effective_chat:
             self.upsert_chat(update.effective_chat)
-        if update.effective_message:
-            self.upsert_message(update.effective_message)
         if update.effective_user:
             self.upsert_user(update.effective_user)
 
@@ -58,14 +54,6 @@ class Database(BaseCommand):
             user (:obj:`telegram.user.User`): Telegram Api User Object
         """
         self.users.update({"id": user.id}, user.to_dict(), upsert=True)
-
-    def upsert_message(self, message: Message):
-        """Insert or if existing update message
-
-        Args:
-            message (:obj:`telegram.message.Message`): Telegram Api Message Object
-        """
-        self.messages.update({"message_id": message.message_id}, message.to_dict(), upsert=True)
 
     def upsert_chat(self, chat: Chat):
         """Insert or if existing update chat
