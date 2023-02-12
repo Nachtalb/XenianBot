@@ -236,12 +236,8 @@ $RECYCLE.BIN/
 *.lnk
 
 ### Bot
-settings.py
 log/
 tmp/
 data/
-.idea/
-buildout.cfg
 src/
-.mr.developer.cfg
 .vim

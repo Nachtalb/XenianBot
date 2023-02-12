@@ -1,3 +1,4 @@
+# type: ignore
 from setuptools import find_packages
 from setuptools import setup
 
@@ -34,6 +35,7 @@ setup(
         "yt-dlp==2023.1.6",
         "decorator==4.4.2",
         "idna<3a",
+        "python-dotenv==0.21.1",
     ],
     entry_points={"console_scripts": ["bot = xenian.bot.bot:main"]},
 )

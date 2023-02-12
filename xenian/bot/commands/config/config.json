@@ -1,0 +1,66 @@
+{
+  "bot_token": "xxxxxxxxx",
+  "anime_services": [
+    {
+      "name": "danbooru",
+      "type": "danbooru",
+      "url": "https://danbooru.donmai.us",
+      "api": null,
+      "username": null,
+      "password": null
+    },
+    {
+      "name": "safebooru",
+      "type": "danbooru",
+      "url": "https://safebooru.donmai.us",
+      "api": null,
+      "username": null,
+      "password": null
+    },
+    {
+      "name": "konachan",
+      "type": "moebooru",
+      "url": null,
+      "hashed_string": null,
+      "username": null,
+      "password": null
+    }
+  ],
+  "admins": [
+    "@user1"
+  ],
+  "supporters": [
+    "@user1"
+  ],
+  "template_dir": "{BASE_DIR}/xenian/bot/commands/templates",
+  "mode": {
+    "active": "webhook",
+    "webhook": {
+      "listen": "127.0.0.1",
+      "port": 5000,
+      "url_path": "xenian_bot",
+      "host": "example.org"
+    }
+  },
+  "uploader": {
+    "uploader": "xenian.bot.uploaders.ssh.SSHUploader",
+    "url": "example.org",
+    "configuration": {
+        "host": "example.org",
+        "user": "username",
+        "password": "xxxxx",
+        "upload_dir": "/path/to/upload",
+        "key_filename": "/path/of/ssh/key"
+    }
+  },
+  "log_level": "warning",
+  "instagram_credentials": {
+    "username": "username",
+    "password": "password"
+  },
+  "mongodb": {
+    "host": "localhost",
+    "port": 27017,
+    "db_name": "xenian_bot"
+  }
+}
