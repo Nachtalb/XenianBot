@@ -239,3 +239,4 @@ $RECYCLE.BIN/
 .vim
 config/
 data/
+data_db/

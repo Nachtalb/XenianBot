@@ -59,8 +59,12 @@
     "password": "password"
   },
   "mongodb": {
-    "host": "localhost",
-    "port": 27017,
-    "db_name": "xenian_bot"
+    "server": {
+      "host": "xenian_db",
+      "port": 27017,
+      "username": "xenian",
+      "password": "xenian"
+    },
+    "db_name": "xenian"
   }
 }

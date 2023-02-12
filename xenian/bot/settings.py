@@ -51,13 +51,6 @@ match config["log_level"]:
 
 # These Instagram credentials are used for the centralized Instagram account which automatically follows private
 # accounts and downloads images / videos
-INSTAGRAM_CREDENTIALS = {
-    "username": "INSTAGRAM_USERNAME",
-    "password": "INSTAGRAM_PASSWORD",
-}
+INSTAGRAM_CREDENTIALS = config["instagram_credentials"]
 
-MONGODB_CONFIGURATION = {
-    "host": "HOST_OF_YOUR_DB",  # default: localhost
-    "port": "PORT_OF_YOUR_DB_AS_INT",  # default: 27017
-    "db_name": "DATABASE_NAME",
-}
+MONGODB_CONFIGURATION = config["mongodb"]
