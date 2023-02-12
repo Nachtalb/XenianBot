@@ -8,7 +8,7 @@ ENV PYTHONIOENCODING=utf-8
 RUN \
  apt update && \
  apt install -yq \
-   ffmpeg \
+   ffmpeg
 
 WORKDIR /bot
 COPY . /bot
