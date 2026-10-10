@@ -12,4 +12,4 @@ pytesseract==0.3.10
 python-telegram-bot==12.8
 requests-html==0.10.0
 urbandictionary==1.1
-yt-dlp==2023.1.6
+yt-dlp==2026.7.4
