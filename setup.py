@@ -22,7 +22,7 @@ setup(
         "googletrans==4.0.0rc1",
         "gTTS==2.1.1",
         "htmlmin==0.1.12",
-        "Mako==1.1.3",
+        "Mako==1.4.2",
         "moviepy==1.0.3",
         "paramiko==2.7.1",
         "Pillow==9.4.0",
