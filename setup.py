@@ -24,7 +24,7 @@ setup(
         "htmlmin==0.1.12",
         "Mako==1.1.3",
         "moviepy==1.0.3",
-        "paramiko==2.7.1",
+        "paramiko==5.0.0",
         "Pillow==9.4.0",
         "Pybooru==4.2.0",
         "pymongo==3.11.0",
